@@ -1620,22 +1620,19 @@ function _lsGetGame(gameId) {
 }
 
 async function fetchSquares(gameId) {
-  await checkApi();
-  if (isHosted()) {
-    try {
-      const res = await fetch(`/api/squares?gameId=${encodeURIComponent(gameId)}`);
-      if (!res.ok) throw new Error('fetch failed');
-      const data = await res.json();
-      _cache[gameId] = data;
-      return data;
-    } catch (e) {
-      return _cache[gameId] || { squares: [], owners: {} };
-    }
-  } else {
-    // Local fallback: read from localStorage
-    const data = _lsGetGame(gameId);
+  try {
+    const res = await fetch(SB_URL + '/rest/v1/squares?game_id=eq.' + encodeURIComponent(gameId), {
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
+    });
+    if (!res.ok) throw new Error('supabase fetch failed');
+    const rows = await res.json();
+    const data = rows.length > 0
+      ? { squares: rows[0].owners ? Object.keys(rows[0].owners).map(Number) : [], owners: rows[0].owners || {} }
+      : { squares: [], owners: {} };
     _cache[gameId] = data;
     return data;
+  } catch (e) {
+    return _cache[gameId] || { squares: [], owners: {} };
   }
 }
 
@@ -1655,32 +1652,34 @@ function getInitialsForGame(gameId) {
 }
 
 async function persistSquares(gameId, newIndices, initials) {
-  await checkApi();
-  if (isHosted()) {
-    const res = await fetch('/api/claim', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId, initials, indices: newIndices })
-    });
-    const data = await res.json();
-    if (res.status === 409) throw new Error('conflict: ' + (data.conflicts || []).join(','));
-    if (!res.ok) throw new Error(data.error || 'claim failed');
-    _cache[gameId] = { squares: data.squares, owners: data.owners };
-    _sessionInitials[gameId] = initials;
-    return data;
-  } else {
-    // Local fallback: save to localStorage
-    const current = _lsGetGame(gameId);
+  try {
+    // Fetch current state first
+    const current = _cache[gameId] || { squares: [], owners: {} };
     const updatedOwners = { ...current.owners };
     for (const idx of newIndices) updatedOwners[idx] = initials;
     const updatedSquares = [...new Set([...current.squares, ...newIndices])];
+
+    // Try PATCH first (row exists), then POST (new row)
+    let res = await fetch(SB_URL + '/rest/v1/squares?game_id=eq.' + encodeURIComponent(gameId), {
+      method: 'PATCH',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ owners: updatedOwners })
+    });
+    let rows = res.ok ? await res.json() : [];
+    if (!rows.length) {
+      res = await fetch(SB_URL + '/rest/v1/squares', {
+        method: 'POST',
+        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify({ game_id: gameId, owners: updatedOwners })
+      });
+      rows = res.ok ? await res.json() : [];
+    }
     const updated = { squares: updatedSquares, owners: updatedOwners };
-    const store = _lsLoad();
-    store[gameId] = updated;
-    _lsSave(store);
     _cache[gameId] = updated;
     _sessionInitials[gameId] = initials;
     return updated;
+  } catch (e) {
+    throw new Error('Could not save squares: ' + e.message);
   }
 }
 
