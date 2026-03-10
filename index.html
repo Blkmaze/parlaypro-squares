@@ -1189,7 +1189,7 @@
         Admin Zone
       </div>
       <div class="admin-btns"><button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
-        <button class="admin-btn admin-btn-blue" onclick="buildTicker();buildGrid(currentGame);">↻ Force Refresh Scores</button>
+        <button class="admin-btn admin-btn-blue" onclick="buildTicker();if(currentGame||window.currentGame){buildGrid(currentGame||window.currentGame);}else{alert('No game selected.');}">↻ Force Refresh Scores</button>
         <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
         <button class="admin-btn admin-btn-red" onclick="adminReset();">⚠ Reset Board</button>
       </div>
@@ -1552,6 +1552,7 @@ const GAMES = {
 // ── STATE ────────────────────────────────────────────────────
 let currentSport = 'NBA';
 let currentGame = GAMES.NBA[0];
+window.currentGame = currentGame;
 let currentQty = 5;
 
 // ── STORAGE: API (Netlify) with localStorage fallback ──────────
@@ -1860,6 +1861,7 @@ function populateGameDropdown(sport) {
 // ── LOAD GAME ────────────────────────────────────────────────
 async function loadGame(game) {
   currentGame = game;
+  window.currentGame = game;
   await buildGrid(game);
   // Auto-refresh every 15s to sync claimed squares
   if (window._pollTimer) clearInterval(window._pollTimer);
