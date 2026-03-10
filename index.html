@@ -1684,30 +1684,7 @@ async function persistSquares(gameId, newIndices, initials) {
   }
 }
 
-async function adminReset(gameId) {
-  await checkApi();
-  if (isHosted()) {
-    const key = prompt('Enter admin key:');
-    if (!key) return;
-    const res = await fetch('/api/admin/reset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId, adminKey: key })
-    });
-    const data = await res.json();
-    if (!res.ok) { alert('Reset failed: ' + (data.error || 'unauthorized')); return; }
-  } else {
-    // Local fallback
-    if (!confirm('Reset ' + (gameId ? 'this board' : 'ALL boards') + '?')) return;
-    const store = _lsLoad();
-    if (gameId) delete store[gameId];
-    else Object.keys(store).forEach(k => delete store[k]);
-    _lsSave(store);
-  }
-  if (gameId) delete _cache[gameId]; else Object.keys(_cache).forEach(k => delete _cache[k]);
-  await loadGame(currentGame);
-  buildGamesList(currentSport);
-}
+// adminReset defined below
 
 // ── TICKER ───────────────────────────────────────────────────
 function buildTicker() {
@@ -2070,43 +2047,43 @@ function lockNumbers(game) {
   }).catch(function(e){ alert('Error: ' + e.message); });
 }
 </script>
-<script>setInterval(async function(){if(!window.currentGame)return;try{var r=await fetch("/api/squares?gameId="+window.currentGame.id);var d=await r.json();if(!d||!d.owners)return;var cells=document.querySelectorAll(".cell");var i=0;cells.forEach(function(c){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}i++;});}catch(e){}},8000);</script>
-<script src="/poll.js"></script><script>setInterval(async function(){try{if(!window.currentGame)return;var d=await(await fetch("/api/squares?gameId="+window.currentGame.id)).json();if(!d||!d.owners)return;document.querySelectorAll(".cell").forEach(function(c,i){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}});}catch(e){}},8000);</script>
-<script>setInterval(async function(){try{if(!window.currentGame)return;var d=await(await fetch("/api/squares?gameId="+window.currentGame.id)).json();if(!d||!d.owners)return;document.querySelectorAll(".cell").forEach(function(c,i){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}});}catch(e){}},8000);</script><script>function adminReset(){if(!window.currentGame){alert("No game selected");return;}var pin=prompt("Enter admin PIN to reset board:");if(!pin)return;fetch("/api/reset-squares",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({gameId:window.currentGame.id,pin:pin})}).then(function(r){return r.json();}).then(function(d){if(d.ok){alert("Board cleared!");buildGrid(window.currentGame);}else{alert("Error: "+(d.error||"failed"));}}).catch(function(e){alert("Network error");});}</script>
-<script>window.adminReset=function(){var gid=window.currentGame?window.currentGame.id:null;if(!gid){var active=document.querySelector(".game-tab.active,.board-tab.active,[data-game-id]");if(active)gid=active.dataset.gameId||active.dataset.id;}if(!gid){alert("Please select a game board first, then click Reset Board.");return;}var pin=prompt("Enter PIN to clear all squares from: "+gid);if(!pin)return;fetch("/api/reset-squares",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({gameId:gid,pin:pin})}).then(function(r){return r.json();}).then(function(d){if(d.ok){alert("Board cleared! All squares reset.");if(window.buildGrid&&window.currentGame)buildGrid(window.currentGame);}else{alert("Error: "+(d.error||"unknown"));}}).catch(function(){alert("Network error - try again");});};</script>
 <script>
 window.adminReset = async function() {
-  var gameId = null;
-  if (window.currentGame) { gameId = window.currentGame.id; }
-  if (!gameId) {
-    var el = document.querySelector('.game-btn.active, .tab.active, [data-game-id]');
-    if (el) gameId = el.dataset.gameId || el.dataset.id;
-  }
-  if (!gameId) { alert('Please select a game board first.'); return; }
+  if (!window.currentGame) { alert('No game selected. Please pick a game first.'); return; }
+  var gameId = window.currentGame.id;
   var pin = prompt('Enter admin PIN to reset board:');
   if (!pin) return;
-  if (pin !== '2826') { alert('Incorrect PIN.'); return; }
+  if (pin !== '2826') { alert('Incorrect PIN'); return; }
   if (!confirm('Clear ALL squares for: ' + gameId + '?')) return;
   var SB_URL = 'https://pmbzffdgbtyxbnrtjehq.supabase.co';
   var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtYnpmZmRnYnR5eGJucnRqZWhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwOTMwOTUsImV4cCI6MjA4ODY2OTA5NX0.RfX46ZB5f0vhxo2_P7tGuM_-yyf6yM80gp6YYUJ0S9U';
   try {
+    // Try PATCH first (row exists)
     var res = await fetch(SB_URL + '/rest/v1/squares?game_id=eq.' + encodeURIComponent(gameId), {
       method: 'PATCH',
       headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
       body: JSON.stringify({ owners: {}, numbers_locked: false, row_nums: null, col_nums: null })
     });
     if (res.ok || res.status === 204) {
-      alert('Board cleared! All squares reset.');
+      alert('✅ Board cleared! All squares reset.');
       if (window.buildGrid && window.currentGame) buildGrid(window.currentGame);
-    } else { alert('Reset failed: ' + res.status); }
+      return;
+    }
+    // If row doesn't exist, INSERT it
+    var res2 = await fetch(SB_URL + '/rest/v1/squares', {
+      method: 'POST',
+      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ game_id: gameId, owners: {}, numbers_locked: false, row_nums: null, col_nums: null })
+    });
+    if (res2.ok || res2.status === 201) {
+      alert('✅ Board cleared! All squares reset.');
+      if (window.buildGrid && window.currentGame) buildGrid(window.currentGame);
+    } else {
+      var errText = await res2.text();
+      alert('Reset failed: ' + res2.status + ' ' + errText);
+    }
   } catch(e) { alert('Error: ' + e.message); }
 };
 </script>
 </body>
 </html>
-
-
-
-
-
-
