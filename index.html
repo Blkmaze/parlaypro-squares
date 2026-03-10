@@ -1564,6 +1564,8 @@ const STORE_KEY = 'parlaypro_squares_v1';
 
 // Detect if the API is actually available (not just a static placeholder)
 let _apiAvailable = null; // null=unknown, true=yes, false=no
+const SB_URL = 'https://pmbzffdgbtyxbnrtjehq.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtYnpmZmRnYnR5eGJucnRqZWhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwOTMwOTUsImV4cCI6MjA4ODY2OTA5NX0.RfX46ZB5f0vhxo2_P7tGuM_-yyf6yM80gp6YYUJ0S9U';
 
 async function checkApi() {
   // Always return true - we use direct blob REST API now
@@ -2034,8 +2036,6 @@ window.adminReset = async function() {
   if (!pin) return;
   if (pin !== '2826') { alert('Incorrect PIN'); return; }
   if (!confirm('Clear ALL squares for: ' + gameId + '?')) return;
-  var SB_URL = 'https://pmbzffdgbtyxbnrtjehq.supabase.co';
-  var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtYnpmZmRnYnR5eGJucnRqZWhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwOTMwOTUsImV4cCI6MjA4ODY2OTA5NX0.RfX46ZB5f0vhxo2_P7tGuM_-yyf6yM80gp6YYUJ0S9U';
   try {
     // Try PATCH first (row exists)
     var res = await fetch(SB_URL + '/rest/v1/squares?game_id=eq.' + encodeURIComponent(gameId), {
