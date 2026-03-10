@@ -1768,27 +1768,7 @@ async function buildGrid(game) {
   }
 
   document.getElementById('squaresGrid').innerHTML = html;
-  // Store render timestamp for polling
-  window._lastGridRender = Date.now();
-  if (window._pollTimer) clearInterval(window._pollTimer);
-  window._pollTimer = setInterval(async function() {
-    if (!window.currentGame || window.currentGame.id !== game.id) return;
-    try {
-      var r = await fetch('/api/squares?gameId=' + game.id);
-      var data = await r.json();
-      if (!data || !data.owners) return;
-      var owners = data.owners;
-      var cells = document.querySelectorAll('.cell');
-      var i = 0;
-      cells.forEach(function(cell) {
-        if (owners[i] !== undefined && !cell.classList.contains('cell-mine')) {
-          cell.className = 'cell cell-sold';
-          cell.textContent = owners[i];
-        }
-        i++;
-      });
-    } catch(e) {}
-  }, 10000);
+  // Polling handled by loadGame
 }
 
 // ── ODDS PANEL ───────────────────────────────────────────────
@@ -1886,7 +1866,7 @@ async function loadGame(game) {
     if (currentGame && currentGame.id === game.id) {
       await buildGrid(currentGame);
     }
-  }, 15000);
+  }, 60000);
   buildOdds(game);
   updateBoardHeader(game);
   updateCTA();
