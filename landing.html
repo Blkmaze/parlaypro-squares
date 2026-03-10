@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParlayPro Squares — Run Your Own Squares Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;1,700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black: #050505;
+  --dark: #0d0d0d;
+  --card: #111;
+  --border: #1c1c1c;
+  --border2: #2a2a2a;
+  --green: #0dff6e;
+  --green2: #00c44f;
+  --green-dim: rgba(13,255,110,0.08);
+  --green-glow: rgba(13,255,110,0.15);
+  --gold: #f5c518;
+  --red: #ff3b3b;
+  --text: #f0f0f0;
+  --muted: #666;
+  --faint: #333;
+  --font-display: 'Anton', sans-serif;
+  --font-cond: 'Barlow Condensed', sans-serif;
+  --font-body: 'Barlow', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* GRID TEXTURE */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(13,255,110,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(13,255,110,0.015) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  background: rgba(5,5,5,0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  color: white;
+}
+
+.nav-logo span { color: var(--green); }
+
+.nav-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-price {
+  font-family: var(--font-cond);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-cond);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all 0.18s ease;
+}
+
+.btn-green {
+  background: var(--green);
+  color: #000;
+  box-shadow: 0 0 24px rgba(13,255,110,0.3);
+}
+
+.btn-green:hover {
+  background: #fff;
+  box-shadow: 0 0 40px rgba(13,255,110,0.5);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+}
+
+.btn-outline:hover {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.btn-xl {
+  font-size: 18px;
+  padding: 18px 40px;
+  border-radius: 8px;
+}
+
+/* ── SECTIONS ── */
+section {
+  position: relative;
+  z-index: 1;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 120px 32px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 700px;
+  height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13,255,110,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--green-dim);
+  border: 1px solid rgba(13,255,110,0.2);
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-family: var(--font-cond);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 20px;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: blink 1.5s ease infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity:1; }
+  50% { opacity:0.2; }
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: clamp(52px, 6vw, 88px);
+  line-height: 0.92;
+  letter-spacing: 0.01em;
+  color: white;
+  margin-bottom: 24px;
+}
+
+h1 .accent { color: var(--green); }
+h1 .stroke {
+  -webkit-text-stroke: 2px white;
+  color: transparent;
+}
+
+.hero-desc {
+  font-size: 18px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 36px;
+  max-width: 480px;
+  font-weight: 400;
+}
+
+.hero-desc strong { color: var(--text); font-weight: 600; }
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hero-proof {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  font-family: var(--font-cond);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hero-proof::before {
+  content: '★★★★★';
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+/* DEMO BOARD */
+.demo-board {
+  background: #0d0d0d;
+  border: 1px solid #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(13,255,110,0.05);
+}
+
+.demo-header {
+  background: #111;
+  border-bottom: 1px solid #1a1a1a;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.demo-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: white;
+}
+
+.demo-live {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-cond);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.demo-live::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: blink 1.5s ease infinite;
+}
+
+.demo-score {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(13,255,110,0.04), transparent);
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.demo-team {
+  font-family: var(--font-cond);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: white;
+}
+
+.demo-pts {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--green);
+}
+
+.demo-grid-wrap {
+  padding: 12px;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: 22px repeat(5, 1fr);
+  grid-template-rows: 22px repeat(5, 1fr);
+  gap: 3px;
+  font-family: var(--font-cond);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.demo-cell {
+  background: #1a1a1a;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  color: #555;
+  font-size: 8px;
+  transition: all 0.2s;
+}
+
+.demo-cell.num-head {
+  background: transparent;
+  color: var(--green);
+  font-size: 10px;
+}
+
+.demo-cell.claimed {
+  background: rgba(13,255,110,0.12);
+  border: 1px solid rgba(13,255,110,0.2);
+  color: var(--green);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.demo-cell.winner {
+  background: rgba(13,255,110,0.3);
+  border: 1px solid var(--green);
+  color: #000;
+  box-shadow: 0 0 12px rgba(13,255,110,0.4);
+  animation: pulse-win 2s ease infinite;
+}
+
+@keyframes pulse-win {
+  0%,100% { box-shadow: 0 0 12px rgba(13,255,110,0.4); }
+  50% { box-shadow: 0 0 24px rgba(13,255,110,0.7); }
+}
+
+.demo-pay {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid #1a1a1a;
+}
+
+.demo-pay-chip {
+  flex: 1;
+  background: #161616;
+  border: 1px solid #222;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: var(--font-cond);
+}
+
+.demo-pay-label { font-size: 8px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #555; }
+.demo-pay-val { font-size: 13px; font-weight: 700; color: white; margin-top: 1px; }
+.demo-pay-handle { font-size: 9px; color: var(--green); font-family: monospace; }
+
+/* ── STATS BAR ── */
+.stats-bar {
+  background: var(--dark);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 28px 32px;
+}
+
+.stats-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+
+.stat {
+  text-align: center;
+  padding: 8px 24px;
+  border-right: 1px solid var(--border);
+}
+
+.stat:last-child { border-right: none; }
+
+.stat-num {
+  font-family: var(--font-display);
+  font-size: 40px;
+  letter-spacing: 0.02em;
+  color: var(--green);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-family: var(--font-cond);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── HOW IT WORKS ── */
+.how {
+  padding: 100px 32px;
+}
+
+.section-tag {
+  font-family: var(--font-cond);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 12px;
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 4vw, 56px);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  color: white;
+  margin-bottom: 16px;
+}
+
+.section-sub {
+  font-size: 17px;
+  color: var(--muted);
+  max-width: 540px;
+  margin-bottom: 64px;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+.step-card {
+  background: var(--card);
+  padding: 36px 28px;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.step-card:hover { border-color: rgba(13,255,110,0.2); }
+
+.step-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--green), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.step-card:hover::before { opacity: 1; }
+
+.step-num {
+  font-family: var(--font-display);
+  font-size: 72px;
+  line-height: 1;
+  color: var(--border2);
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  letter-spacing: -0.02em;
+  transition: color 0.2s;
+}
+
+.step-card:hover .step-num { color: rgba(13,255,110,0.08); }
+
+.step-icon {
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+.step-title {
+  font-family: var(--font-cond);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: white;
+  margin-bottom: 8px;
+}
+
+.step-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ── FEATURES ── */
+.features {
+  padding: 80px 32px 100px;
+  background: var(--dark);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+  margin-top: 56px;
+}
+
+.feature-card {
+  background: var(--black);
+  padding: 32px;
+  border: 1px solid var(--border);
+  display: flex;
+  gap: 18px;
+  transition: border-color 0.2s;
+}
+
+.feature-card:hover { border-color: rgba(13,255,110,0.15); }
+
+.feature-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--green-dim);
+  border: 1px solid rgba(13,255,110,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.feature-title {
+  font-family: var(--font-cond);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: white;
+  margin-bottom: 6px;
+}
+
+.feature-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ── PRICING ── */
+.pricing {
+  padding: 100px 32px;
+}
+
+.pricing-card {
+  max-width: 520px;
+  margin: 56px auto 0;
+  background: var(--card);
+  border: 1px solid rgba(13,255,110,0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(13,255,110,0.08);
+  position: relative;
+}
+
+.pricing-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--green);
+  color: #000;
+  font-family: var(--font-cond);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 100px;
+}
+
+.pricing-top {
+  padding: 36px 36px 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pricing-name {
+  font-family: var(--font-cond);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+
+.pricing-amount {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.price-dollar {
+  font-family: var(--font-cond);
+  font-size: 28px;
+  font-weight: 700;
+  color: white;
+  margin-top: 8px;
+}
+
+.price-num {
+  font-family: var(--font-display);
+  font-size: 80px;
+  line-height: 1;
+  color: white;
+}
+
+.price-per {
+  font-family: var(--font-cond);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  align-self: flex-end;
+  margin-bottom: 10px;
+}
+
+.pricing-desc {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.pricing-includes {
+  padding: 28px 36px 36px;
+}
+
+.includes-title {
+  font-family: var(--font-cond);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.include-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.include-item::before {
+  content: '✓';
+  color: var(--green);
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.pricing-cta {
+  padding: 0 36px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── FAQ ── */
+.faq {
+  padding: 80px 32px 100px;
+  background: var(--dark);
+  border-top: 1px solid var(--border);
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  margin-top: 56px;
+}
+
+.faq-item {
+  background: var(--black);
+  border: 1px solid var(--border);
+  padding: 28px;
+  transition: border-color 0.2s;
+}
+
+.faq-item:hover { border-color: var(--border2); }
+
+.faq-q {
+  font-family: var(--font-cond);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.faq-a {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.faq-a a { color: var(--green); text-decoration: none; }
+.faq-a a:hover { text-decoration: underline; }
+
+/* ── CTA FOOTER ── */
+.cta-footer {
+  padding: 100px 32px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-footer::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 300px;
+  background: radial-gradient(ellipse, rgba(13,255,110,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.cta-footer h2 { font-size: clamp(40px, 5vw, 72px); margin-bottom: 16px; }
+.cta-footer p { font-size: 17px; color: var(--muted); margin-bottom: 36px; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--dark);
+  border-top: 1px solid var(--border);
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer-logo {
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: white;
+}
+.footer-logo span { color: var(--green); }
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+.footer-links a {
+  font-family: var(--font-cond);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover { color: var(--green); }
+
+.footer-copy {
+  font-size: 12px;
+  color: var(--faint);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .hero-inner { grid-template-columns: 1fr; }
+  .demo-board { display: none; }
+  .steps-grid { grid-template-columns: 1fr; }
+  .features-grid { grid-template-columns: 1fr; }
+  .stats-inner { grid-template-columns: repeat(2, 1fr); }
+  .faq-grid { grid-template-columns: 1fr; }
+  footer { flex-direction: column; gap: 16px; text-align: center; }
+}
+
+@media (max-width: 600px) {
+  nav { padding: 12px 16px; }
+  .container, .hero, .how, .features, .pricing, .faq, .cta-footer { padding-left: 16px; padding-right: 16px; }
+  .stats-inner { grid-template-columns: repeat(2, 1fr); gap: 0; }
+  .stat { padding: 16px; }
+}
+
+/* ── ANIMATIONS ── */
+.fade-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">PARLAY<span>PRO</span> SQUARES</div>
+  <div class="nav-cta">
+    <span class="nav-price">From $15/season</span>
+    <a href="https://gum.co/parlaypro-squares" class="btn btn-green" target="_blank">Get It Now →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">White-Label Sports Squares App</div>
+      <h1>RUN YOUR<br>OWN <span class="accent">SQUARES</span><br><span class="stroke">BOARD</span></h1>
+      <p class="hero-desc">
+        Collect money, track games, and run professional squares pools for <strong>any NFL, NBA, MLB, or NHL game</strong> — with your name, your payment info, your brand.
+      </p>
+      <div class="hero-actions">
+        <a href="https://gum.co/parlaypro-squares" class="btn btn-green btn-xl" target="_blank">🏆 Get Your License — $15</a>
+        <a href="#how-it-works" class="btn btn-outline">See How It Works</a>
+      </div>
+      <div class="hero-proof">5-star rated · Instant download · No coding needed</div>
+    </div>
+
+    <!-- DEMO BOARD -->
+    <div class="demo-board">
+      <div class="demo-header">
+        <div class="demo-title">YOUR BOARD NAME</div>
+        <div class="demo-live">Live</div>
+      </div>
+      <div class="demo-score">
+        <div>
+          <div class="demo-team">CHIEFS</div>
+          <div style="font-size:10px;color:#555;font-family:var(--font-cond);letter-spacing:0.05em;">Q3 · 8:42</div>
+        </div>
+        <div class="demo-pts">24</div>
+        <div style="color:#333;font-family:var(--font-display);font-size:18px;">VS</div>
+        <div class="demo-pts" style="color:#f0f0f0;">17</div>
+        <div style="text-align:right;">
+          <div class="demo-team">EAGLES</div>
+          <div style="font-size:10px;color:#555;font-family:var(--font-cond);letter-spacing:0.05em;">Final score wins</div>
+        </div>
+      </div>
+      <div class="demo-grid-wrap">
+        <div class="demo-grid" id="demoGrid"></div>
+      </div>
+      <div class="demo-pay">
+        <div class="demo-pay-chip">
+          <div class="demo-pay-label">Cash App</div>
+          <div class="demo-pay-val">$YourName</div>
+          <div class="demo-pay-handle">$10 per square</div>
+        </div>
+        <div class="demo-pay-chip">
+          <div class="demo-pay-label">PayPal</div>
+          <div class="demo-pay-val">you@gmail.com</div>
+          <div class="demo-pay-handle">Instant pay</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat">
+      <div class="stat-num">6</div>
+      <div class="stat-label">Major Sports</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">100</div>
+      <div class="stat-label">Squares Per Board</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">5min</div>
+      <div class="stat-label">Setup Time</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">$0</div>
+      <div class="stat-label">Monthly Fees</div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how-it-works">
+  <div class="container">
+    <div class="section-tag fade-up">How It Works</div>
+    <h2 class="fade-up">SETUP IN<br>THREE STEPS</h2>
+    <p class="section-sub fade-up">No developers. No servers. No monthly subscriptions. Just download and go.</p>
+
+    <div class="steps-grid">
+      <div class="step-card fade-up">
+        <div class="step-num">01</div>
+        <div class="step-icon">⚙️</div>
+        <div class="step-title">Configure Your App</div>
+        <p class="step-desc">Open the setup wizard. Enter your board name, Cash App/PayPal info, admin PIN, price per square, and your Supabase database credentials. Takes under 5 minutes.</p>
+      </div>
+      <div class="step-card fade-up" style="animation-delay:0.1s;">
+        <div class="step-num">02</div>
+        <div class="step-icon">🚀</div>
+        <div class="step-title">Deploy for Free</div>
+        <p class="step-desc">Download your custom <code style="background:#1a1a1a;padding:2px 6px;border-radius:4px;font-size:12px;color:var(--green);">index.html</code> and drag it onto Netlify. You get a live URL in 30 seconds. Works on mobile as an installable PWA.</p>
+      </div>
+      <div class="step-card fade-up" style="animation-delay:0.2s;">
+        <div class="step-num">03</div>
+        <div class="step-icon">💰</div>
+        <div class="step-title">Share & Collect</div>
+        <p class="step-desc">Send the link to your players. They pick squares and pay you directly via Cash App or PayPal. Live scores update automatically. You keep 100% of the money.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="container">
+    <div class="section-tag fade-up">What You Get</div>
+    <h2 class="fade-up">EVERYTHING<br>YOU NEED</h2>
+
+    <div class="features-grid">
+      <div class="feature-card fade-up">
+        <div class="feature-icon">🏈</div>
+        <div>
+          <div class="feature-title">Live Scores — All Sports</div>
+          <p class="feature-desc">Real-time score ticker pulls from ESPN. NFL, NBA, MLB, NHL, NCAA — auto-updates every 60 seconds so everyone stays in the game.</p>
+        </div>
+      </div>
+      <div class="feature-card fade-up" style="animation-delay:0.05s;">
+        <div class="feature-icon">📱</div>
+        <div>
+          <div class="feature-title">Installs Like a Native App</div>
+          <p class="feature-desc">Players tap "Add to Home Screen" on iPhone or Android and get a full-screen app experience — no App Store, no Google Play, no approvals needed.</p>
+        </div>
+      </div>
+      <div class="feature-card fade-up" style="animation-delay:0.1s;">
+        <div class="feature-icon">💳</div>
+        <div>
+          <div class="feature-title">Your Payment Info, Your Money</div>
+          <p class="feature-desc">Your Cash App cashtag and PayPal email are baked directly into the app. Players pay you directly — zero middlemen, zero platform cuts.</p>
+        </div>
+      </div>
+      <div class="feature-card fade-up" style="animation-delay:0.15s;">
+        <div class="feature-icon">🎨</div>
+        <div>
+          <div class="feature-title">Fully Branded to You</div>
+          <p class="feature-desc">Your board name, your admin PIN, your price per square. Looks professional enough to charge whatever the market will bear.</p>
+        </div>
+      </div>
+      <div class="feature-card fade-up" style="animation-delay:0.2s;">
+        <div class="feature-icon">🔒</div>
+        <div>
+          <div class="feature-title">Admin Controls</div>
+          <p class="feature-desc">PIN-protected reset and lock functions. Lock the random numbers to the board when ready, force-refresh scores, and reset between games.</p>
+        </div>
+      </div>
+      <div class="feature-card fade-up" style="animation-delay:0.25s;">
+        <div class="feature-icon">☁️</div>
+        <div>
+          <div class="feature-title">Cloud-Synced Squares</div>
+          <p class="feature-desc">Squares data lives in your own Supabase database (free tier handles it easily). Multiple devices, real-time sync — everyone sees the same board.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="container" style="text-align:center;">
+    <div class="section-tag fade-up">Pricing</div>
+    <h2 class="fade-up">ONE FLAT PRICE.<br>KEEP ALL THE MONEY.</h2>
+    <p class="section-sub fade-up" style="margin:12px auto 0;">No revenue share. No per-player fees. No monthly bills. Just a one-time license fee each season.</p>
+
+    <div class="pricing-card fade-up">
+      <div class="pricing-badge">Most Popular</div>
+      <div class="pricing-top">
+        <div class="pricing-name">Season License</div>
+        <div class="pricing-amount">
+          <span class="price-dollar">$</span>
+          <span class="price-num" id="priceDisplay">15</span>
+          <span class="price-per">/ season</span>
+        </div>
+        <p class="pricing-desc">Valid for one full NFL/NBA/MLB/NHL season. Run as many boards as you want for the same game.</p>
+      </div>
+      <div class="pricing-includes">
+        <div class="includes-title">Everything Included</div>
+        <div class="include-item">Full white-label configurator app</div>
+        <div class="include-item">Complete squares board with live ESPN scores</div>
+        <div class="include-item">Your Cash App + PayPal info baked in</div>
+        <div class="include-item">PWA — installs on Android &amp; iPhone home screen</div>
+        <div class="include-item">Admin controls (PIN, reset, lock numbers)</div>
+        <div class="include-item">Free Netlify hosting setup guide</div>
+        <div class="include-item">Free Supabase database setup guide</div>
+        <div class="include-item">Instant download — no waiting</div>
+      </div>
+      <div class="pricing-cta">
+        <a href="https://gum.co/parlaypro-squares" class="btn btn-green btn-xl" target="_blank" style="text-align:center;justify-content:center;">
+          🏆 Buy Now on Gumroad — $15
+        </a>
+        <div style="font-size:12px;color:var(--muted);text-align:center;font-family:var(--font-cond);letter-spacing:0.05em;">
+          Secure payment · Instant delivery · 30-day refund policy
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="container">
+    <div class="section-tag fade-up">FAQ</div>
+    <h2 class="fade-up">GOT QUESTIONS?</h2>
+
+    <div class="faq-grid">
+      <div class="faq-item fade-up">
+        <div class="faq-q">Do I need to know how to code?</div>
+        <p class="faq-a">Zero coding required. You fill out a setup form, download an HTML file, and drag it onto Netlify. The whole setup takes about 5 minutes.</p>
+      </div>
+      <div class="faq-item fade-up">
+        <div class="faq-q">How do players pay me?</div>
+        <p class="faq-a">Your Cash App cashtag and PayPal email show up directly in the app. Players pay you directly — you keep 100%. We take nothing from the pot.</p>
+      </div>
+      <div class="faq-item fade-up">
+        <div class="faq-q">What sports does it support?</div>
+        <p class="faq-a">NFL, NBA, MLB, NHL, NCAA Men's Basketball, and NCAA Women's Basketball. Live scores pull automatically from ESPN's API.</p>
+      </div>
+      <div class="faq-item fade-up">
+        <div class="faq-q">Is hosting free?</div>
+        <p class="faq-a">Yes. We use <a href="https://netlify.com" target="_blank">Netlify</a> (free tier) for hosting and <a href="https://supabase.com" target="_blank">Supabase</a> (free tier) for the database. Monthly cost to run your board: $0.</p>
+      </div>
+      <div class="faq-item fade-up">
+        <div class="faq-q">Can I run multiple boards?</div>
+        <p class="faq-a">Yes — one license covers unlimited boards for the season. Run a board for every game if you want.</p>
+      </div>
+      <div class="faq-item fade-up">
+        <div class="faq-q">What happens after I buy?</div>
+        <p class="faq-a">Gumroad sends you the configurator file instantly. Open it in your browser, fill in your info, click download, deploy to Netlify. Done.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FOOTER -->
+<section class="cta-footer">
+  <div class="container">
+    <div class="section-tag" style="text-align:center;">Ready to Run Your Board?</div>
+    <h2 class="fade-up">STOP USING<br>PAPER BOARDS</h2>
+    <p class="fade-up">Go digital. Go professional. Go paid.</p>
+    <a href="https://gum.co/parlaypro-squares" class="btn btn-green btn-xl fade-up" target="_blank">
+      🏆 Get Your License — $15/Season
+    </a>
+    <div style="margin-top:16px;font-family:var(--font-cond);font-size:12px;color:var(--muted);letter-spacing:0.05em;" class="fade-up">
+      Instant download · Works on any device · 30-day money-back guarantee
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">PARLAY<span>PRO</span> SQUARES</div>
+  <div class="footer-links">
+    <a href="#how-it-works">How It Works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="https://gum.co/parlaypro-squares" target="_blank">Buy Now</a>
+  </div>
+  <div class="footer-copy">© 2025 ParlayPro Squares. All rights reserved.</div>
+</footer>
+
+<script>
+// ── DEMO GRID ──
+(function() {
+  const grid = document.getElementById('demoGrid');
+  const nums = [3,7,1,9,4];
+  const initials = ['WM','KJ','DT','RB','LM','CP','AA','TW','MB','GH'];
+  const winRow = 2, winCol = 3;
+
+  // corner
+  const corner = document.createElement('div');
+  corner.className = 'demo-cell';
+  grid.appendChild(corner);
+
+  // col headers
+  nums.forEach(n => {
+    const c = document.createElement('div');
+    c.className = 'demo-cell num-head';
+    c.textContent = n;
+    grid.appendChild(c);
+  });
+
+  // rows
+  nums.forEach((rn, ri) => {
+    const rh = document.createElement('div');
+    rh.className = 'demo-cell num-head';
+    rh.textContent = rn;
+    grid.appendChild(rh);
+
+    nums.forEach((cn, ci) => {
+      const cell = document.createElement('div');
+      const idx = ri * 5 + ci;
+      if (ri === winRow && ci === winCol) {
+        cell.className = 'demo-cell winner';
+        cell.textContent = 'WM';
+      } else if (idx % 3 === 0 || idx % 2 === 0) {
+        cell.className = 'demo-cell claimed';
+        cell.textContent = initials[idx % initials.length];
+      } else {
+        cell.className = 'demo-cell';
+        cell.textContent = idx + 1;
+      }
+      grid.appendChild(cell);
+    });
+  });
+})();
+
+// ── SCROLL ANIMATIONS ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// ── STAGGER CHILDREN ──
+document.querySelectorAll('.steps-grid, .features-grid, .faq-grid').forEach(grid => {
+  grid.querySelectorAll('.fade-up').forEach((el, i) => {
+    el.style.transitionDelay = (i * 0.06) + 's';
+  });
+});
+</script>
+</body>
+</html>

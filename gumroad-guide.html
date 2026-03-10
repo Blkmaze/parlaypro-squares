@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParlayPro Squares — Gumroad Setup Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0a; --card: #111; --border: #1c1c1c; --border2: #2a2a2a;
+  --green: #0dff6e; --gold: #f5c518; --red: #ff4444; --blue: #3b82f6;
+  --text: #f0f0f0; --muted: #666; --faint: #2a2a2a;
+  --font-d: 'Anton', sans-serif; --font-c: 'Barlow Condensed', sans-serif; --font-b: 'Barlow', sans-serif;
+}
+body { background: var(--bg); color: var(--text); font-family: var(--font-b); font-size: 15px; line-height: 1.6; }
+.page { max-width: 800px; margin: 0 auto; padding: 48px 24px 80px; }
+
+h1 { font-family: var(--font-d); font-size: 48px; letter-spacing: 0.02em; color: white; margin-bottom: 6px; }
+h1 span { color: var(--green); }
+.subtitle { font-family: var(--font-c); font-size: 14px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 40px; }
+
+.toc { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 40px; }
+.toc-title { font-family: var(--font-c); font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.toc ol { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.toc li { font-size: 14px; }
+.toc a { color: var(--green); text-decoration: none; font-weight: 500; }
+.toc a:hover { text-decoration: underline; }
+
+.phase { margin-bottom: 48px; }
+.phase-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.phase-num { font-family: var(--font-d); font-size: 48px; color: var(--green); line-height: 1; opacity: 0.5; }
+.phase-title { font-family: var(--font-d); font-size: 28px; letter-spacing: 0.03em; color: white; }
+.phase-sub { font-size: 13px; color: var(--muted); margin-top: 2px; font-family: var(--font-c); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+
+.step { background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+.step-head { display: flex; align-items: center; gap: 14px; padding: 18px 20px; }
+.step-badge { background: var(--faint); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-family: var(--font-c); font-size: 12px; font-weight: 700; color: var(--green); flex-shrink: 0; }
+.step-text { flex: 1; }
+.step-title { font-family: var(--font-c); font-size: 16px; font-weight: 700; letter-spacing: 0.03em; color: white; }
+.step-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.step-body { padding: 0 20px 20px 62px; }
+
+.field-map { background: #0d0d0d; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-top: 12px; }
+.field-row { display: flex; align-items: flex-start; gap: 0; border-bottom: 1px solid var(--border); }
+.field-row:last-child { border-bottom: none; }
+.field-name { font-family: var(--font-c); font-size: 13px; font-weight: 700; color: var(--text); padding: 12px 16px; min-width: 200px; border-right: 1px solid var(--border); background: #111; }
+.field-val { font-size: 13px; color: var(--muted); padding: 12px 16px; flex: 1; line-height: 1.6; }
+.field-val code { background: var(--faint); border-radius: 4px; padding: 1px 6px; font-size: 12px; color: var(--green); }
+.field-val strong { color: var(--text); }
+
+.note { display: flex; gap: 12px; background: rgba(13,255,110,0.04); border: 1px solid rgba(13,255,110,0.12); border-radius: 8px; padding: 14px 16px; margin-top: 14px; }
+.note-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.note-text { font-size: 13px; color: var(--muted); line-height: 1.7; }
+.note-text strong { color: var(--green); }
+.note-text a { color: var(--green); }
+
+.warning { background: rgba(245,197,24,0.04); border-color: rgba(245,197,24,0.15); }
+.warning .note-text strong { color: var(--gold); }
+
+.copy-box { background: #0d0d0d; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-top: 12px; font-family: monospace; font-size: 13px; color: var(--green); line-height: 1.8; position: relative; }
+.copy-btn { position: absolute; top: 10px; right: 10px; background: var(--faint); border: 1px solid var(--border2); border-radius: 5px; padding: 4px 10px; font-family: var(--font-c); font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.copy-btn:hover { border-color: var(--green); color: var(--green); }
+
+.checklist { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.check-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--text); }
+.check-item::before { content: "☐"; color: var(--green); font-size: 16px; flex-shrink: 0; margin-top: -1px; }
+
+.price-table { width: 100%; border-collapse: collapse; margin-top: 14px; }
+.price-table th { background: var(--faint); font-family: var(--font-c); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+.price-table td { padding: 11px 14px; border: 1px solid var(--border); font-size: 13px; }
+.price-table tr:hover td { background: var(--card); }
+.green { color: var(--green); font-weight: 700; }
+.red { color: var(--red); }
+.gold { color: var(--gold); font-weight: 700; }
+
+.platform-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.platform-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.platform-card.recommended { border-color: rgba(13,255,110,0.25); }
+.platform-name { font-family: var(--font-c); font-size: 16px; font-weight: 700; color: white; margin-bottom: 6px; }
+.platform-tag { display: inline-block; font-family: var(--font-c); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 100px; margin-bottom: 8px; }
+.tag-rec { background: rgba(13,255,110,0.1); color: var(--green); border: 1px solid rgba(13,255,110,0.2); }
+.tag-alt { background: var(--faint); color: var(--muted); border: 1px solid var(--border2); }
+.platform-detail { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.platform-detail strong { color: var(--text); }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+.promo-tips { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.promo-tip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: flex; gap: 12px; }
+.promo-emoji { font-size: 20px; flex-shrink: 0; }
+.promo-title { font-family: var(--font-c); font-size: 14px; font-weight: 700; color: white; margin-bottom: 3px; }
+.promo-body { font-size: 13px; color: var(--muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>GUMROAD<br><span>SETUP GUIDE</span></h1>
+<p class="subtitle">ParlayPro Squares · White-Label Launch Playbook</p>
+
+<div class="toc">
+  <div class="toc-title">Table of Contents</div>
+  <ol>
+    <li><a href="#phase1">Create Your Gumroad Account</a></li>
+    <li><a href="#phase2">Set Up Your Product Listing</a></li>
+    <li><a href="#phase3">Pricing Strategy ($10–$20/season)</a></li>
+    <li><a href="#phase4">Connect Your Bank / Payout Info</a></li>
+    <li><a href="#phase5">Upload the Product File</a></li>
+    <li><a href="#phase6">Write Your Sales Page Copy</a></li>
+    <li><a href="#phase7">Set Up Your Landing Page</a></li>
+    <li><a href="#phase8">Promote & Drive Traffic</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="phase" id="phase1">
+  <div class="phase-header">
+    <div class="phase-num">01</div>
+    <div>
+      <div class="phase-title">CREATE YOUR GUMROAD ACCOUNT</div>
+      <div class="phase-sub">5 minutes · Free to start</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">A</div>
+      <div class="step-text">
+        <div class="step-title">Sign up at gumroad.com</div>
+        <div class="step-desc">Go to <strong>gumroad.com</strong> → click "Start selling" → sign up with your email</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="note">
+        <div class="note-icon">💡</div>
+        <div class="note-text"><strong>Use your Gmail or a dedicated business email.</strong> This is what buyers will see on receipts. Consider something like <code>parlayproboards@gmail.com</code> if you want to keep it branded.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">B</div>
+      <div class="step-text">
+        <div class="step-title">Fill in your profile</div>
+        <div class="step-desc">Settings → Profile — buyers see this on your store page</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="field-map">
+        <div class="field-row"><div class="field-name">Name</div><div class="field-val"><strong>ParlayPro Squares</strong> or your personal brand name</div></div>
+        <div class="field-row"><div class="field-name">Bio</div><div class="field-val">Run your own professional sports squares board. Instant setup, zero coding.</div></div>
+        <div class="field-row"><div class="field-name">Profile URL</div><div class="field-val"><code>gumroad.com/parlayprosquares</code> (customize this)</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="phase" id="phase2">
+  <div class="phase-header">
+    <div class="phase-num">02</div>
+    <div>
+      <div class="phase-title">CREATE YOUR PRODUCT</div>
+      <div class="phase-sub">10 minutes · This is what buyers purchase</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">A</div>
+      <div class="step-text">
+        <div class="step-title">Create a new product</div>
+        <div class="step-desc">Dashboard → Products → New Product → choose "Digital product"</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">B</div>
+      <div class="step-text">
+        <div class="step-title">Fill in the product details</div>
+        <div class="step-desc">Copy these settings exactly for best conversion</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="field-map">
+        <div class="field-row"><div class="field-name">Product Name</div><div class="field-val"><strong>ParlayPro Squares — Run Your Own Squares Board App</strong></div></div>
+        <div class="field-row"><div class="field-name">Short Description</div><div class="field-val">White-label sports squares app. Your branding, your Cash App, your money. Setup in 5 minutes.</div></div>
+        <div class="field-row"><div class="field-name">URL Slug</div><div class="field-val"><code>parlaypro-squares</code> → becomes <code>gum.co/parlaypro-squares</code></div></div>
+        <div class="field-row"><div class="field-name">Category</div><div class="field-val">Apps → Tools &amp; Utilities</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">C</div>
+      <div class="step-text">
+        <div class="step-title">Upload your cover image</div>
+        <div class="step-desc">1280×720px JPG/PNG — this is the thumbnail that shows in the store</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="note">
+        <div class="note-icon">🎨</div>
+        <div class="note-text"><strong>Cover image tips:</strong> Use a screenshot of the live board with a game in progress, overlaid with your price ($15). Dark background + green accents performs well. You can use Canva for free — search "product launch" templates.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="phase" id="phase3">
+  <div class="phase-header">
+    <div class="phase-num">03</div>
+    <div>
+      <div class="phase-title">PRICING STRATEGY</div>
+      <div class="phase-sub">What to charge and why</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">★</div>
+      <div class="step-text">
+        <div class="step-title">Recommended price range: $15–$20 / season</div>
+        <div class="step-desc">Here's the breakdown of what each price point does for you</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <table class="price-table">
+        <tr>
+          <th>Price</th>
+          <th>Gumroad Cut (~10%)</th>
+          <th>You Keep</th>
+          <th>At 50 Sales</th>
+          <th>Notes</th>
+        </tr>
+        <tr>
+          <td>$10</td>
+          <td class="red">$1.00</td>
+          <td class="green">$9.00</td>
+          <td class="green">$450</td>
+          <td>Entry price, highest volume</td>
+        </tr>
+        <tr style="background:#0d1a0d;">
+          <td class="gold">$15 ★</td>
+          <td class="red">$1.50</td>
+          <td class="green">$13.50</td>
+          <td class="green">$675</td>
+          <td class="gold">Best balance — recommended</td>
+        </tr>
+        <tr>
+          <td>$20</td>
+          <td class="red">$2.00</td>
+          <td class="green">$18.00</td>
+          <td class="green">$900</td>
+          <td>Strong if you have social proof</td>
+        </tr>
+        <tr>
+          <td>$25</td>
+          <td class="red">$2.50</td>
+          <td class="green">$22.50</td>
+          <td class="green">$1,125</td>
+          <td>Add a bonus to justify</td>
+        </tr>
+      </table>
+      <div class="note warning">
+        <div class="note-icon">⚡</div>
+        <div class="note-text"><strong>Launch strategy:</strong> Start at $10 for the first 2 weeks to get reviews and social proof, then bump to $15–$20. Gumroad shows "X people bought this" which builds trust.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">+</div>
+      <div class="step-text">
+        <div class="step-title">Upsell: Offer a "Setup Done For You" tier</div>
+        <div class="step-desc">Add a second pricing tier at $40–$75 where you do the Supabase + Netlify setup for them</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="note">
+        <div class="note-icon">💰</div>
+        <div class="note-text">Many non-technical buyers will pay $40+ for you to just handle the 15-minute setup. Add this as a "Done For You" tier in Gumroad. Collect via <strong>Cash App</strong> and deliver via DM/email.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="phase" id="phase4">
+  <div class="phase-header">
+    <div class="phase-num">04</div>
+    <div>
+      <div class="phase-title">CONNECT PAYOUT INFO</div>
+      <div class="phase-sub">So Gumroad can pay you</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">A</div>
+      <div class="step-text">
+        <div class="step-title">Settings → Payments → Connect bank account</div>
+        <div class="step-desc">Gumroad pays out via direct bank deposit or PayPal</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="field-map">
+        <div class="field-row"><div class="field-name">Payout method</div><div class="field-val">Bank transfer (US) — fastest, lowest fees</div></div>
+        <div class="field-row"><div class="field-name">Payout schedule</div><div class="field-val">Weekly (Fridays) — recommended once you have sales coming in</div></div>
+        <div class="field-row"><div class="field-name">Tax info</div><div class="field-val">Enter SSN or EIN — required for payouts, Gumroad handles 1099 automatically over $600/yr</div></div>
+      </div>
+      <div class="note warning">
+        <div class="note-icon">⚠️</div>
+        <div class="note-text"><strong>Do this before your first sale</strong> or Gumroad will hold your funds until you complete payout setup. Takes 2–3 business days to verify your bank.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="phase" id="phase5">
+  <div class="phase-header">
+    <div class="phase-num">05</div>
+    <div>
+      <div class="phase-title">UPLOAD THE PRODUCT FILE</div>
+      <div class="phase-sub">What buyers actually download</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">A</div>
+      <div class="step-text">
+        <div class="step-title">What to upload to Gumroad</div>
+        <div class="step-desc">Package these two files in a ZIP</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="checklist">
+        <div class="check-item"><code>parlaypro-configurator.html</code> — the setup wizard (this is the main product)</div>
+        <div class="check-item"><code>README.txt</code> — quick start instructions (see template below)</div>
+      </div>
+      <div class="copy-box" id="readmeBox">
+PARLAYPRO SQUARES — QUICK START
+================================
+
+WHAT YOU GOT:
+- parlaypro-configurator.html — Open this in any browser
+
+HOW TO USE:
+1. Open parlaypro-configurator.html in Chrome/Firefox/Safari
+2. Fill in your info (3 quick steps)
+3. Click "Download My App"
+4. Go to netlify.com → drag your downloaded index.html onto the deploy area
+5. Share the Netlify URL with your players
+
+NEED HELP?
+- Supabase setup: https://supabase.com (free account, create "squares" table)
+- Netlify hosting: https://netlify.com (free account, drag & drop deploy)
+- Questions: Reply to your Gumroad receipt email
+
+Thanks for your purchase!
+      <button class="copy-btn" onclick="copyText('readmeBox', this)">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="phase" id="phase6">
+  <div class="phase-header">
+    <div class="phase-num">06</div>
+    <div>
+      <div class="phase-title">WRITE YOUR SALES PAGE</div>
+      <div class="phase-sub">Copy/paste this into Gumroad's description editor</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">★</div>
+      <div class="step-text">
+        <div class="step-title">Gumroad product description — copy this</div>
+        <div class="step-desc">Paste into the product description field. Edit your name/handle.</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="copy-box" id="descBox">
+🏆 RUN YOUR OWN PROFESSIONAL SPORTS SQUARES BOARD
+
+Stop using paper. Stop manually tracking who paid. Get a live, mobile-friendly squares board with YOUR name and YOUR payment info — set up in under 5 minutes.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT IS THIS?
+━━━━━━━━━━━━━━━━━━━━━━━━
+ParlayPro Squares is a white-label web app that lets YOU run a 10×10 squares pool for any NFL, NBA, MLB, or NHL game. Players claim squares on their phone, pay you directly via Cash App or PayPal, and scores update live automatically.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+HOW IT WORKS
+━━━━━━━━━━━━━━━━━━━━━━━━
+1. Download the configurator file
+2. Enter your info (board name, Cash App tag, PayPal, price per square)
+3. Download your custom app
+4. Deploy free on Netlify (drag and drop — 30 seconds)
+5. Share the link — players claim squares and pay you directly
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT YOU GET
+━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Full white-label configurator
+✅ Live ESPN score ticker (NFL, NBA, MLB, NHL, NCAA)
+✅ 10×10 squares grid with cloud sync (Supabase free tier)
+✅ Your Cash App + PayPal displayed to players
+✅ Installs on iPhone & Android home screen (PWA)
+✅ Admin PIN to reset board and lock numbers
+✅ Works on any device — no app store needed
+✅ Step-by-step setup guide included
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+HOSTING IS FREE
+━━━━━━━━━━━━━━━━━━━━━━━━
+Uses Netlify (free) for hosting + Supabase (free) for the database. Your monthly cost to run the board: $0.
+
+You charge $10–$50 per square. 100 squares per board. You do the math. 💰
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━
+• A free Netlify account (netlify.com)
+• A free Supabase account (supabase.com) — takes ~10 minutes to set up
+• A modern browser to open the configurator
+
+No coding. No monthly fees. No tech background needed.
+
+Questions? Reply to your receipt email.
+      <button class="copy-btn" onclick="copyText('descBox', this)">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="phase" id="phase7">
+  <div class="phase-header">
+    <div class="phase-num">07</div>
+    <div>
+      <div class="phase-title">DEPLOY YOUR LANDING PAGE</div>
+      <div class="phase-sub">The sales page we built — host it free on Netlify</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-head">
+      <div class="step-badge">A</div>
+      <div class="step-text">
+        <div class="step-title">Deploy the landing page to Netlify</div>
+        <div class="step-desc">Separate from the squares app — this is your marketing site</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="checklist">
+        <div class="check-item">Save the landing page HTML file as <code>index.html</code></div>
+        <div class="check-item">Go to netlify.com → "Add new site" → "Deploy manually"</div>
+        <div class="check-item">Drag and drop the landing page <code>index.html</code></div>
+        <div class="check-item">Set a custom subdomain: <code>parlayprosquares.netlify.app</code></div>
+        <div class="check-item">Update the Gumroad link in the landing page to your actual <code>gum.co/your-slug</code> URL</div>
+      </div>
+      <div class="note">
+        <div class="note-icon">🔗</div>
+        <div class="note-text">After deploy, your flow is: <strong>Landing page → Gumroad checkout → buyer gets ZIP download</strong>. Share the landing page URL everywhere — it sells for you 24/7.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<div class="phase" id="phase8">
+  <div class="phase-header">
+    <div class="phase-num">08</div>
+    <div>
+      <div class="phase-title">PROMOTE & DRIVE TRAFFIC</div>
+      <div class="phase-sub">Where to post and what to say</div>
+    </div>
+  </div>
+
+  <div class="promo-tips">
+    <div class="promo-tip">
+      <div class="promo-emoji">🎵</div>
+      <div>
+        <div class="promo-title">TikTok / Instagram Reels — @satiremotionstudio</div>
+        <div class="promo-body">Film a 30-second demo: open the board on your phone, claim a square, show the live score updating. Caption: "Run your own squares pool from your phone 📱 link in bio." Post before game days (Thursday, Sunday, Monday for NFL).</div>
+      </div>
+    </div>
+    <div class="promo-tip">
+      <div class="promo-emoji">📘</div>
+      <div>
+        <div class="promo-title">Facebook Groups — Sports betting & football groups</div>
+        <div class="promo-body">Search: "NFL squares pool", "Super Bowl squares", "sports betting group". Post a screenshot of a filled board + "Built this so I could run my own squares. Now selling the template." Link to your landing page.</div>
+      </div>
+    </div>
+    <div class="promo-tip">
+      <div class="promo-emoji">🐦</div>
+      <div>
+        <div class="promo-title">Twitter/X — Sports Twitter is massive</div>
+        <div class="promo-body">Post during NFL games when squares pools trend. "Anyone want to run their own squares board? Built a no-code app for it — $15/season, keep all the money. [landing page link]" Tag #NFLSquares #SuperBowlSquares.</div>
+      </div>
+    </div>
+    <div class="promo-tip">
+      <div class="promo-emoji">🎯</div>
+      <div>
+        <div class="promo-title">Reddit — r/sportsbook, r/nfl, r/fantasyfootball</div>
+        <div class="promo-body">Post a "Show HN"-style post: "I built a no-code squares pool app — here's how it works." Be genuine, answer questions. Drop the link naturally if people ask. Don't spam.</div>
+      </div>
+    </div>
+    <div class="promo-tip">
+      <div class="promo-emoji">💰</div>
+      <div>
+        <div class="promo-title">Gumroad Discover + Affiliate Program</div>
+        <div class="promo-body">Enable affiliates in Gumroad (offer 20–30% commission). Sports influencers and betting accounts will promote it for you. Also: list on Product Hunt the day before a big game.</div>
+      </div>
+    </div>
+    <div class="promo-tip">
+      <div class="promo-emoji">📅</div>
+      <div>
+        <div class="promo-title">Timing is everything — peak selling windows</div>
+        <div class="promo-body"><strong>NFL Playoffs (Jan)</strong> · <strong>Super Bowl week (Feb)</strong> · <strong>NBA Playoffs (Apr–Jun)</strong> · <strong>March Madness (Mar)</strong> · <strong>NFL Season Opener (Sep)</strong>. Price spike to $20 during Super Bowl week — demand triples.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div style="background:var(--card);border:1px solid rgba(13,255,110,0.15);border-radius:10px;padding:28px;text-align:center;">
+  <div style="font-family:var(--font-d);font-size:32px;color:white;margin-bottom:8px;">YOU'RE READY TO LAUNCH 🚀</div>
+  <p style="font-size:14px;color:var(--muted);max-width:480px;margin:0 auto 20px;line-height:1.7;">Gumroad listing live + Landing page deployed + Configurator in hand = a real product for sale. First $15 sale could happen today.</p>
+  <div style="font-family:var(--font-c);font-size:13px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--green);">Estimated revenue at 100 sales · $15 price · ~$1,350 after Gumroad fees</div>
+</div>
+
+</div>
+<script>
+function copyText(id, btn) {
+  const el = document.getElementById(id);
+  const text = el.innerText.replace('Copy', '').trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+  });
+}
+</script>
+</body>
+</html>
