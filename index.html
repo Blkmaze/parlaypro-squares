@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- v20260316081114 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -954,7 +955,7 @@
         <div class="board-subtitle">
           <span style="display:flex;align-items:center;gap:4px;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            March 9, 2026 · Live Games
+            <span id="live-date">Loading...</span>
           </span>
         </div>
       </div>
@@ -1189,7 +1190,7 @@
         Admin Zone
       </div>
       <div class="admin-btns"><button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
-        <button class="admin-btn admin-btn-blue" onclick="buildTicker();if(currentGame||window.currentGame){buildGrid(currentGame||window.currentGame);}else{alert('No game selected.');}">↻ Force Refresh Scores</button>
+        <button class="admin-btn admin-btn-blue" onclick="buildTicker();buildGrid(currentGame);">↻ Force Refresh Scores</button>
         <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
         <button class="admin-btn admin-btn-red" onclick="adminReset();">⚠ Reset Board</button>
       </div>
@@ -1552,7 +1553,6 @@ const GAMES = {
 // ── STATE ────────────────────────────────────────────────────
 let currentSport = 'NBA';
 let currentGame = GAMES.NBA[0];
-window.currentGame = currentGame;
 let currentQty = 5;
 
 // ── STORAGE: API (Netlify) with localStorage fallback ──────────
@@ -1565,8 +1565,6 @@ const STORE_KEY = 'parlaypro_squares_v1';
 
 // Detect if the API is actually available (not just a static placeholder)
 let _apiAvailable = null; // null=unknown, true=yes, false=no
-const SB_URL = 'https://pmbzffdgbtyxbnrtjehq.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtYnpmZmRnYnR5eGJucnRqZWhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwOTMwOTUsImV4cCI6MjA4ODY2OTA5NX0.RfX46ZB5f0vhxo2_P7tGuM_-yyf6yM80gp6YYUJ0S9U';
 
 async function checkApi() {
   // Always return true - we use direct blob REST API now
@@ -1581,7 +1579,7 @@ async function _blobFetch(gameId) {
   } catch { return { squares: [], owners: {} }; }
 }
 async function _blobClaim(gameId, indices, initials) {
-  const r = await fetch('/api/claim', {
+  const r = await fetch('/api/claim-square', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ gameId, initials, indices })
@@ -1623,19 +1621,22 @@ function _lsGetGame(gameId) {
 }
 
 async function fetchSquares(gameId) {
-  try {
-    const res = await fetch(SB_URL + '/rest/v1/squares?game_id=eq.' + encodeURIComponent(gameId), {
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
-    });
-    if (!res.ok) throw new Error('supabase fetch failed');
-    const rows = await res.json();
-    const data = rows.length > 0
-      ? { squares: rows[0].owners ? Object.keys(rows[0].owners).map(Number) : [], owners: rows[0].owners || {} }
-      : { squares: [], owners: {} };
+  await checkApi();
+  if (isHosted()) {
+    try {
+      const res = await fetch(`/api/squares?gameId=${encodeURIComponent(gameId)}`);
+      if (!res.ok) throw new Error('fetch failed');
+      const data = await res.json();
+      _cache[gameId] = data;
+      return data;
+    } catch (e) {
+      return _cache[gameId] || { squares: [], owners: {} };
+    }
+  } else {
+    // Local fallback: read from localStorage
+    const data = _lsGetGame(gameId);
     _cache[gameId] = data;
     return data;
-  } catch (e) {
-    return _cache[gameId] || { squares: [], owners: {} };
   }
 }
 
@@ -1655,38 +1656,59 @@ function getInitialsForGame(gameId) {
 }
 
 async function persistSquares(gameId, newIndices, initials) {
-  try {
-    // Fetch current state first
-    const current = _cache[gameId] || { squares: [], owners: {} };
+  await checkApi();
+  if (isHosted()) {
+    const res = await fetch('/api/claim-square', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId, initials, indices: newIndices })
+    });
+    const data = await res.json();
+    if (res.status === 409) throw new Error('conflict: ' + (data.conflicts || []).join(','));
+    if (!res.ok) throw new Error(data.error || 'claim failed');
+    _cache[gameId] = { squares: data.squares, owners: data.owners };
+    _sessionInitials[gameId] = initials;
+    return data;
+  } else {
+    // Local fallback: save to localStorage
+    const current = _lsGetGame(gameId);
     const updatedOwners = { ...current.owners };
     for (const idx of newIndices) updatedOwners[idx] = initials;
     const updatedSquares = [...new Set([...current.squares, ...newIndices])];
-
-    // Try PATCH first (row exists), then POST (new row)
-    let res = await fetch(SB_URL + '/rest/v1/squares?game_id=eq.' + encodeURIComponent(gameId), {
-      method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ owners: updatedOwners })
-    });
-    let rows = res.ok ? await res.json() : [];
-    if (!rows.length) {
-      res = await fetch(SB_URL + '/rest/v1/squares', {
-        method: 'POST',
-        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify({ game_id: gameId, owners: updatedOwners })
-      });
-      rows = res.ok ? await res.json() : [];
-    }
     const updated = { squares: updatedSquares, owners: updatedOwners };
+    const store = _lsLoad();
+    store[gameId] = updated;
+    _lsSave(store);
     _cache[gameId] = updated;
     _sessionInitials[gameId] = initials;
     return updated;
-  } catch (e) {
-    throw new Error('Could not save squares: ' + e.message);
   }
 }
 
-// adminReset defined below
+async function adminReset(gameId) {
+  await checkApi();
+  if (isHosted()) {
+    const key = prompt('Enter admin key:');
+    if (!key) return;
+    const res = await fetch('/api/admin/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId, adminKey: key })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert('Reset failed: ' + (data.error || 'unauthorized')); return; }
+  } else {
+    // Local fallback
+    if (!confirm('Reset ' + (gameId ? 'this board' : 'ALL boards') + '?')) return;
+    const store = _lsLoad();
+    if (gameId) delete store[gameId];
+    else Object.keys(store).forEach(k => delete store[k]);
+    _lsSave(store);
+  }
+  if (gameId) delete _cache[gameId]; else Object.keys(_cache).forEach(k => delete _cache[k]);
+  await loadGame(currentGame);
+  buildGamesList(currentSport);
+}
 
 // ── TICKER ───────────────────────────────────────────────────
 function buildTicker() {
@@ -1770,7 +1792,27 @@ async function buildGrid(game) {
   }
 
   document.getElementById('squaresGrid').innerHTML = html;
-  // Polling handled by loadGame
+  // Store render timestamp for polling
+  window._lastGridRender = Date.now();
+  if (window._pollTimer) clearInterval(window._pollTimer);
+  window._pollTimer = setInterval(async function() {
+    if (!window.currentGame || window.currentGame.id !== game.id) return;
+    try {
+      var r = await fetch('/api/squares?gameId=' + game.id);
+      var data = await r.json();
+      if (!data || !data.owners) return;
+      var owners = data.owners;
+      var cells = document.querySelectorAll('.cell');
+      var i = 0;
+      cells.forEach(function(cell) {
+        if (owners[i] !== undefined && !cell.classList.contains('cell-mine')) {
+          cell.className = 'cell cell-sold';
+          cell.textContent = owners[i];
+        }
+        i++;
+      });
+    } catch(e) {}
+  }, 10000);
 }
 
 // ── ODDS PANEL ───────────────────────────────────────────────
@@ -1861,7 +1903,6 @@ function populateGameDropdown(sport) {
 // ── LOAD GAME ────────────────────────────────────────────────
 async function loadGame(game) {
   currentGame = game;
-  window.currentGame = game;
   await buildGrid(game);
   // Auto-refresh every 15s to sync claimed squares
   if (window._pollTimer) clearInterval(window._pollTimer);
@@ -1869,7 +1910,7 @@ async function loadGame(game) {
     if (currentGame && currentGame.id === game.id) {
       await buildGrid(currentGame);
     }
-  }, 60000);
+  }, 15000);
   buildOdds(game);
   updateBoardHeader(game);
   updateCTA();
@@ -2030,41 +2071,152 @@ function lockNumbers(game) {
   }).catch(function(e){ alert('Error: ' + e.message); });
 }
 </script>
+<script>setInterval(async function(){if(!window.currentGame)return;try{var r=await fetch("/api/squares?gameId="+window.currentGame.id);var d=await r.json();if(!d||!d.owners)return;var cells=document.querySelectorAll(".cell");var i=0;cells.forEach(function(c){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}i++;});}catch(e){}},8000);</script>
+<script src="/poll.js"></script><script>setInterval(async function(){try{if(!window.currentGame)return;var d=await(await fetch("/api/squares?gameId="+window.currentGame.id)).json();if(!d||!d.owners)return;document.querySelectorAll(".cell").forEach(function(c,i){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}});}catch(e){}},8000);</script>
+<script>setInterval(async function(){try{if(!window.currentGame)return;var d=await(await fetch("/api/squares?gameId="+window.currentGame.id)).json();if(!d||!d.owners)return;document.querySelectorAll(".cell").forEach(function(c,i){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}});}catch(e){}},8000);</script><script>function adminReset(){if(!window.currentGame){alert("No game selected");return;}var pin=prompt("Enter admin PIN to reset board:");if(!pin)return;fetch("/api/reset-squares",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({gameId:window.currentGame.id,pin:pin})}).then(function(r){return r.json();}).then(function(d){if(d.ok){alert("Board cleared!");buildGrid(window.currentGame);}else{alert("Error: "+(d.error||"failed"));}}).catch(function(e){alert("Network error");});}</script>
+<script>window.adminReset=function(){var gid=window.currentGame?window.currentGame.id:null;if(!gid){var active=document.querySelector(".game-tab.active,.board-tab.active,[data-game-id]");if(active)gid=active.dataset.gameId||active.dataset.id;}if(!gid){alert("Please select a game board first, then click Reset Board.");return;}var pin=prompt("Enter PIN to clear all squares from: "+gid);if(!pin)return;fetch("/api/reset-squares",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({gameId:gid,pin:pin})}).then(function(r){return r.json();}).then(function(d){if(d.ok){alert("Board cleared! All squares reset.");if(window.buildGrid&&window.currentGame)buildGrid(window.currentGame);}else{alert("Error: "+(d.error||"unknown"));}}).catch(function(){alert("Network error - try again");});};</script>
 <script>
-window.adminReset = async function() {
-  if (!window.currentGame) { alert('No game selected. Please pick a game first.'); return; }
-  var gameId = window.currentGame.id;
-  var pin = prompt('Enter admin PIN to reset board:');
-  if (!pin) return;
-  if (pin !== '2826') { alert('Incorrect PIN'); return; }
-  if (!confirm('Clear ALL squares for: ' + gameId + '?')) return;
-  try {
-    // Try PATCH first (row exists)
-    var res = await fetch(SB_URL + '/rest/v1/squares?game_id=eq.' + encodeURIComponent(gameId), {
-      method: 'PATCH',
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ owners: {}, numbers_locked: false, row_nums: null, col_nums: null })
-    });
-    if (res.ok || res.status === 204) {
-      alert('✅ Board cleared! All squares reset.');
-      if (window.buildGrid && window.currentGame) buildGrid(window.currentGame);
-      return;
+window.addEventListener("load", function() {
+  window.adminReset = function() {
+    var gameId = null;
+    if (window.currentGame) { gameId = window.currentGame.id; }
+    if (!gameId) {
+      var active = document.querySelector(".game-btn.active, .tab.active, [data-id]");
+      if (active) gameId = active.dataset.id || active.dataset.gameId;
     }
-    // If row doesn't exist, INSERT it
-    var res2 = await fetch(SB_URL + '/rest/v1/squares', {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ game_id: gameId, owners: {}, numbers_locked: false, row_nums: null, col_nums: null })
-    });
-    if (res2.ok || res2.status === 201) {
-      alert('✅ Board cleared! All squares reset.');
-      if (window.buildGrid && window.currentGame) buildGrid(window.currentGame);
-    } else {
-      var errText = await res2.text();
-      alert('Reset failed: ' + res2.status + ' ' + errText);
+    if (!gameId) {
+      var header = document.querySelector(".board-title, #boardTitle, .game-title");
+      if (header) gameId = header.textContent.trim().toLowerCase().replace(/\s+/g,"").replace(/[@]/g,"-");
     }
-  } catch(e) { alert('Error: ' + e.message); }
-};
+    if (!gameId) { gameId = prompt("Enter game ID to reset (e.g. phi-cle):"); }
+    if (!gameId) return;
+    var pin = prompt("Enter PIN to reset board [" + gameId + "]:");
+    if (!pin) return;
+    fetch("/api/reset-squares", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({gameId: gameId, pin: pin})
+    }).then(function(r){return r.json();}).then(function(d){
+      if (d.ok) { alert("Board cleared!"); if(window.buildGrid && window.currentGame) buildGrid(window.currentGame); else location.reload(); }
+      else { alert("Error: " + (d.error||"failed")); }
+    }).catch(function(){ alert("Network error"); });
+  };
+});
+</script>
+<script>
+// LIVE SCORES - fetches from Netlify function server-side (no CORS)
+(function() {
+  let currentSport = 'ncaam';
+  let currentGameIdx = 0;
+  let allGames = [];
+
+  async function fetchGames(sport) {
+    try {
+      const res = await fetch('/api/scores?sport=' + sport);
+      const data = await res.json();
+      return data;
+    } catch(e) {
+      console.error('Score fetch failed:', e);
+      return null;
+    }
+  }
+
+  function updateBoardGame(game) {
+    if (!game) return;
+    // Update title
+    const title = document.querySelector('.board-title, h1, .game-title');
+    if (title) title.textContent = game.awayFull + ' @ ' + game.homeFull;
+
+    // Update team headers
+    document.querySelectorAll('.col-header, .home-team, [class*="home"]').forEach(el => {
+      if (el.textContent.trim().length < 20) el.textContent = game.homeFull.toUpperCase();
+    });
+    document.querySelectorAll('.row-header, .away-team, [class*="away"]').forEach(el => {
+      if (el.textContent.trim().length < 20) el.textContent = game.awayFull.toUpperCase();
+    });
+
+    // Update date
+    const dateEl = document.getElementById('live-date');
+    if (dateEl) dateEl.textContent = game.date + ' · ' + (game.status === 'LIVE' ? 'LIVE' : 'Live Games');
+
+    // Update score if live
+    const scoreEl = document.querySelector('.live-score, .score-display, #live-score');
+    if (scoreEl && game.status !== 'SCHEDULED') {
+      scoreEl.textContent = game.away + ' ' + game.awayScore + ' - ' + game.homeScore + ' ' + game.home;
+    }
+
+    // Update game selector dropdown if exists
+    const gameSelect = document.querySelector('.game-select, select[onchange*="game"]');
+    if (gameSelect && allGames.length) {
+      gameSelect.innerHTML = allGames.map((g, i) =>
+        `<option value="${i}" ${i === currentGameIdx ? 'selected' : ''}>${g.awayFull} @ ${g.homeFull} - ${g.time}</option>`
+      ).join('');
+    }
+  }
+
+  function updateTicker(games) {
+    const track = document.querySelector('.ticker-track, .ticker-inner');
+    if (!track || !games.length) return;
+    const html = games.map(g => {
+      const badge = g.status === 'LIVE' ? '<span class="ticker-badge badge-live">LIVE</span>' :
+                    g.status === 'FINAL' ? '<span class="ticker-badge badge-final">FINAL</span>' :
+                    '<span class="ticker-badge badge-upcoming">TODAY</span>';
+      const score = g.status !== 'SCHEDULED' ? ` <span class="score">${g.awayScore}-${g.homeScore}</span>` : '';
+      return `<div class="ticker-item">${badge} ${g.away}${score} @ ${g.home} <span class="ticker-period">${g.time}</span></div>`;
+    }).join('');
+    track.innerHTML = html + html;
+  }
+
+  async function refresh() {
+    const data = await fetchGames(currentSport);
+    if (!data || !data.games) return;
+    allGames = data.games;
+
+    // Update date
+    const dateEl = document.getElementById('live-date');
+    if (dateEl) dateEl.textContent = data.today + ' · Live Games';
+
+    // Update ticker
+    updateTicker(data.games);
+
+    // Update main board with first/selected game
+    if (data.games.length > 0) {
+      updateBoardGame(data.games[currentGameIdx] || data.games[0]);
+    }
+  }
+
+  // Hook into sport selector
+  const sportSelect = document.querySelector('.sport-select, select[onchange*="sport"]');
+  if (sportSelect) {
+    sportSelect.addEventListener('change', function() {
+      currentSport = this.value.toLowerCase();
+      if (currentSport === 'nba') currentSport = 'nba';
+      else if (currentSport === 'nhl') currentSport = 'nhl';
+      else if (currentSport === 'mlb') currentSport = 'mlb';
+      else if (currentSport === 'nfl') currentSport = 'nfl';
+      else if (currentSport === 'ncaam') currentSport = 'ncaam';
+      currentGameIdx = 0;
+      refresh();
+    });
+  }
+
+  // Fix date immediately
+  const dateEl = document.getElementById('live-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' · Live Games';
+
+  // Start fetching
+  refresh();
+  setInterval(refresh, 60000);
+})();
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
