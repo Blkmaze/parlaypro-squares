@@ -1159,7 +1159,7 @@
       </div>
       <div class="admin-btns">
         <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
-        <button class="admin-btn admin-btn-blue" onclick="buildTicker();buildGrid(currentGame);">↻ Force Refresh Scores</button>
+        <button class="admin-btn admin-btn-blue" onclick="if(!currentGame){alert('No game selected — pick a game first');return;}_cache={};buildTicker();buildGrid(currentGame);">↻ Force Refresh Scores</button>
         <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
         <button class="admin-btn admin-btn-red" onclick="adminReset();">⨂ Reset Board</button>
       </div>
@@ -1635,10 +1635,4 @@ function adminReset() {
 // ── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   buildTicker();
-  await updateSport('NBA');
-});
-</script>
-
-<script src="/props.js"></script>
-</body>
-</html>
+  await upda
