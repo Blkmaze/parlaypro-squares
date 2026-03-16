@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <!-- v20260316_cleaned -->
 <html lang="en">
 <head>
@@ -925,7 +925,7 @@
 <body>
 
 <!-- STATUS BAR (debug) -->
-<div id="statusBar" style="position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#22c55e;z-index:9999;display:none;"></div>
+<div id="statusBar" style="position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#22c55e;z-index:9999;">Loading...</div>
 
 <!-- SCORE TICKER -->
 <div class="ticker-wrap">
@@ -1230,10 +1230,8 @@
 function logStatus(msg, isError) {
   const el = document.getElementById('statusBar');
   if (el) {
-    el.textContent = msg;
+    el.textContent = (new Date()).toLocaleTimeString() + ' | ' + msg;
     el.style.color = isError ? '#ef4444' : '#22c55e';
-    el.style.display = 'block';
-    if (!isError) setTimeout(() => { el.style.display = 'none'; }, 5000);
   }
   if (isError) console.error('[ParlayPro]', msg);
   else console.log('[ParlayPro]', msg);
@@ -1625,4 +1623,5 @@ async function confirmPurchase() {
   document.getElementById('payModal').classList.remove('open');
   const price = parseFloat(document.getElementById('squarePrice').value) || 10;
   document.getElementById('confirmMsg').innerHTML =
-    `${toAdd} square${toAdd > 1 ? 's' : ''} × $${price} = <strong style
+    `${toAdd} square${toAdd > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${(toAdd * price).toFixed(2)}</strong>` +
+    `<
