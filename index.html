@@ -1362,15 +1362,14 @@ function updateBoardHeader(game) {
 // ── SERVER SYNC ──────────────────────────────────────────────
 async function fetchSquares(gameId) {
   try {
-    if (_cache[gameId]) return _cache[gameId];
     const res = await fetch(`/api/squares?gameId=${encodeURIComponent(gameId)}`);
-    if (!res.ok) return { owners: {} };
+    if (!res.ok) return _cache[gameId] || { owners: {} };
     const data = await res.json();
     _cache[gameId] = data || { owners: {} };
     return _cache[gameId];
   } catch (e) {
     console.error('Fetch squares failed:', e);
-    return { owners: {} };
+    return _cache[gameId] || { owners: {} };
   }
 }
 
@@ -1641,4 +1640,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 
 <script src="/props.js"></script>
-</b
+</body>
+</html>
