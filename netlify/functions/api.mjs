@@ -165,11 +165,64 @@ export default async (req, context) => {
       return json({ error: err.message }, 500);
     }
   }
+  // ── GET /api/props ─────────────────────────────────────────
+  if (method === "GET" && path === "/api/props") {
+    const gameId = url.searchParams.get("gameId");
+    if (!gameId) return json({ error: "Missing gameId" }, 400);
+    try {
+      const home = await blobGet(token, `props:${gameId}:home`) || null;
+      const away = await blobGet(token, `props:${gameId}:away`) || null;
+      return json({ home, away });
+    } catch (err) { return json({ error: err.message }, 500); }
+  }
+
+  // ── POST /api/props/setup ───────────────────────────────────
+  if (method === "POST" && path === "/api/props/setup") {
+    const { gameId, homePlayer, homeName, awayPlayer, awayName, price, pin } = body;
+    if (!gameId || !pin) return json({ error: "Missing gameId or pin" }, 400);
+    if (pin !== ADMIN_PIN) return json({ error: "Invalid PIN" }, 403);
+    const ranges = ["0-9","10-19","20-29","30-39","40+"];
+    const mkBoard = (id, name, team) => ({ id, name, team, price: price || 5, squares: ranges.map(r => ({ range: r, owner: null })) });
+    try {
+      await blobSet(token, `props:${gameId}:home`, mkBoard(homePlayer, homeName, "home"));
+      await blobSet(token, `props:${gameId}:away`, mkBoard(awayPlayer, awayName, "away"));
+      return json({ ok: true });
+    } catch (err) { return json({ error: err.message }, 500); }
+  }
+
+  // ── POST /api/props/claim ───────────────────────────────────
+  if (method === "POST" && path === "/api/props/claim") {
+    const { gameId, side, rangeIdx, owner } = body;
+    if (!gameId || side === undefined || rangeIdx === undefined || !owner) return json({ error: "Missing fields" }, 400);
+    try {
+      const data = await blobGet(token, `props:${gameId}:${side}`);
+      if (!data) return json({ error: "Props board not found" }, 404);
+      if (data.squares[rangeIdx].owner) return json({ error: "Already claimed" }, 409);
+      data.squares[rangeIdx].owner = owner.toUpperCase().slice(0, 4);
+      await blobSet(token, `props:${gameId}:${side}`, data);
+      return json({ ok: true, squares: data.squares });
+    } catch (err) { return json({ error: err.message }, 500); }
+  }
+
+  // ── POST /api/props/reset ───────────────────────────────────
+  if (method === "POST" && path === "/api/props/reset") {
+    const { gameId, side, pin } = body;
+    if (!gameId || !pin) return json({ error: "Missing fields" }, 400);
+    if (pin !== ADMIN_PIN) return json({ error: "Invalid PIN" }, 403);
+    try {
+      const data = await blobGet(token, `props:${gameId}:${side}`);
+      if (!data) return json({ error: "Not found" }, 404);
+      data.squares = data.squares.map(s => ({ ...s, owner: null }));
+      await blobSet(token, `props:${gameId}:${side}`, data);
+      return json({ ok: true });
+    } catch (err) { return json({ error: err.message }, 500); }
+  }
   // ── 404 fallback ──────────────────────────────────────────
   return json({ error: `No handler for ${method} ${path}` }, 404);
 };
 
 export const config = {
-  path: ["/api/scores", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares"]
+  path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares"]
 };
+
 
