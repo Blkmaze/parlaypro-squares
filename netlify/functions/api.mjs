@@ -200,14 +200,15 @@ export default async (req, context) => {
       const data = await blobGet(token, `props:${gameId}:${side}`);
       if (!data) return json({ error: "Props board not found" }, 404);
       if (data.squares[rangeIdx].owner) return json({ error: "Already claimed" }, 409);
-      data.squares[rangeIdx].owner = owner.toUpperCase().slice(0, 4);
+      data.squares[rangeIdx].owner = owner.toUpperCase().slice(0, 6);
+      data.squares[rangeIdx].pending = body.pending === true;
       await blobSet(token, `props:${gameId}:${side}`, data);
       return json({ ok: true, squares: data.squares });
     } catch (err) { return json({ error: err.message }, 500); }
   }
 
   // ── POST /api/props/reset ───────────────────────────────────
-  if (method === "POST" && path === "/api/props/reset") {
+  if (method === "POST" && path === "/api/props/reset", "/api/props/confirm") {
     const { gameId, side, pin } = body;
     if (!gameId || !pin) return json({ error: "Missing fields" }, 400);
     if (pin !== ADMIN_PIN) return json({ error: "Invalid PIN" }, 403);
@@ -219,13 +220,28 @@ export default async (req, context) => {
       return json({ ok: true });
     } catch (err) { return json({ error: err.message }, 500); }
   }
+  // -- POST /api/props/confirm (admin confirms payment)
+  if (method === "POST" && path === "/api/props/confirm") {
+    const { gameId, side, rangeIdx, pin } = body;
+    if (!gameId || !pin) return json({ error: "Missing fields" }, 400);
+    if (pin !== ADMIN_PIN) return json({ error: "Invalid PIN" }, 403);
+    try {
+      const data = await blobGet(token, `props:${gameId}:${side}`);
+      if (!data) return json({ error: "Board not found" }, 404);
+      if (!data.squares[rangeIdx].owner) return json({ error: "Square not claimed" }, 400);
+      data.squares[rangeIdx].pending = false;
+      await blobSet(token, `props:${gameId}:${side}`, data);
+      return json({ ok: true });
+    } catch (err) { return json({ error: err.message }, 500); }
+  }
   // ── 404 fallback ──────────────────────────────────────────
   return json({ error: `No handler for ${method} ${path}` }, 404);
 };
 
 export const config = {
-  path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares"]
+  path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/props/confirm", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares"]
 };
+
 
 
 
