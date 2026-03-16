@@ -961,6 +961,11 @@
           <option value="MM_MEN">🏀 March Madness (Men)</option>
           <option value="MM_WOMEN">🏀 March Madness (Women)</option>
         </select>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <button onclick="changeDate(-1)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1;">◀</button>
+          <input type="date" id="gameDate" class="game-select" onchange="updateDateFromPicker(this.value)" style="min-width:130px;color-scheme:dark;" />
+          <button onclick="changeDate(1)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1;">▶</button>
+        </div>
         <select class="game-select" id="gameSelect" onchange="selectGame(this.value)">
           <!-- populated by JS -->
         </select>
@@ -1301,6 +1306,7 @@ const SPORT_MAP = {
 
 let currentSport = 'NBA';
 let currentGame = null;
+let currentDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 let currentQty = 5;
 let currentBoardVersion = null;
 let espnGames = {}; // { sport: [games...] }
@@ -1308,12 +1314,48 @@ let _cache = {}; // { gameId: serverData }
 
 const INITIALS = ['WM','KJ','DT','AA','RB','LM','CP','JS','MB','TW','GH','PD','NT','BK','SC','FO','YI','QV','ZX','ER'];
 
+// ── DATE HELPERS ──────────────────────────────────────────────
+function initDatePicker() {
+  const picker = document.getElementById('gameDate');
+  if (!picker) return;
+  const today = new Date();
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 14); // 2 weeks out
+  picker.value = currentDate;
+  picker.min = today.toISOString().slice(0, 10);
+  picker.max = maxDate.toISOString().slice(0, 10);
+}
+
+function changeDate(offset) {
+  const d = new Date(currentDate + 'T12:00:00');
+  d.setDate(d.getDate() + offset);
+  const today = new Date();
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 14);
+  today.setHours(0,0,0,0);
+  maxDate.setHours(23,59,59,999);
+  if (d < today || d > maxDate) return;
+  currentDate = d.toISOString().slice(0, 10);
+  document.getElementById('gameDate').value = currentDate;
+  updateSport(currentSport);
+}
+
+function updateDateFromPicker(val) {
+  currentDate = val;
+  updateSport(currentSport);
+}
+
+function getEspnDateParam() {
+  return currentDate.replace(/-/g, ''); // YYYYMMDD format for ESPN
+}
+
 // ── ESPN API: Fetch real live data ────────────────────────────
 async function fetchEspnScores(sport) {
   try {
-    logStatus('Fetching ' + sport + ' scores...', false);
+    const dateStr = getEspnDateParam();
+    logStatus('Fetching ' + sport + ' for ' + currentDate + '...', false);
     const apiSport = SPORT_MAP[sport] || sport.toLowerCase();
-    const res = await fetch(`/api/scores?sport=${encodeURIComponent(apiSport)}`);
+    const res = await fetch(`/api/scores?sport=${encodeURIComponent(apiSport)}&date=${dateStr}`);
     if (!res.ok) {
       logStatus('ESPN API error: HTTP ' + res.status + ' for ' + sport, true);
       return null;
@@ -1431,8 +1473,8 @@ function buildOdds(game) {
 // ── BOARD HEADER ─────────────────────────────────────────────
 function updateBoardHeader(game) {
   if (!game) return;
-  const now = new Date();
-  document.getElementById('live-date').textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const d = new Date(currentDate + 'T12:00:00');
+  document.getElementById('live-date').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 // ── SERVER SYNC ──────────────────────────────────────────────
@@ -1703,24 +1745,41 @@ async function lockNumbers(game) {
 }
 
 async function adminReset() {
-  if (!window.currentGame) { location.reload(); return; }
-  var pin = prompt('Enter admin PIN to reset board:');
+  // Try to get game from currentGame or from the dropdown
+  var game = window.currentGame;
+  if (!game) {
+    var sel = document.getElementById('gameSelect');
+    if (sel && sel.value) {
+      for (var sp of Object.keys(espnGames)) {
+        var found = (espnGames[sp] || []).find(function(g) { return g.id === sel.value; });
+        if (found) { game = found; window.currentGame = found; break; }
+      }
+    }
+  }
+  if (!game) {
+    await updateSport(currentSport || 'NBA');
+    game = window.currentGame;
+  }
+  if (!game) { alert('No game loaded. Pick a sport and game first.'); return; }
+
+  var pin = prompt('Enter admin PIN to reset board for ' + game.away + ' @ ' + game.home + ':');
   if (!pin) return;
   fetch('/api/reset-squares', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({gameId: window.currentGame.id, pin: pin})
+    body: JSON.stringify({gameId: game.id, pin: pin})
   }).then(function(r) {
     return r.json();
   }).then(function(d) {
     if (d.ok) {
-      alert('Board cleared!');
-      buildGrid(window.currentGame);
+      alert('Board cleared for ' + game.away + ' @ ' + game.home + '!');
+      _cache = {};
+      buildGrid(game);
     } else {
       alert('Error: ' + (d.error || 'failed'));
     }
   }).catch(function(e) {
-    alert('Network error');
+    alert('Network error: ' + e.message);
   });
 }
 
@@ -1728,6 +1787,7 @@ async function adminReset() {
 document.addEventListener('DOMContentLoaded', async () => {
   logStatus('Page loading...', false);
   try {
+    initDatePicker();
     // Load game FIRST (don't wait for ticker)
     await updateSport('NBA');
     logStatus('Page ready ✓ | Game: ' + (currentGame ? currentGame.away + ' @ ' + currentGame.home : 'NONE'), !currentGame);
