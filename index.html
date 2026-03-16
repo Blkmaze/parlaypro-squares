@@ -1175,24 +1175,42 @@
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
           Player Props — Over/Under
         </span>
-        <button class="admin-btn admin-btn-green" style="margin:0;padding:4px 10px;font-size:10px;" onclick="togglePropsSetup()">Setup</button>
+        <div style="display:flex;gap:4px;">
+          <button class="admin-btn admin-btn-green" style="margin:0;padding:4px 10px;font-size:10px;" onclick="togglePropsSetup()">+ Add Player</button>
+          <button class="admin-btn admin-btn-red" style="margin:0;padding:4px 10px;font-size:10px;" onclick="resetProps()">Reset Props</button>
+        </div>
       </div>
 
       <!-- Props Setup Form (hidden by default) -->
       <div id="propsSetupForm" style="display:none;padding:12px;background:var(--surface2);border-radius:8px;margin:10px 12px;">
-        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">Setup Player Props</div>
-        <input id="propsHomePlayer" type="text" placeholder="Home Player Name" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;margin-bottom:6px;outline:none;" />
-        <input id="propsAwayPlayer" type="text" placeholder="Away Player Name" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;margin-bottom:6px;outline:none;" />
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">Add Player Props Board</div>
+        <input id="propsPlayerName" type="text" placeholder="Player Name (e.g. LeBron James)" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;margin-bottom:6px;outline:none;" />
+        <select id="propsPlayerSide" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;margin-bottom:6px;outline:none;cursor:pointer;">
+          <option value="home">Home Team Player</option>
+          <option value="away">Away Team Player</option>
+          <option value="player3">Player 3</option>
+          <option value="player4">Player 4</option>
+          <option value="player5">Player 5</option>
+          <option value="player6">Player 6</option>
+        </select>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
-          <input id="propsPrice" type="number" value="5" placeholder="Price $" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;outline:none;" />
+          <select id="propsPrice" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;outline:none;cursor:pointer;">
+            <option value="5">$5 per square</option>
+            <option value="10">$10 per square</option>
+            <option value="15">$15 per square</option>
+            <option value="20">$20 per square</option>
+            <option value="25">$25 per square</option>
+            <option value="50">$50 per square</option>
+            <option value="100">$100 per square</option>
+          </select>
           <input id="propsPin" type="password" placeholder="Admin PIN" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;outline:none;" />
         </div>
-        <button onclick="submitPropsSetup()" style="width:100%;background:var(--green);border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:10px;cursor:pointer;">Create Props Board</button>
+        <button onclick="addPlayerProp()" style="width:100%;background:var(--green);border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:10px;cursor:pointer;">Create Props Board for This Player</button>
       </div>
 
       <!-- Props Boards Container -->
       <div id="propsBoardsContainer" style="padding:8px 12px;">
-        <div style="text-align:center;color:#444;font-size:12px;padding:20px 0">No props set up yet.<br>Click Setup to add players.</div>
+        <div style="text-align:center;color:#444;font-size:12px;padding:20px 0">No props set up yet.<br>Click + Add Player to create a board.</div>
       </div>
     </div>
 
