@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <!-- v20260316_cleaned -->
 <html lang="en">
 <head>
@@ -924,6 +924,9 @@
 </head>
 <body>
 
+<!-- STATUS BAR (debug) -->
+<div id="statusBar" style="position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#22c55e;z-index:9999;display:none;"></div>
+
 <!-- SCORE TICKER -->
 <div class="ticker-wrap">
   <div class="ticker-inner" id="ticker">
@@ -1223,6 +1226,28 @@
 </div>
 
 <script>
+// ── ERROR HANDLING ──────────────────────────────────────────────
+function logStatus(msg, isError) {
+  const el = document.getElementById('statusBar');
+  if (el) {
+    el.textContent = msg;
+    el.style.color = isError ? '#ef4444' : '#22c55e';
+    el.style.display = 'block';
+    if (!isError) setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+  if (isError) console.error('[ParlayPro]', msg);
+  else console.log('[ParlayPro]', msg);
+}
+
+window.onerror = function(msg, src, line, col, err) {
+  logStatus('JS Error: ' + msg + ' (line ' + line + ')', true);
+  return false;
+};
+
+window.addEventListener('unhandledrejection', function(e) {
+  logStatus('Async Error: ' + (e.reason?.message || e.reason || 'Unknown'), true);
+});
+
 // ── STATE ────────────────────────────────────────────────────────
 const SPORT_MAP = {
   'NBA': 'nba', 'NHL': 'nhl', 'MLB': 'mlb', 'NFL': 'nfl',
@@ -1242,17 +1267,23 @@ const INITIALS = ['WM','KJ','DT','AA','RB','LM','CP','JS','MB','TW','GH','PD','N
 // ── ESPN API: Fetch real live data ────────────────────────────
 async function fetchEspnScores(sport) {
   try {
+    logStatus('Fetching ' + sport + ' scores...', false);
     const apiSport = SPORT_MAP[sport] || sport.toLowerCase();
     const res = await fetch(`/api/scores?sport=${encodeURIComponent(apiSport)}`);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      logStatus('ESPN API error: HTTP ' + res.status + ' for ' + sport, true);
+      return null;
+    }
     const data = await res.json();
     if (data && data.games) {
+      logStatus(sport + ': ' + data.games.length + ' games loaded', false);
       espnGames[sport] = data.games;
       return data;
     }
+    logStatus('No games data in response for ' + sport, true);
     return null;
   } catch (e) {
-    console.error('ESPN fetch failed:', e);
+    logStatus('ESPN fetch failed for ' + sport + ': ' + e.message, true);
     return null;
   }
 }
@@ -1362,13 +1393,19 @@ function updateBoardHeader(game) {
 // ── SERVER SYNC ──────────────────────────────────────────────
 async function fetchSquares(gameId) {
   try {
+    logStatus('Loading squares for game ' + gameId + '...', false);
     const res = await fetch(`/api/squares?gameId=${encodeURIComponent(gameId)}`);
-    if (!res.ok) return _cache[gameId] || { owners: {} };
+    if (!res.ok) {
+      logStatus('Squares API error: HTTP ' + res.status + ' for game ' + gameId, true);
+      return _cache[gameId] || { owners: {} };
+    }
     const data = await res.json();
     _cache[gameId] = data || { owners: {} };
+    const ownCount = Object.keys((_cache[gameId].owners || {})).length;
+    logStatus('Game ' + gameId + ': ' + ownCount + ' squares claimed', false);
     return _cache[gameId];
   } catch (e) {
-    console.error('Fetch squares failed:', e);
+    logStatus('Fetch squares failed: ' + e.message, true);
     return _cache[gameId] || { owners: {} };
   }
 }
@@ -1384,12 +1421,18 @@ function getInitialsForGame(gameId) {
 }
 
 async function persistSquares(gameId, indices, initials) {
+  logStatus('Claiming ' + indices.length + ' squares as ' + initials + '...', false);
   const res = await fetch('/api/claim-square', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ gameId, indices, initials })
   });
-  if (!res.ok) throw new Error('Failed to persist squares');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    logStatus('Claim failed: ' + (err.error || 'HTTP ' + res.status), true);
+    throw new Error(err.error || 'Failed to persist squares');
+  }
+  logStatus('Claimed ' + indices.length + ' squares as ' + initials + ' ✓', false);
   localStorage.setItem(`my_${gameId}`, JSON.stringify(indices));
   localStorage.setItem(`initials_${gameId}`, initials);
   _cache[gameId] = null;
@@ -1424,14 +1467,19 @@ function populateGameDropdown(sport) {
 
 // ── LOAD GAME ────────────────────────────────────────────────
 async function loadGame(game) {
-  if (!game) return;
+  if (!game) { logStatus('loadGame called with no game', true); return; }
+  logStatus('Loading game: ' + game.away + ' @ ' + game.home + ' (ID: ' + game.id + ')', false);
   currentGame = game;
-  await buildGrid(game);
+  try {
+    await buildGrid(game);
+  } catch (e) {
+    logStatus('buildGrid error: ' + e.message, true);
+  }
 
   if (window._pollTimer) clearInterval(window._pollTimer);
   window._pollTimer = setInterval(async function() {
     if (currentGame && currentGame.id === game.id) {
-      await buildGrid(currentGame);
+      try { await buildGrid(currentGame); } catch (e) { logStatus('Poll error: ' + e.message, true); }
     }
   }, 15000);
 
@@ -1448,14 +1496,16 @@ async function loadGame(game) {
 
 // ── EVENT HANDLERS ───────────────────────────────────────────
 async function updateSport(sport) {
+  logStatus('Switching to ' + sport + '...', false);
   currentSport = sport;
   const data = await fetchEspnScores(sport);
   if (!data || !data.games || !data.games.length) {
-    alert('No games found for ' + sport);
+    logStatus('No games found for ' + sport, true);
     return;
   }
   populateGameDropdown(sport);
   buildGamesList(sport);
+  logStatus('Auto-selecting first game: ' + data.games[0].away + ' @ ' + data.games[0].home, false);
   await loadGame(data.games[0]);
 }
 
@@ -1575,64 +1625,4 @@ async function confirmPurchase() {
   document.getElementById('payModal').classList.remove('open');
   const price = parseFloat(document.getElementById('squarePrice').value) || 10;
   document.getElementById('confirmMsg').innerHTML =
-    `${toAdd} square${toAdd > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${(toAdd * price).toFixed(2)}</strong>` +
-    `<br><span style="color:var(--green-light);font-size:13px;margin-top:4px;display:block;">Your squares are locked in as <strong>${initials}</strong> ✓ visible to all players!</span>`;
-  setTimeout(() => {
-    document.getElementById('confirmModal').classList.add('open');
-    buildGrid(game);
-  }, 150);
-}
-
-function closeConfirm() {
-  document.getElementById('confirmModal').classList.remove('open');
-}
-
-// ── ADMIN ────────────────────────────────────────────────────
-function lockNumbers(game) {
-  if (!game) { alert('No game selected'); return; }
-  var topCells = document.querySelectorAll('.axis-header.axis-top');
-  var leftCells = document.querySelectorAll('.axis-header.axis-left');
-  var rowNums = Array.from(topCells).map(function(el){ return parseInt(el.textContent.trim()); });
-  var colNums = Array.from(leftCells).map(function(el){ return parseInt(el.textContent.trim()); });
-  if (rowNums.length !== 10 || colNums.length !== 10) { alert('Open a game board first (found ' + rowNums.length + ' top, ' + colNums.length + ' left)'); return; }
-  var pin = prompt('Enter admin PIN to lock numbers:');
-  if (!pin) return;
-  fetch('/api/lock-numbers', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({gameId: game.id, pin: pin, rowNums: rowNums, colNums: colNums})
-  }).then(function(r){ return r.json(); }).then(function(d){
-    if (d.ok) { alert('Numbers locked! All boards will now match.'); location.reload(); }
-    else { alert('Error: ' + (d.error || 'Unknown')); }
-  }).catch(function(e){ alert('Error: ' + e.message); });
-}
-
-function adminReset() {
-  if (!window.currentGame) {
-    alert('No game selected');
-    return;
-  }
-  var pin = prompt('Enter admin PIN to reset board:');
-  if (!pin) return;
-  fetch('/api/reset-squares', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({gameId: window.currentGame.id, pin: pin})
-  }).then(function(r) {
-    return r.json();
-  }).then(function(d) {
-    if (d.ok) {
-      alert('Board cleared!');
-      buildGrid(window.currentGame);
-    } else {
-      alert('Error: ' + (d.error || 'failed'));
-    }
-  }).catch(function(e) {
-    alert('Network error');
-  });
-}
-
-// ── INIT ─────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  buildTicker();
-  await upda
+    `${toAdd} square${toAdd > 1 ? 's' : ''} × $${price} = <strong style
