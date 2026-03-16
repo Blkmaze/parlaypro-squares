@@ -55,8 +55,7 @@ export default async (req, context) => {
   // ── POST /api/claim-square ────────────────────────────────
   if (path === "/api/claim-square" && method === "POST") {
     if (!token) return json({ error: "Server not configured (missing NETLIFY_TOKEN)" }, 500);
-    let body;
-    try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
+    , 400); }
 
     const { gameId, indices, initials } = body;
     if (!gameId || !Array.isArray(indices) || !initials) {
@@ -90,8 +89,7 @@ export default async (req, context) => {
   // ── POST /api/lock-numbers ────────────────────────────────
   if (path === "/api/lock-numbers" && method === "POST") {
     if (!token) return json({ error: "Server not configured (missing NETLIFY_TOKEN)" }, 500);
-    let body;
-    try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
+    , 400); }
 
     const { gameId, pin, rowNums, colNums } = body;
     if (!gameId || !pin || !rowNums || !colNums) {
@@ -117,8 +115,7 @@ export default async (req, context) => {
   // ── POST /api/reset-squares ───────────────────────────────
   if (path === "/api/reset-squares" && method === "POST") {
     if (!token) return json({ error: "Server not configured (missing NETLIFY_TOKEN)" }, 500);
-    let body;
-    try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
+    , 400); }
 
     const { gameId, pin } = body;
     if (!gameId || !pin) return json({ error: "Missing gameId or pin" }, 400);
@@ -241,6 +238,7 @@ export default async (req, context) => {
 export const config = {
   path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/props/confirm", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares"]
 };
+
 
 
 

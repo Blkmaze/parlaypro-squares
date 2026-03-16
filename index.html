@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ParlayPro — Super Squares</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -1083,7 +1083,7 @@
       <div class="buy-section">
         <div class="buy-meta">
           <span class="buy-meta-label">Price per Square</span>
-          <span class="buy-meta-value">$10.00</span>
+          <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="background:#1a1a1a;border:1px solid #333;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option></select>
         </div>
 
         <!-- Qty -->
@@ -1877,7 +1877,12 @@ function updateBoardHeader(game) {
   });
 }
 
-// ── SIDEBAR GAMES LIST ───────────────────────────────────────
+function updatePriceDisplay(val) {
+  var p = parseFloat(val);
+  var qty = document.querySelectorAll('.square.selected').length || 1;
+  var lbl = document.getElementById('modalSquaresLabel');
+  var tot = document.getElementById('modalTotal');
+  if(lbl) lbl.textContent = qty + ' Square' + (qty>1?'s':'') + ' ×  ───────────────────────────────────────
 function buildGamesList(sport) {
   const games = GAMES[sport] || [];
   const list = document.querySelector('.games-list');
@@ -2214,6 +2219,713 @@ window.addEventListener("load", function() {
 <script src="/props.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ + p;
+  if(tot) tot.textContent = ' ───────────────────────────────────────
+function buildGamesList(sport) {
+  const games = GAMES[sport] || [];
+  const list = document.querySelector('.games-list');
+  list.innerHTML = games.map(g => `
+    <div class="game-row${g.id === currentGame.id ? ' active' : ''}" data-id="${g.id}" onclick="selectGameById('${g.id}')">
+      <div class="game-row-top">
+        <span class="game-teams">${g.away} @ ${g.home}</span>
+        ${g.status==='LIVE'
+          ? `<span class="status-dot status-live" style="font-size:8px;">Live</span>`
+          : `<span class="status-dot status-scheduled" style="font-size:8px;">${g.period}</span>`}
+      </div>
+      ${g.status==='LIVE' ? `<div class="game-score" style="margin-top:4px;">${g.as} – ${g.hs}</div>` : ''}
+    </div>`).join('');
+}
+
+// ── GAME SELECT DROPDOWN ─────────────────────────────────────
+function populateGameDropdown(sport) {
+  const games = GAMES[sport] || [];
+  const sel = document.getElementById('gameSelect');
+  sel.innerHTML = games.map(g =>
+    `<option value="${g.id}">${g.status==='LIVE'?'● ':''}${g.away} @ ${g.home}</option>`
+  ).join('');
+}
+
+// ── LOAD GAME ────────────────────────────────────────────────
+async function loadGame(game) {
+  currentGame = game;
+  await buildGrid(game);
+  // Auto-refresh every 15s to sync claimed squares
+  if (window._pollTimer) clearInterval(window._pollTimer);
+  window._pollTimer = setInterval(async function() {
+    if (currentGame && currentGame.id === game.id) {
+      await buildGrid(currentGame);
+    }
+  }, 15000);
+  buildOdds(game);
+  updateBoardHeader(game);
+  updateCTA();
+
+  // Sync dropdown
+  document.getElementById('gameSelect').value = game.id;
+
+  // Sync sidebar list
+  document.querySelectorAll('.game-row').forEach(row => {
+    row.classList.toggle('active', row.dataset.id === game.id);
+  });
+}
+
+// ── EVENT HANDLERS ───────────────────────────────────────────
+function updateSport(val) {
+  currentSport = val;
+  const games = GAMES[val] || [];
+  if (!games.length) return;
+  populateGameDropdown(val);
+  buildGamesList(val);
+  loadGame(games[0]); // async, intentionally not awaited
+}
+
+function selectGame(gameId) {
+  const game = (GAMES[currentSport] || []).find(g => g.id === gameId);
+  if (game) loadGame(game);
+}
+
+function selectGameById(gameId) {
+  const game = Object.values(GAMES).flat().find(g => g.id === gameId);
+  if (game) loadGame(game);
+}
+
+function toggleOdds(btn) {
+  btn.classList.toggle('selected');
+  const selected = document.querySelectorAll('.odds-btn.selected');
+  const legsSection = document.querySelector('.legs-section');
+
+  if (selected.length === 0) {
+    legsSection.innerHTML = `
+      <div class="legs-title">Selected Legs (0)</div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0;">Click odds above to add legs</div>`;
+    return;
+  }
+
+  let html = `<div class="legs-title">Selected Legs (${selected.length})</div>`;
+  selected.forEach(b => {
+    const label = b.querySelector('.odds-btn-label').textContent;
+    const odds = b.querySelector('.odds-value').textContent;
+    html += `<div class="leg-row"><span class="leg-label">${label}</span><span class="leg-odds">${odds}</span></div>`;
+  });
+  legsSection.innerHTML = html;
+}
+
+function setQty(n, btn) {
+  currentQty = n;
+  document.querySelectorAll('.qty-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('totalAmount').textContent = `$${(n * 10).toFixed(2)}`;
+  document.getElementById('totalSquares').textContent = `${n} Square${n > 1 ? 's' : ''}`;
+  updateCTA();
+}
+
+function updateCTA() {
+  document.querySelector('.cta-btn').innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    BUY ${currentQty} SQUARE${currentQty > 1 ? 'S' : ''} NOW`;
+}
+
+function openPayModal() {
+  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} × $10`;
+  document.getElementById('modalTotal').textContent = `$${(currentQty * 10).toFixed(2)}`;
+  document.getElementById('initialsInput').value = '';
+  document.getElementById('confirmBtn').disabled = true;
+  document.getElementById('payModal').classList.add('open');
+}
+
+function selectPay(el) {
+  document.querySelectorAll('.modal-pay-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function checkInitials() {
+  document.getElementById('confirmBtn').disabled = document.getElementById('initialsInput').value.trim().length < 3;
+}
+
+async function confirmPurchase() {
+  const initials = document.getElementById('initialsInput').value.trim().toUpperCase();
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true;
+  btn.textContent = 'Locking in...';
+
+  const game = currentGame;
+  const serverData = _cache[game.id] || await fetchSquares(game.id);
+  const serverOwned = new Set(Object.keys(serverData.owners || {}).map(Number));
+  const sold = new Set([...game.sold, ...serverOwned]);
+  const mine = getMySquares(game.id);
+  (game.mine || []).forEach(i => mine.add(i));
+
+  // Collect open indices and pick random ones
+  const open = [];
+  for (let i = 0; i < 100; i++) {
+    if (!sold.has(i) && !mine.has(i)) open.push(i);
+  }
+  const shuffled = open.sort(() => Math.random() - 0.5);
+  const toAdd = Math.min(currentQty, shuffled.length);
+  const newIdxs = shuffled.slice(0, toAdd);
+
+  try {
+    await persistSquares(game.id, newIdxs, initials);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'CONFIRM & LOCK IN';
+    alert('Could not claim squares: ' + e.message + '\nTry refreshing and picking again.');
+    return;
+  }
+
+  document.getElementById('payModal').classList.remove('open');
+  document.getElementById('confirmMsg').innerHTML =
+    `${toAdd} square${toAdd > 1 ? 's' : ''} × $10 = <strong style="color:white;">$${(toAdd * 10).toFixed(2)}</strong>` +
+    `<br><span style="color:var(--green-light);font-size:13px;margin-top:4px;display:block;">Your squares are locked in as <strong>${initials}</strong> ✓ — visible to all players!</span>`;
+  setTimeout(() => {
+    document.getElementById('confirmModal').classList.add('open');
+    buildGrid(game);
+  }, 150);
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('open');
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  buildTicker();
+  populateGameDropdown('NBA');
+  buildGamesList('NBA');
+  await loadGame(GAMES.NBA[0]);
+});
+
+
+
+function lockNumbers(game) {
+  if (!game) { alert('No game selected'); return; }
+  var topCells = document.querySelectorAll('.axis-header.axis-top');
+  var leftCells = document.querySelectorAll('.axis-header.axis-left');
+  var rowNums = Array.from(topCells).map(function(el){ return parseInt(el.textContent.trim()); });
+  var colNums = Array.from(leftCells).map(function(el){ return parseInt(el.textContent.trim()); });
+  if (rowNums.length !== 10 || colNums.length !== 10) { alert('Open a game board first (found ' + rowNums.length + ' top, ' + colNums.length + ' left)'); return; }
+  var pin = prompt('Enter admin PIN to lock numbers:');
+  if (!pin) return;
+  fetch('/api/lock-numbers', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({gameId: game.id, pin: pin, rowNums: rowNums, colNums: colNums})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (d.ok) { alert('Numbers locked! All boards will now match.'); location.reload(); }
+    else { alert('Error: ' + (d.error || 'Unknown')); }
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+</script>
+<script>setInterval(async function(){if(!window.currentGame)return;try{var r=await fetch("/api/squares?gameId="+window.currentGame.id);var d=await r.json();if(!d||!d.owners)return;var cells=document.querySelectorAll(".cell");var i=0;cells.forEach(function(c){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}i++;});}catch(e){}},8000);</script>
+<script src="/poll.js"></script><script>setInterval(async function(){try{if(!window.currentGame)return;var d=await(await fetch("/api/squares?gameId="+window.currentGame.id)).json();if(!d||!d.owners)return;document.querySelectorAll(".cell").forEach(function(c,i){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}});}catch(e){}},8000);</script>
+<script>setInterval(async function(){try{if(!window.currentGame)return;var d=await(await fetch("/api/squares?gameId="+window.currentGame.id)).json();if(!d||!d.owners)return;document.querySelectorAll(".cell").forEach(function(c,i){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}});}catch(e){}},8000);</script><script>function adminReset(){if(!window.currentGame){alert("No game selected");return;}var pin=prompt("Enter admin PIN to reset board:");if(!pin)return;fetch("/api/reset-squares",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({gameId:window.currentGame.id,pin:pin})}).then(function(r){return r.json();}).then(function(d){if(d.ok){alert("Board cleared!");buildGrid(window.currentGame);}else{alert("Error: "+(d.error||"failed"));}}).catch(function(e){alert("Network error");});}</script>
+<script>window.adminReset=function(){var gid=window.currentGame?window.currentGame.id:null;if(!gid){var active=document.querySelector(".game-tab.active,.board-tab.active,[data-game-id]");if(active)gid=active.dataset.gameId||active.dataset.id;}if(!gid){alert("Please select a game board first, then click Reset Board.");return;}var pin=prompt("Enter PIN to clear all squares from: "+gid);if(!pin)return;fetch("/api/reset-squares",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({gameId:gid,pin:pin})}).then(function(r){return r.json();}).then(function(d){if(d.ok){alert("Board cleared! All squares reset.");if(window.buildGrid&&window.currentGame)buildGrid(window.currentGame);}else{alert("Error: "+(d.error||"unknown"));}}).catch(function(){alert("Network error - try again");});};</script>
+<script>
+window.addEventListener("load", function() {
+  window.adminReset = function() {
+    var gameId = null;
+    if (window.currentGame) { gameId = window.currentGame.id; }
+    if (!gameId) {
+      var active = document.querySelector(".game-btn.active, .tab.active, [data-id]");
+      if (active) gameId = active.dataset.id || active.dataset.gameId;
+    }
+    if (!gameId) {
+      var header = document.querySelector(".board-title, #boardTitle, .game-title");
+      if (header) gameId = header.textContent.trim().toLowerCase().replace(/\s+/g,"").replace(/[@]/g,"-");
+    }
+    if (!gameId) { gameId = prompt("Enter game ID to reset (e.g. phi-cle):"); }
+    if (!gameId) return;
+    var pin = prompt("Enter PIN to reset board [" + gameId + "]:");
+    if (!pin) return;
+    fetch("/api/reset-squares", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({gameId: gameId, pin: pin})
+    }).then(function(r){return r.json();}).then(function(d){
+      if (d.ok) { alert("Board cleared!"); if(window.buildGrid && window.currentGame) buildGrid(window.currentGame); else location.reload(); }
+      else { alert("Error: " + (d.error||"failed")); }
+    }).catch(function(){ alert("Network error"); });
+  };
+});
+</script>
+<script>
+// LIVE SCORES - fetches from Netlify function server-side (no CORS)
+(function() {
+  let currentSport = 'ncaam';
+  let currentGameIdx = 0;
+  let allGames = [];
+
+  async function fetchGames(sport) {
+    try {
+      const res = await fetch('/api/scores?sport=' + sport);
+      const data = await res.json();
+      return data;
+    } catch(e) {
+      console.error('Score fetch failed:', e);
+      return null;
+    }
+  }
+
+  function updateBoardGame(game) {
+    if (!game) return;
+    // Update title
+    const title = document.querySelector('.board-title, h1, .game-title');
+    if (title) title.textContent = game.awayFull + ' @ ' + game.homeFull;
+
+    // Update team headers
+    document.querySelectorAll('.col-header, .home-team, [class*="home"]').forEach(el => {
+      if (el.textContent.trim().length < 20) el.textContent = game.homeFull.toUpperCase();
+    });
+    document.querySelectorAll('.row-header, .away-team, [class*="away"]').forEach(el => {
+      if (el.textContent.trim().length < 20) el.textContent = game.awayFull.toUpperCase();
+    });
+
+    // Update date
+    const dateEl = document.getElementById('live-date');
+    if (dateEl) dateEl.textContent = game.date + ' · ' + (game.status === 'LIVE' ? 'LIVE' : 'Live Games');
+
+    // Update score if live
+    const scoreEl = document.querySelector('.live-score, .score-display, #live-score');
+    if (scoreEl && game.status !== 'SCHEDULED') {
+      scoreEl.textContent = game.away + ' ' + game.awayScore + ' - ' + game.homeScore + ' ' + game.home;
+    }
+
+    // Update game selector dropdown if exists
+    const gameSelect = document.querySelector('.game-select, select[onchange*="game"]');
+    if (gameSelect && allGames.length) {
+      gameSelect.innerHTML = allGames.map((g, i) =>
+        `<option value="${i}" ${i === currentGameIdx ? 'selected' : ''}>${g.awayFull} @ ${g.homeFull} - ${g.time}</option>`
+      ).join('');
+    }
+  }
+
+  function updateTicker(games) {
+    const track = document.querySelector('.ticker-track, .ticker-inner');
+    if (!track || !games.length) return;
+    const html = games.map(g => {
+      const badge = g.status === 'LIVE' ? '<span class="ticker-badge badge-live">LIVE</span>' :
+                    g.status === 'FINAL' ? '<span class="ticker-badge badge-final">FINAL</span>' :
+                    '<span class="ticker-badge badge-upcoming">TODAY</span>';
+      const score = g.status !== 'SCHEDULED' ? ` <span class="score">${g.awayScore}-${g.homeScore}</span>` : '';
+      return `<div class="ticker-item">${badge} ${g.away}${score} @ ${g.home} <span class="ticker-period">${g.time}</span></div>`;
+    }).join('');
+    track.innerHTML = html + html;
+  }
+
+  async function refresh() {
+    const data = await fetchGames(currentSport);
+    if (!data || !data.games) return;
+    allGames = data.games;
+
+    // Update date
+    const dateEl = document.getElementById('live-date');
+    if (dateEl) dateEl.textContent = data.today + ' · Live Games';
+
+    // Update ticker
+    updateTicker(data.games);
+
+    // Update main board with first/selected game
+    if (data.games.length > 0) {
+      updateBoardGame(data.games[currentGameIdx] || data.games[0]);
+    }
+  }
+
+  // Hook into sport selector
+  const sportSelect = document.querySelector('.sport-select, select[onchange*="sport"]');
+  if (sportSelect) {
+    sportSelect.addEventListener('change', function() {
+      currentSport = this.value.toLowerCase();
+      if (currentSport === 'nba') currentSport = 'nba';
+      else if (currentSport === 'nhl') currentSport = 'nhl';
+      else if (currentSport === 'mlb') currentSport = 'mlb';
+      else if (currentSport === 'nfl') currentSport = 'nfl';
+      else if (currentSport === 'ncaam') currentSport = 'ncaam';
+      currentGameIdx = 0;
+      refresh();
+    });
+  }
+
+  // Fix date immediately
+  const dateEl = document.getElementById('live-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' · Live Games';
+
+  // Start fetching
+  refresh();
+  setInterval(refresh, 60000);
+})();
+</script>
+<script src="/props.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ + (qty * p).toFixed(2);
+  window._squarePrice = p;
+}
+  // ── SIDEBAR GAMES LIST ───────────────────────────────────────
+function buildGamesList(sport) {
+  const games = GAMES[sport] || [];
+  const list = document.querySelector('.games-list');
+  list.innerHTML = games.map(g => `
+    <div class="game-row${g.id === currentGame.id ? ' active' : ''}" data-id="${g.id}" onclick="selectGameById('${g.id}')">
+      <div class="game-row-top">
+        <span class="game-teams">${g.away} @ ${g.home}</span>
+        ${g.status==='LIVE'
+          ? `<span class="status-dot status-live" style="font-size:8px;">Live</span>`
+          : `<span class="status-dot status-scheduled" style="font-size:8px;">${g.period}</span>`}
+      </div>
+      ${g.status==='LIVE' ? `<div class="game-score" style="margin-top:4px;">${g.as} – ${g.hs}</div>` : ''}
+    </div>`).join('');
+}
+
+// ── GAME SELECT DROPDOWN ─────────────────────────────────────
+function populateGameDropdown(sport) {
+  const games = GAMES[sport] || [];
+  const sel = document.getElementById('gameSelect');
+  sel.innerHTML = games.map(g =>
+    `<option value="${g.id}">${g.status==='LIVE'?'● ':''}${g.away} @ ${g.home}</option>`
+  ).join('');
+}
+
+// ── LOAD GAME ────────────────────────────────────────────────
+async function loadGame(game) {
+  currentGame = game;
+  await buildGrid(game);
+  // Auto-refresh every 15s to sync claimed squares
+  if (window._pollTimer) clearInterval(window._pollTimer);
+  window._pollTimer = setInterval(async function() {
+    if (currentGame && currentGame.id === game.id) {
+      await buildGrid(currentGame);
+    }
+  }, 15000);
+  buildOdds(game);
+  updateBoardHeader(game);
+  updateCTA();
+
+  // Sync dropdown
+  document.getElementById('gameSelect').value = game.id;
+
+  // Sync sidebar list
+  document.querySelectorAll('.game-row').forEach(row => {
+    row.classList.toggle('active', row.dataset.id === game.id);
+  });
+}
+
+// ── EVENT HANDLERS ───────────────────────────────────────────
+function updateSport(val) {
+  currentSport = val;
+  const games = GAMES[val] || [];
+  if (!games.length) return;
+  populateGameDropdown(val);
+  buildGamesList(val);
+  loadGame(games[0]); // async, intentionally not awaited
+}
+
+function selectGame(gameId) {
+  const game = (GAMES[currentSport] || []).find(g => g.id === gameId);
+  if (game) loadGame(game);
+}
+
+function selectGameById(gameId) {
+  const game = Object.values(GAMES).flat().find(g => g.id === gameId);
+  if (game) loadGame(game);
+}
+
+function toggleOdds(btn) {
+  btn.classList.toggle('selected');
+  const selected = document.querySelectorAll('.odds-btn.selected');
+  const legsSection = document.querySelector('.legs-section');
+
+  if (selected.length === 0) {
+    legsSection.innerHTML = `
+      <div class="legs-title">Selected Legs (0)</div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0;">Click odds above to add legs</div>`;
+    return;
+  }
+
+  let html = `<div class="legs-title">Selected Legs (${selected.length})</div>`;
+  selected.forEach(b => {
+    const label = b.querySelector('.odds-btn-label').textContent;
+    const odds = b.querySelector('.odds-value').textContent;
+    html += `<div class="leg-row"><span class="leg-label">${label}</span><span class="leg-odds">${odds}</span></div>`;
+  });
+  legsSection.innerHTML = html;
+}
+
+function setQty(n, btn) {
+  currentQty = n;
+  document.querySelectorAll('.qty-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('totalAmount').textContent = `$${(n * 10).toFixed(2)}`;
+  document.getElementById('totalSquares').textContent = `${n} Square${n > 1 ? 's' : ''}`;
+  updateCTA();
+}
+
+function updateCTA() {
+  document.querySelector('.cta-btn').innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    BUY ${currentQty} SQUARE${currentQty > 1 ? 'S' : ''} NOW`;
+}
+
+function openPayModal() {
+  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} × $10`;
+  document.getElementById('modalTotal').textContent = `$${(currentQty * 10).toFixed(2)}`;
+  document.getElementById('initialsInput').value = '';
+  document.getElementById('confirmBtn').disabled = true;
+  document.getElementById('payModal').classList.add('open');
+}
+
+function selectPay(el) {
+  document.querySelectorAll('.modal-pay-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function checkInitials() {
+  document.getElementById('confirmBtn').disabled = document.getElementById('initialsInput').value.trim().length < 3;
+}
+
+async function confirmPurchase() {
+  const initials = document.getElementById('initialsInput').value.trim().toUpperCase();
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true;
+  btn.textContent = 'Locking in...';
+
+  const game = currentGame;
+  const serverData = _cache[game.id] || await fetchSquares(game.id);
+  const serverOwned = new Set(Object.keys(serverData.owners || {}).map(Number));
+  const sold = new Set([...game.sold, ...serverOwned]);
+  const mine = getMySquares(game.id);
+  (game.mine || []).forEach(i => mine.add(i));
+
+  // Collect open indices and pick random ones
+  const open = [];
+  for (let i = 0; i < 100; i++) {
+    if (!sold.has(i) && !mine.has(i)) open.push(i);
+  }
+  const shuffled = open.sort(() => Math.random() - 0.5);
+  const toAdd = Math.min(currentQty, shuffled.length);
+  const newIdxs = shuffled.slice(0, toAdd);
+
+  try {
+    await persistSquares(game.id, newIdxs, initials);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'CONFIRM & LOCK IN';
+    alert('Could not claim squares: ' + e.message + '\nTry refreshing and picking again.');
+    return;
+  }
+
+  document.getElementById('payModal').classList.remove('open');
+  document.getElementById('confirmMsg').innerHTML =
+    `${toAdd} square${toAdd > 1 ? 's' : ''} × $10 = <strong style="color:white;">$${(toAdd * 10).toFixed(2)}</strong>` +
+    `<br><span style="color:var(--green-light);font-size:13px;margin-top:4px;display:block;">Your squares are locked in as <strong>${initials}</strong> ✓ — visible to all players!</span>`;
+  setTimeout(() => {
+    document.getElementById('confirmModal').classList.add('open');
+    buildGrid(game);
+  }, 150);
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('open');
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  buildTicker();
+  populateGameDropdown('NBA');
+  buildGamesList('NBA');
+  await loadGame(GAMES.NBA[0]);
+});
+
+
+
+function lockNumbers(game) {
+  if (!game) { alert('No game selected'); return; }
+  var topCells = document.querySelectorAll('.axis-header.axis-top');
+  var leftCells = document.querySelectorAll('.axis-header.axis-left');
+  var rowNums = Array.from(topCells).map(function(el){ return parseInt(el.textContent.trim()); });
+  var colNums = Array.from(leftCells).map(function(el){ return parseInt(el.textContent.trim()); });
+  if (rowNums.length !== 10 || colNums.length !== 10) { alert('Open a game board first (found ' + rowNums.length + ' top, ' + colNums.length + ' left)'); return; }
+  var pin = prompt('Enter admin PIN to lock numbers:');
+  if (!pin) return;
+  fetch('/api/lock-numbers', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({gameId: game.id, pin: pin, rowNums: rowNums, colNums: colNums})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (d.ok) { alert('Numbers locked! All boards will now match.'); location.reload(); }
+    else { alert('Error: ' + (d.error || 'Unknown')); }
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+</script>
+<script>setInterval(async function(){if(!window.currentGame)return;try{var r=await fetch("/api/squares?gameId="+window.currentGame.id);var d=await r.json();if(!d||!d.owners)return;var cells=document.querySelectorAll(".cell");var i=0;cells.forEach(function(c){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}i++;});}catch(e){}},8000);</script>
+<script src="/poll.js"></script><script>setInterval(async function(){try{if(!window.currentGame)return;var d=await(await fetch("/api/squares?gameId="+window.currentGame.id)).json();if(!d||!d.owners)return;document.querySelectorAll(".cell").forEach(function(c,i){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}});}catch(e){}},8000);</script>
+<script>setInterval(async function(){try{if(!window.currentGame)return;var d=await(await fetch("/api/squares?gameId="+window.currentGame.id)).json();if(!d||!d.owners)return;document.querySelectorAll(".cell").forEach(function(c,i){if(d.owners[i]!==undefined&&!c.classList.contains("cell-mine")){c.className="cell cell-sold";c.textContent=d.owners[i];}});}catch(e){}},8000);</script><script>function adminReset(){if(!window.currentGame){alert("No game selected");return;}var pin=prompt("Enter admin PIN to reset board:");if(!pin)return;fetch("/api/reset-squares",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({gameId:window.currentGame.id,pin:pin})}).then(function(r){return r.json();}).then(function(d){if(d.ok){alert("Board cleared!");buildGrid(window.currentGame);}else{alert("Error: "+(d.error||"failed"));}}).catch(function(e){alert("Network error");});}</script>
+<script>window.adminReset=function(){var gid=window.currentGame?window.currentGame.id:null;if(!gid){var active=document.querySelector(".game-tab.active,.board-tab.active,[data-game-id]");if(active)gid=active.dataset.gameId||active.dataset.id;}if(!gid){alert("Please select a game board first, then click Reset Board.");return;}var pin=prompt("Enter PIN to clear all squares from: "+gid);if(!pin)return;fetch("/api/reset-squares",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({gameId:gid,pin:pin})}).then(function(r){return r.json();}).then(function(d){if(d.ok){alert("Board cleared! All squares reset.");if(window.buildGrid&&window.currentGame)buildGrid(window.currentGame);}else{alert("Error: "+(d.error||"unknown"));}}).catch(function(){alert("Network error - try again");});};</script>
+<script>
+window.addEventListener("load", function() {
+  window.adminReset = function() {
+    var gameId = null;
+    if (window.currentGame) { gameId = window.currentGame.id; }
+    if (!gameId) {
+      var active = document.querySelector(".game-btn.active, .tab.active, [data-id]");
+      if (active) gameId = active.dataset.id || active.dataset.gameId;
+    }
+    if (!gameId) {
+      var header = document.querySelector(".board-title, #boardTitle, .game-title");
+      if (header) gameId = header.textContent.trim().toLowerCase().replace(/\s+/g,"").replace(/[@]/g,"-");
+    }
+    if (!gameId) { gameId = prompt("Enter game ID to reset (e.g. phi-cle):"); }
+    if (!gameId) return;
+    var pin = prompt("Enter PIN to reset board [" + gameId + "]:");
+    if (!pin) return;
+    fetch("/api/reset-squares", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({gameId: gameId, pin: pin})
+    }).then(function(r){return r.json();}).then(function(d){
+      if (d.ok) { alert("Board cleared!"); if(window.buildGrid && window.currentGame) buildGrid(window.currentGame); else location.reload(); }
+      else { alert("Error: " + (d.error||"failed")); }
+    }).catch(function(){ alert("Network error"); });
+  };
+});
+</script>
+<script>
+// LIVE SCORES - fetches from Netlify function server-side (no CORS)
+(function() {
+  let currentSport = 'ncaam';
+  let currentGameIdx = 0;
+  let allGames = [];
+
+  async function fetchGames(sport) {
+    try {
+      const res = await fetch('/api/scores?sport=' + sport);
+      const data = await res.json();
+      return data;
+    } catch(e) {
+      console.error('Score fetch failed:', e);
+      return null;
+    }
+  }
+
+  function updateBoardGame(game) {
+    if (!game) return;
+    // Update title
+    const title = document.querySelector('.board-title, h1, .game-title');
+    if (title) title.textContent = game.awayFull + ' @ ' + game.homeFull;
+
+    // Update team headers
+    document.querySelectorAll('.col-header, .home-team, [class*="home"]').forEach(el => {
+      if (el.textContent.trim().length < 20) el.textContent = game.homeFull.toUpperCase();
+    });
+    document.querySelectorAll('.row-header, .away-team, [class*="away"]').forEach(el => {
+      if (el.textContent.trim().length < 20) el.textContent = game.awayFull.toUpperCase();
+    });
+
+    // Update date
+    const dateEl = document.getElementById('live-date');
+    if (dateEl) dateEl.textContent = game.date + ' · ' + (game.status === 'LIVE' ? 'LIVE' : 'Live Games');
+
+    // Update score if live
+    const scoreEl = document.querySelector('.live-score, .score-display, #live-score');
+    if (scoreEl && game.status !== 'SCHEDULED') {
+      scoreEl.textContent = game.away + ' ' + game.awayScore + ' - ' + game.homeScore + ' ' + game.home;
+    }
+
+    // Update game selector dropdown if exists
+    const gameSelect = document.querySelector('.game-select, select[onchange*="game"]');
+    if (gameSelect && allGames.length) {
+      gameSelect.innerHTML = allGames.map((g, i) =>
+        `<option value="${i}" ${i === currentGameIdx ? 'selected' : ''}>${g.awayFull} @ ${g.homeFull} - ${g.time}</option>`
+      ).join('');
+    }
+  }
+
+  function updateTicker(games) {
+    const track = document.querySelector('.ticker-track, .ticker-inner');
+    if (!track || !games.length) return;
+    const html = games.map(g => {
+      const badge = g.status === 'LIVE' ? '<span class="ticker-badge badge-live">LIVE</span>' :
+                    g.status === 'FINAL' ? '<span class="ticker-badge badge-final">FINAL</span>' :
+                    '<span class="ticker-badge badge-upcoming">TODAY</span>';
+      const score = g.status !== 'SCHEDULED' ? ` <span class="score">${g.awayScore}-${g.homeScore}</span>` : '';
+      return `<div class="ticker-item">${badge} ${g.away}${score} @ ${g.home} <span class="ticker-period">${g.time}</span></div>`;
+    }).join('');
+    track.innerHTML = html + html;
+  }
+
+  async function refresh() {
+    const data = await fetchGames(currentSport);
+    if (!data || !data.games) return;
+    allGames = data.games;
+
+    // Update date
+    const dateEl = document.getElementById('live-date');
+    if (dateEl) dateEl.textContent = data.today + ' · Live Games';
+
+    // Update ticker
+    updateTicker(data.games);
+
+    // Update main board with first/selected game
+    if (data.games.length > 0) {
+      updateBoardGame(data.games[currentGameIdx] || data.games[0]);
+    }
+  }
+
+  // Hook into sport selector
+  const sportSelect = document.querySelector('.sport-select, select[onchange*="sport"]');
+  if (sportSelect) {
+    sportSelect.addEventListener('change', function() {
+      currentSport = this.value.toLowerCase();
+      if (currentSport === 'nba') currentSport = 'nba';
+      else if (currentSport === 'nhl') currentSport = 'nhl';
+      else if (currentSport === 'mlb') currentSport = 'mlb';
+      else if (currentSport === 'nfl') currentSport = 'nfl';
+      else if (currentSport === 'ncaam') currentSport = 'ncaam';
+      currentGameIdx = 0;
+      refresh();
+    });
+  }
+
+  // Fix date immediately
+  const dateEl = document.getElementById('live-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' · Live Games';
+
+  // Start fetching
+  refresh();
+  setInterval(refresh, 60000);
+})();
+</script>
+<script src="/props.js"></script>
+</body>
+</html>
+
 
 
 
