@@ -1168,6 +1168,34 @@
       </div>
     </div>
 
+    <!-- PLAYER PROPS -->
+    <div class="admin-card" style="margin-top:12px;">
+      <div class="admin-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Player Props — Over/Under
+        </span>
+        <button class="admin-btn admin-btn-green" style="margin:0;padding:4px 10px;font-size:10px;" onclick="togglePropsSetup()">Setup</button>
+      </div>
+
+      <!-- Props Setup Form (hidden by default) -->
+      <div id="propsSetupForm" style="display:none;padding:12px;background:var(--surface2);border-radius:8px;margin:10px 12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">Setup Player Props</div>
+        <input id="propsHomePlayer" type="text" placeholder="Home Player Name" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;margin-bottom:6px;outline:none;" />
+        <input id="propsAwayPlayer" type="text" placeholder="Away Player Name" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;margin-bottom:6px;outline:none;" />
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+          <input id="propsPrice" type="number" value="5" placeholder="Price $" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;outline:none;" />
+          <input id="propsPin" type="password" placeholder="Admin PIN" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;outline:none;" />
+        </div>
+        <button onclick="submitPropsSetup()" style="width:100%;background:var(--green);border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:10px;cursor:pointer;">Create Props Board</button>
+      </div>
+
+      <!-- Props Boards Container -->
+      <div id="propsBoardsContainer" style="padding:8px 12px;">
+        <div style="text-align:center;color:#444;font-size:12px;padding:20px 0">No props set up yet.<br>Click Setup to add players.</div>
+      </div>
+    </div>
+
   </div>
 </div>
 </div>
@@ -1357,6 +1385,7 @@ async function buildGrid(game) {
 
   html += `<div class="team-banner">${game.home}${game.status==='LIVE'?` &nbsp; <span style="color:var(--yellow)">${game.homeScore||0}</span>`:''}</div>`;
 
+  html += `<div class="axis-header axis-corner" style="font-size:9px;color:var(--text3);"></div>`;
   topNums.forEach(num => {
     html += `<div class="axis-header axis-top">${num}</div>`;
   });
