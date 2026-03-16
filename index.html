@@ -1162,7 +1162,7 @@
       </div>
       <div class="admin-btns">
         <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
-        <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){updateSport(currentSport||'NBA');}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
+        <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
         <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
         <button class="admin-btn admin-btn-red" onclick="adminReset();">⨂ Reset Board</button>
       </div>
@@ -1666,8 +1666,7 @@ function closeConfirm() {
 
 // ── ADMIN ────────────────────────────────────────────────────
 async function lockNumbers(game) {
-  if (!game) { await updateSport(currentSport||'NBA'); game = currentGame; }
-  if (!game) { alert('Still no game available — try selecting a sport first'); return; }
+  if (!game) { location.reload(); return; }
   var topCells = document.querySelectorAll('.axis-header.axis-top');
   var leftCells = document.querySelectorAll('.axis-header.axis-left');
   var rowNums = Array.from(topCells).map(function(el){ return parseInt(el.textContent.trim()); });
@@ -1686,13 +1685,7 @@ async function lockNumbers(game) {
 }
 
 async function adminReset() {
-  if (!window.currentGame) {
-    await updateSport(currentSport||'NBA');
-  }
-  if (!window.currentGame) {
-    alert('Still no game available — try selecting a sport first');
-    return;
-  }
+  if (!window.currentGame) { location.reload(); return; }
   var pin = prompt('Enter admin PIN to reset board:');
   if (!pin) return;
   fetch('/api/reset-squares', {
