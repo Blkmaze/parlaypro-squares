@@ -1,4 +1,4 @@
-// Zero imports - uses Netlify Blobs REST API with the token injected at runtime
+ // Zero imports - uses Netlify Blobs REST API with the token injected at runtime
 const SITE_ID = "658f40e1-9d0f-4072-80a5-d6d0eb35d77e";
 const STORE = "sq3";
 const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
@@ -55,7 +55,6 @@ export default async (req, context) => {
   // ── POST /api/claim-square ────────────────────────────────
   if (path === "/api/claim-square" && method === "POST") {
     if (!token) return json({ error: "Server not configured (missing NETLIFY_TOKEN)" }, 500);
-    , 400); }
 
     const { gameId, indices, initials } = body;
     if (!gameId || !Array.isArray(indices) || !initials) {
@@ -89,7 +88,6 @@ export default async (req, context) => {
   // ── POST /api/lock-numbers ────────────────────────────────
   if (path === "/api/lock-numbers" && method === "POST") {
     if (!token) return json({ error: "Server not configured (missing NETLIFY_TOKEN)" }, 500);
-    , 400); }
 
     const { gameId, pin, rowNums, colNums } = body;
     if (!gameId || !pin || !rowNums || !colNums) {
@@ -115,7 +113,6 @@ export default async (req, context) => {
   // ── POST /api/reset-squares ───────────────────────────────
   if (path === "/api/reset-squares" && method === "POST") {
     if (!token) return json({ error: "Server not configured (missing NETLIFY_TOKEN)" }, 500);
-    , 400); }
 
     const { gameId, pin } = body;
     if (!gameId || !pin) return json({ error: "Missing gameId or pin" }, 400);
@@ -135,9 +132,11 @@ export default async (req, context) => {
       ncaam: "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard",
       ncaaw: "https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard",
       nba: "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
+      wnba: "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard",
       nhl: "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard",
       mlb: "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard",
       nfl: "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
+      mls: "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard",
     };
     const sport = url.searchParams.get("sport") || "ncaam";
     const espnUrl = SPORTS[sport] || SPORTS.ncaam;
