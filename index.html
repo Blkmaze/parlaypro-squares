@@ -2941,9 +2941,19 @@ window.addEventListener("load", function() {
   setInterval(refresh, 60000);
 })();
 </script>
-<script src="/props.js"></script>
+<script src="/props.js">function updatePriceDisplay(val) {
+  window._sqPrice = parseFloat(val);
+  var qty = document.querySelectorAll('.square.selected').length || parseInt(document.querySelector('.qty-btn.active')?.textContent) || 5;
+  var lbl = document.getElementById('modalSquaresLabel');
+  var tot = document.getElementById('modalTotal');
+  if(lbl) lbl.textContent = qty + ' Square' + (qty>1?'s':'') + ' \u00d7 $' + window._sqPrice;
+  if(tot) tot.textContent = '$' + (qty * window._sqPrice).toFixed(2);
+}
+window._sqPrice = 10;
+</script>
 </body>
 </html>
+
 
 
 
