@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ParlayPro — Super Squares</title>
+<title>ParlayPro â Super Squares</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -346,7 +346,7 @@
     letter-spacing: 0.05em;
   }
   .status-live { background: rgba(220,38,38,0.2); color: #f87171; border: 1px solid rgba(220,38,38,0.3); }
-  .status-live::before { content: '●'; margin-right: 3px; animation: pulse 1s infinite; }
+  .status-live::before { content: 'â'; margin-right: 3px; animation: pulse 1s infinite; }
   .status-scheduled { background: rgba(234,179,8,0.15); color: #fbbf24; border: 1px solid rgba(234,179,8,0.25); }
 
   /* Odds grid */
@@ -932,7 +932,26 @@
 }
 /* ====== END MOBILE FIX ====== */
 
+
+  @media (max-width:600px){
+    .layout{flex-direction:column!important;}
+    .sidebar{width:100%!important;max-width:100%!important;}
+    .board-panel{width:100%!important;}
+    .square{min-height:52px!important;font-size:11px!important;}
+    .game-row{min-height:56px;padding:12px 14px;}
+  }
 </style>
+<script>
+function updatePriceDisplay(val){
+  var p=parseFloat(val);
+  window._squarePrice=p;
+  var qty=document.querySelectorAll('.square.selected').length||0;
+  var lbl=document.getElementById('modalSquaresLabel');
+  var tot=document.getElementById('modalTotal');
+  if(lbl&&qty>0) lbl.textContent=qty+' Square'+(qty>1?'s':'')+' × $'+p;
+  if(tot&&qty>0) tot.textContent='$'+(qty*p).toFixed(2);
+}
+</script>
 </head>
 <body>
 
@@ -961,14 +980,14 @@
       </div>
       <div class="sport-controls">
         <select class="sport-select" onchange="updateSport(this.value)">
-          <option value="NBA">🏀 NBA</option>
-          <option value="NHL">🏒 NHL</option>
-          <option value="MLB">⚾ MLB</option>
-          <option value="NFL">🏈 NFL</option>
-          <option value="MLS">⚽ MLS</option>
-          <option value="WNBA">🏀 WNBA</option>
-          <option value="MM_MEN">🏀 March Madness (Men)</option>
-          <option value="MM_WOMEN">🏀 March Madness (Women)</option>
+          <option value="NBA">ð NBA</option>
+          <option value="NHL">ð NHL</option>
+          <option value="MLB">â¾ MLB</option>
+          <option value="NFL">ð NFL</option>
+          <option value="MLS">â½ MLS</option>
+          <option value="WNBA">ð WNBA</option>
+          <option value="MM_MEN">ð March Madness (Men)</option>
+          <option value="MM_WOMEN">ð March Madness (Women)</option>
         </select>
         <select class="game-select" id="gameSelect" onchange="selectGame(this.value)">
           <option>Grizzlies @ Bucks</option>
@@ -1014,7 +1033,7 @@
       <div class="parlay-section">
         <div class="section-label">
           Parlay Board
-          <span class="status-dot status-live">Live · Q3 4:22</span>
+          <span class="status-dot status-live">Live Â· Q3 4:22</span>
         </div>
 
         <div class="odds-header-row">
@@ -1070,11 +1089,11 @@
       <div class="legs-section">
         <div class="legs-title">Selected Legs (2)</div>
         <div class="leg-row">
-          <span class="leg-label">Spread · Grizzlies -3.5</span>
+          <span class="leg-label">Spread Â· Grizzlies -3.5</span>
           <span class="leg-odds">-110</span>
         </div>
         <div class="leg-row">
-          <span class="leg-label">Moneyline · Bucks ML</span>
+          <span class="leg-label">Moneyline Â· Bucks ML</span>
           <span class="leg-odds">-160</span>
         </div>
       </div>
@@ -1168,7 +1187,7 @@
             <span class="game-teams">Bucks @ Grizzlies</span>
             <span class="status-dot status-live" style="font-size:8px;">Live</span>
           </div>
-          <div class="game-score" style="margin-top:4px;">109 – 114</div>
+          <div class="game-score" style="margin-top:4px;">109 â 114</div>
         </div>
         <div class="game-row">
           <div class="game-row-top">
@@ -1192,9 +1211,9 @@
         Admin Zone
       </div>
       <div class="admin-btns"><button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
-        <button class="admin-btn admin-btn-blue" onclick="buildTicker();buildGrid(currentGame);">↻ Force Refresh Scores</button>
+        <button class="admin-btn admin-btn-blue" onclick="buildTicker();buildGrid(currentGame);">â» Force Refresh Scores</button>
         <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
-        <button class="admin-btn admin-btn-red" onclick="adminReset();">⚠ Reset Board</button>
+        <button class="admin-btn admin-btn-red" onclick="adminReset();">â  Reset Board</button>
       </div>
     </div>
 
@@ -1205,15 +1224,15 @@
 <!-- PAYMENT MODAL -->
 <div class="modal-overlay" id="payModal">
   <div class="modal" style="position:relative;">
-    <button class="modal-close" onclick="document.getElementById('payModal').classList.remove('open')">✕</button>
+    <button class="modal-close" onclick="document.getElementById('payModal').classList.remove('open')">â</button>
     <div class="modal-header">
-      <div class="modal-icon">💵</div>
+      <div class="modal-icon">ðµ</div>
       <div class="modal-title">Payment Method</div>
       <div class="modal-sub">Select how you want to pay for your squares.</div>
     </div>
     <div class="modal-body">
       <div class="modal-total">
-        <span class="modal-total-label" id="modalSquaresLabel">5 Squares × $10</span>
+        <span class="modal-total-label" id="modalSquaresLabel">5 Squares Ã $10</span>
         <span class="modal-total-amount" id="modalTotal">$50.00</span>
       </div>
       <div class="modal-input-label">Your Initials (3 letters)</div>
@@ -1228,12 +1247,12 @@
           <div class="modal-pay-name">PayPal</div>
         </div>
         <div class="modal-pay-option" onclick="selectPay(this)">
-          <div class="modal-pay-icon" style="background:#555;">💵</div>
+          <div class="modal-pay-icon" style="background:#555;">ðµ</div>
           <div class="modal-pay-name">Cash</div>
         </div>
       </div>
       <button class="modal-cta" id="confirmBtn" disabled onclick="confirmPurchase()">
-        ✓ I've Sent the Payment
+        â I've Sent the Payment
       </button>
     </div>
   </div>
@@ -1243,9 +1262,9 @@
 <div class="modal-overlay" id="confirmModal">
   <div class="modal">
     <div class="confirm-modal">
-      <div class="confirm-icon">✅</div>
+      <div class="confirm-icon">â</div>
       <div class="confirm-title">SQUARES SECURED!</div>
-      <div class="confirm-msg" id="confirmMsg">1 square × $10 = <strong style="color:white;">$10.00</strong></div>
+      <div class="confirm-msg" id="confirmMsg">1 square Ã $10 = <strong style="color:white;">$10.00</strong></div>
       <div class="confirm-badge">
         <div class="confirm-badge-text">Your squares are locked in!</div>
         <div class="confirm-badge-sub">Please pay Willie in cash or via app</div>
@@ -1256,56 +1275,56 @@
 </div>
 
 <script>
-// ── GAME DATA — Real 2026 Schedules ──────────────────────────
-// ── GAME DATA — Live 2026 Schedules (SportRadar) ─────────────
+// ââ GAME DATA â Real 2026 Schedules ââââââââââââââââââââââââââ
+// ââ GAME DATA â Live 2026 Schedules (SportRadar) âââââââââââââ
 const GAMES = {
 
   NBA: [
-    { id:'phi-cle', home:'Cavaliers', away:'76ers', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 · 7:00 PM ET',
+    { id:'phi-cle', home:'Cavaliers', away:'76ers', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 Â· 7:00 PM ET',
       hLogo:'https://a.espncdn.com/i/teamlogos/nba/500/cle.png', aLogo:'https://a.espncdn.com/i/teamlogos/nba/500/phi.png',
       spread:{awayLine:'+13.5',homeLine:'-13.5',awayOdds:-110,homeOdds:-110},
       total:{line:220.5,over:-110,under:-110}, ml:{away:650,home:-1000}, sold:[], mine:[] },
-    { id:'den-okc', home:'Thunder', away:'Nuggets', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 · 7:30 PM ET',
+    { id:'den-okc', home:'Thunder', away:'Nuggets', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 Â· 7:30 PM ET',
       hLogo:'https://a.espncdn.com/i/teamlogos/nba/500/okc.png', aLogo:'https://a.espncdn.com/i/teamlogos/nba/500/den.png',
       spread:{awayLine:'+7.5',homeLine:'-7.5',awayOdds:-110,homeOdds:-110},
       total:{line:220.5,over:-110,under:-110}, ml:{away:260,home:-330}, sold:[], mine:[] },
-    { id:'mem-bkn', home:'Nets', away:'Grizzlies', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 · 7:30 PM ET',
+    { id:'mem-bkn', home:'Nets', away:'Grizzlies', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 Â· 7:30 PM ET',
       hLogo:'https://a.espncdn.com/i/teamlogos/nba/500/bkn.png', aLogo:'https://a.espncdn.com/i/teamlogos/nba/500/mem.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:-110,homeOdds:-110},
       total:{line:228.5,over:-110,under:-110}, ml:{away:-125,home:105}, sold:[], mine:[] },
-    { id:'gsw-uta', home:'Jazz', away:'Warriors', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 · 9:00 PM ET',
+    { id:'gsw-uta', home:'Jazz', away:'Warriors', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 Â· 9:00 PM ET',
       hLogo:'https://a.espncdn.com/i/teamlogos/nba/500/uta.png', aLogo:'https://a.espncdn.com/i/teamlogos/nba/500/gsw.png',
       spread:{awayLine:'-5.5',homeLine:'+5.5',awayOdds:-110,homeOdds:-110},
       total:{line:226.5,over:-110,under:-110}, ml:{away:-215,home:178}, sold:[], mine:[] },
-    { id:'nyk-lac', home:'Clippers', away:'Knicks', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 · 9:30 PM ET',
+    { id:'nyk-lac', home:'Clippers', away:'Knicks', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 Â· 9:30 PM ET',
       hLogo:'https://a.espncdn.com/i/teamlogos/nba/500/lac.png', aLogo:'https://a.espncdn.com/i/teamlogos/nba/500/nyk.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:-110,homeOdds:-110},
       total:{line:220.5,over:-110,under:-110}, ml:{away:-125,home:105}, sold:[], mine:[] },
   ],
   NHL: [
-    { id:'la-cbj', home:'Blue Jackets', away:'Kings', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 · 3:00 PM ET',
+    { id:'la-cbj', home:'Blue Jackets', away:'Kings', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 Â· 3:00 PM ET',
       hLogo:'https://a.espncdn.com/i/teamlogos/nhl/500/cbj.png', aLogo:'https://a.espncdn.com/i/teamlogos/nhl/500/la.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:-175,homeOdds:145},
       total:{line:5.5,over:-110,under:-110}, ml:{away:148,home:-178}, sold:[], mine:[] },
-    { id:'cgy-wsh', home:'Capitals', away:'Flames', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 · 6:00 PM ET',
+    { id:'cgy-wsh', home:'Capitals', away:'Flames', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 Â· 6:00 PM ET',
       hLogo:'https://a.espncdn.com/i/teamlogos/nhl/500/wsh.png', aLogo:'https://a.espncdn.com/i/teamlogos/nhl/500/cgy.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:-175,homeOdds:145},
       total:{line:5.5,over:-110,under:-110}, ml:{away:132,home:-158}, sold:[], mine:[] },
-    { id:'nyr-phi', home:'Flyers', away:'Rangers', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 · 6:00 PM ET',
+    { id:'nyr-phi', home:'Flyers', away:'Rangers', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 Â· 6:00 PM ET',
       hLogo:'https://a.espncdn.com/i/teamlogos/nhl/500/phi.png', aLogo:'https://a.espncdn.com/i/teamlogos/nhl/500/nyr.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:-175,homeOdds:145},
       total:{line:5.5,over:-110,under:-110}, ml:{away:130,home:-155}, sold:[], mine:[] },
-    { id:'uta-chi', home:'Blackhawks', away:'Mammoth', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 · 7:30 PM ET',
+    { id:'uta-chi', home:'Blackhawks', away:'Mammoth', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 Â· 7:30 PM ET',
       hLogo:'https://a.espncdn.com/i/teamlogos/nhl/500/chi.png', aLogo:'https://a.espncdn.com/i/teamlogos/nhl/500/uta.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:145,homeOdds:-178},
       total:{line:5.5,over:-110,under:-110}, ml:{away:-200,home:165}, sold:[], mine:[] },
-    { id:'ott-van', home:'Canucks', away:'Senators', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 · 9:00 PM ET',
+    { id:'ott-van', home:'Canucks', away:'Senators', hs:0, as:0, status:'SCHEDULED', period:'Mar 9 Â· 9:00 PM ET',
       hLogo:'https://a.espncdn.com/i/teamlogos/nhl/500/van.png', aLogo:'https://a.espncdn.com/i/teamlogos/nhl/500/ott.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:-175,homeOdds:145},
       total:{line:5.5,over:-110,under:-110}, ml:{away:220,home:-270}, sold:[], mine:[] },
   ],
   MLB: [
-    // Spring Training / WBC — LIVE now
+    // Spring Training / WBC â LIVE now
     { id:'nyy-tb', home:'Yankees', away:'Rays', hs:2, as:0, status:'LIVE', period:'Bot 3',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/tb.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:130,homeOdds:-155},
@@ -1322,52 +1341,52 @@ const GAMES = {
       total:{line:8.0,over:-110,under:-110}, ml:{away:-195,home:162},
       sold:[2,10,18,26,34,42,50,58,66,74], mine:[] },
     // Tonight Mar 7
-    { id:'kc-lad', home:'Dodgers', away:'Royals', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 8:05 PM',
+    { id:'kc-lad', home:'Dodgers', away:'Royals', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 8:05 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/lad.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/kc.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:155,homeOdds:-180},
       total:{line:8.5,over:-110,under:-110}, ml:{away:175,home:-210},
       sold:[4,12,20,28,36,44,52,60,68,76,84,92], mine:[] },
-    { id:'chc-sd2', home:'Padres', away:'Cubs', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 8:10 PM',
+    { id:'chc-sd2', home:'Padres', away:'Cubs', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 8:10 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/sd.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/chc.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:110,homeOdds:-132},
       total:{line:8.0,over:-110,under:-110}, ml:{away:122,home:-148},
       sold:[1,9,17,25,33,41,49,57,65,73,81,89], mine:[22] },
-    { id:'pit-det', home:'Tigers', away:'Pirates', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 1:05 PM',
+    { id:'pit-det', home:'Tigers', away:'Pirates', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 1:05 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/det.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/pit.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:145,homeOdds:-170},
       total:{line:8.0,over:-110,under:-110}, ml:{away:158,home:-188},
       sold:[6,14,22,30,38,46,54,62,70,78,86,94], mine:[] },
-    { id:'nym-stl', home:'Cardinals', away:'Mets', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 1:05 PM',
+    { id:'nym-stl', home:'Cardinals', away:'Mets', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 1:05 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/stl.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/nym.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:-180,homeOdds:158},
       total:{line:8.5,over:-110,under:-110}, ml:{away:-200,home:170},
       sold:[7,15,23,31,39,47,55,63,71,79,87,95], mine:[] },
-    { id:'tor-phi2', home:'Phillies', away:'Blue Jays', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 1:05 PM',
+    { id:'tor-phi2', home:'Phillies', away:'Blue Jays', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 1:05 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/phi.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/tor.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:120,homeOdds:-145},
       total:{line:9.0,over:-110,under:-110}, ml:{away:132,home:-158},
       sold:[2,9,17,25,33,41,49,57,65,73,81,89], mine:[] },
-    { id:'min-bal', home:'Orioles', away:'Twins', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 1:05 PM',
+    { id:'min-bal', home:'Orioles', away:'Twins', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 1:05 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/bal.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/min.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:108,homeOdds:-130},
       total:{line:8.5,over:-110,under:-110}, ml:{away:120,home:-145},
       sold:[4,11,19,27,35,43,51,59,67,75,83,91], mine:[] },
-    { id:'tb-bos2', home:'Red Sox', away:'Rays', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 1:05 PM',
+    { id:'tb-bos2', home:'Red Sox', away:'Rays', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 1:05 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/bos.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/tb.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:130,homeOdds:-155},
       total:{line:9.0,over:-110,under:-110}, ml:{away:145,home:-172},
       sold:[1,8,16,24,32,40,48,56,64,72,80,88,96], mine:[30,60] },
-    { id:'tex-sf2', home:'Giants', away:'Rangers', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 4:05 PM',
+    { id:'tex-sf2', home:'Giants', away:'Rangers', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 4:05 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/sf.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/tex.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:-155,homeOdds:132},
       total:{line:8.0,over:-110,under:-110}, ml:{away:-172,home:145},
       sold:[3,11,19,27,35,43,51,59,67,75], mine:[] },
-    { id:'cin-kc2', home:'Royals', away:'Reds', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 4:05 PM',
+    { id:'cin-kc2', home:'Royals', away:'Reds', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 4:05 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/kc.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/cin.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:125,homeOdds:-150},
       total:{line:9.0,over:-110,under:-110}, ml:{away:138,home:-165},
       sold:[6,13,21,29,37,45,53,61,69,77,85,93], mine:[] },
-    { id:'sd-cle', home:'Guardians', away:'Padres', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 4:05 PM',
+    { id:'sd-cle', home:'Guardians', away:'Padres', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 4:05 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/cle.png', aLogo:'https://a.espncdn.com/i/teamlogos/mlb/500/sd.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:-165,homeOdds:142},
       total:{line:8.0,over:-110,under:-110}, ml:{away:-182,home:152},
@@ -1387,32 +1406,32 @@ const GAMES = {
 
   WNBA: [
     // 2026 WNBA season starts ~May 2026
-    { id:'lv-ny', home:'Aces', away:'Liberty', hs:0, as:0, status:'SCHEDULED', period:'May 16 · 8:00 PM',
+    { id:'lv-ny', home:'Aces', away:'Liberty', hs:0, as:0, status:'SCHEDULED', period:'May 16 Â· 8:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/lv.png', aLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/ny.png',
       spread:{awayLine:'+3.5',homeLine:'-3.5',awayOdds:130,homeOdds:-155},
       total:{line:165.5,over:-110,under:-110}, ml:{away:145,home:-175},
       sold:[8,16,24,32,40,48,56,64,72,80,88,96], mine:[] },
-    { id:'ind-chi', home:'Sky', away:'Fever', hs:0, as:0, status:'SCHEDULED', period:'May 16 · 7:00 PM',
+    { id:'ind-chi', home:'Sky', away:'Fever', hs:0, as:0, status:'SCHEDULED', period:'May 16 Â· 7:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/chi.png', aLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/ind.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:-120,homeOdds:100},
       total:{line:162.5,over:-110,under:-110}, ml:{away:-135,home:112},
       sold:[4,12,20,28,36,44,52,60,68,76], mine:[33] },
-    { id:'sea-dal', home:'Wings', away:'Storm', hs:0, as:0, status:'SCHEDULED', period:'May 17 · 7:00 PM',
+    { id:'sea-dal', home:'Wings', away:'Storm', hs:0, as:0, status:'SCHEDULED', period:'May 17 Â· 7:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/dal.png', aLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/sea.png',
       spread:{awayLine:'-4.5',homeLine:'+4.5',awayOdds:-110,homeOdds:-110},
       total:{line:163.5,over:-110,under:-110}, ml:{away:-180,home:152},
       sold:[2,9,17,25,33,41,49,57,65,73,81,89], mine:[] },
-    { id:'con-was', home:'Mystics', away:'Sun', hs:0, as:0, status:'SCHEDULED', period:'May 17 · 7:00 PM',
+    { id:'con-was', home:'Mystics', away:'Sun', hs:0, as:0, status:'SCHEDULED', period:'May 17 Â· 7:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/was.png', aLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/con.png',
       spread:{awayLine:'-5.5',homeLine:'+5.5',awayOdds:-110,homeOdds:-110},
       total:{line:160.5,over:-110,under:-110}, ml:{away:-205,home:172},
       sold:[1,8,16,24,32,40,48,56,64,72,80,88,96], mine:[] },
-    { id:'la-min', home:'Lynx', away:'Sparks', hs:0, as:0, status:'SCHEDULED', period:'May 18 · 8:00 PM',
+    { id:'la-min', home:'Lynx', away:'Sparks', hs:0, as:0, status:'SCHEDULED', period:'May 18 Â· 8:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/min.png', aLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/la.png',
       spread:{awayLine:'+6.5',homeLine:'-6.5',awayOdds:-110,homeOdds:-110},
       total:{line:158.5,over:-110,under:-110}, ml:{away:245,home:-298},
       sold:[5,13,21,29,37,45,53,61,69,77,85], mine:[] },
-    { id:'atl-phx2', home:'Mercury', away:'Dream', hs:0, as:0, status:'SCHEDULED', period:'May 18 · 9:00 PM',
+    { id:'atl-phx2', home:'Mercury', away:'Dream', hs:0, as:0, status:'SCHEDULED', period:'May 18 Â· 9:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/phx.png', aLogo:'https://a.espncdn.com/i/teamlogos/wnba/500/atl.png',
       spread:{awayLine:'+2.5',homeLine:'-2.5',awayOdds:108,homeOdds:-130},
       total:{line:161.5,over:-110,under:-110}, ml:{away:120,home:-145},
@@ -1421,53 +1440,53 @@ const GAMES = {
 
   MLS: [
     // LIVE / today Mar 7
-    { id:'orl-nyc', home:'NYCFC', away:'Orlando City', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 2:30 PM',
+    { id:'orl-nyc', home:'NYCFC', away:'Orlando City', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 2:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/5503.png', aLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/5503.png',
       spread:{awayLine:'+0.5',homeLine:'-0.5',awayOdds:175,homeOdds:-215},
       total:{line:2.5,over:-110,under:-110}, ml:{away:195,home:-240},
       sold:[4,12,20,28,36,44,52,60,68,76], mine:[] },
-    { id:'mia-dc', home:'DC United', away:'Inter Miami', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 · 4:30 PM',
+    { id:'mia-dc', home:'DC United', away:'Inter Miami', hs:0, as:0, status:'SCHEDULED', period:'Mar 7 Â· 4:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/1326.png', aLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/36459.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:-188,homeOdds:162},
       total:{line:3.0,over:-110,under:-110}, ml:{away:-215,home:178},
       sold:[1,7,14,21,28,35,42,49,56,63,70,77,84,91], mine:[] },
     // Mar 8
-    { id:'rsl-atl2', home:'Atlanta Utd', away:'Real Salt Lake', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 · 7:30 PM',
+    { id:'rsl-atl2', home:'Atlanta Utd', away:'Real Salt Lake', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 Â· 7:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/1106.png', aLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/11091.png',
       spread:{awayLine:'+0.5',homeLine:'-0.5',awayOdds:175,homeOdds:-215},
       total:{line:3.0,over:-110,under:-110}, ml:{away:192,home:-235},
       sold:[3,10,18,26,34,42,50,58,66,74,82,90], mine:[44,55] },
-    { id:'atx-clt', home:'Charlotte FC', away:'Austin FC', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 · 7:30 PM',
+    { id:'atx-clt', home:'Charlotte FC', away:'Austin FC', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 Â· 7:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/14880.png', aLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/17012.png',
       spread:{awayLine:'+0.5',homeLine:'-0.5',awayOdds:145,homeOdds:-178},
       total:{line:2.5,over:-110,under:-110}, ml:{away:160,home:-198},
       sold:[6,13,21,29,37,45,53,61,69,77,85,93], mine:[] },
-    { id:'cfi-clb', home:'Columbus Crew', away:'Chicago Fire', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 · 7:30 PM',
+    { id:'cfi-clb', home:'Columbus Crew', away:'Chicago Fire', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 Â· 7:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/1106.png', aLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/8399.png',
       spread:{awayLine:'+0.5',homeLine:'-0.5',awayOdds:178,homeOdds:-218},
       total:{line:3.0,over:-110,under:-110}, ml:{away:195,home:-240},
       sold:[2,9,17,25,33,41,49,57,65,73,81,89], mine:[] },
-    { id:'sj-phi2', home:'Philadelphia Union', away:'San Jose EQ', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 · 7:30 PM',
+    { id:'sj-phi2', home:'Philadelphia Union', away:'San Jose EQ', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 Â· 7:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/9473.png', aLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/193.png',
       spread:{awayLine:'+0.5',homeLine:'-0.5',awayOdds:198,homeOdds:-242},
       total:{line:2.5,over:-110,under:-110}, ml:{away:218,home:-268},
       sold:[5,12,20,28,36,44,52,60,68,76,84,92], mine:[] },
-    { id:'san-skc', home:'Sporting KC', away:'San Diego FC', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 · 8:30 PM',
+    { id:'san-skc', home:'Sporting KC', away:'San Diego FC', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 Â· 8:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/1581.png', aLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/1581.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:-178,homeOdds:152},
       total:{line:3.0,over:-110,under:-110}, ml:{away:-198,home:165},
       sold:[7,15,23,31,39,47,55,63,71,79,87,95], mine:[] },
-    { id:'min-nsh2', home:'Nashville SC', away:'Minnesota Utd', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 · 8:30 PM',
+    { id:'min-nsh2', home:'Nashville SC', away:'Minnesota Utd', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 Â· 8:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/17012.png', aLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/17012.png',
       spread:{awayLine:'+0.5',homeLine:'-0.5',awayOdds:185,homeOdds:-228},
       total:{line:2.5,over:-110,under:-110}, ml:{away:205,home:-252},
       sold:[1,8,16,24,32,40,48,56,64,72,80,88], mine:[22] },
-    { id:'sea-sai', home:'St. Louis City', away:'Seattle Sounders', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 · 8:30 PM',
+    { id:'sea-sai', home:'St. Louis City', away:'Seattle Sounders', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 Â· 8:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/19538.png', aLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/9726.png',
       spread:{awayLine:'-0.5',homeLine:'+0.5',awayOdds:-158,homeOdds:135},
       total:{line:3.0,over:-110,under:-110}, ml:{away:-178,home:148},
       sold:[3,11,19,27,35,43,51,59,67,75,83,91], mine:[] },
-    { id:'lag-col2', home:'Colorado Rapids', away:'LA Galaxy', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 · 9:30 PM',
+    { id:'lag-col2', home:'Colorado Rapids', away:'LA Galaxy', hs:0, as:0, status:'SCHEDULED', period:'Mar 8 Â· 9:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/254.png', aLogo:'https://a.espncdn.com/i/teamlogos/soccer/500/392.png',
       spread:{awayLine:'-0.5',homeLine:'+0.5',awayOdds:-145,homeOdds:122},
       total:{line:3.0,over:-110,under:-110}, ml:{away:-162,home:135},
@@ -1486,32 +1505,32 @@ const GAMES = {
   ],
 
   MM_MEN: [
-    { id:'duke-unc', home:'Duke', away:'UNC', hs:0, as:0, status:'SCHEDULED', period:'Mar 19 · 9:00 PM',
+    { id:'duke-unc', home:'Duke', away:'UNC', hs:0, as:0, status:'SCHEDULED', period:'Mar 19 Â· 9:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/150.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/153.png',
       spread:{awayLine:'+2.5',homeLine:'-2.5',awayOdds:110,homeOdds:-130},
       total:{line:145.5,over:-110,under:-110}, ml:{away:120,home:-145},
       sold:[7,15,23,31,39,47,55,63,71,79,87,95], mine:[] },
-    { id:'kan-ken', home:'Kansas', away:'Kentucky', hs:0, as:0, status:'SCHEDULED', period:'Mar 19 · 6:30 PM',
+    { id:'kan-ken', home:'Kansas', away:'Kentucky', hs:0, as:0, status:'SCHEDULED', period:'Mar 19 Â· 6:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/2305.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/96.png',
       spread:{awayLine:'+1.5',homeLine:'-1.5',awayOdds:105,homeOdds:-125},
       total:{line:150.5,over:-110,under:-110}, ml:{away:115,home:-140},
       sold:[3,11,19,27,35,43,51,59,67,75], mine:[] },
-    { id:'hou-gon', home:'Gonzaga', away:'Houston', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 · 7:09 PM',
+    { id:'hou-gon', home:'Gonzaga', away:'Houston', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 Â· 7:09 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/2250.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/248.png',
       spread:{awayLine:'+3.5',homeLine:'-3.5',awayOdds:145,homeOdds:-170},
       total:{line:148.5,over:-110,under:-110}, ml:{away:160,home:-195},
       sold:[2,9,17,25,33,41,49,57,65,73,81,89], mine:[44] },
-    { id:'aub-ten', home:'Tennessee', away:'Auburn', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 · 9:39 PM',
+    { id:'aub-ten', home:'Tennessee', away:'Auburn', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 Â· 9:39 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/2.png',
       spread:{awayLine:'-2.5',homeLine:'+2.5',awayOdds:-115,homeOdds:-105},
       total:{line:152.5,over:-110,under:-110}, ml:{away:-130,home:110},
       sold:[5,13,21,29,37,45,53,61,69,77,85,93], mine:[] },
-    { id:'okc2-mich', home:'Michigan St', away:'Oklahoma', hs:0, as:0, status:'SCHEDULED', period:'Mar 19 · 7:15 PM',
+    { id:'okc2-mich', home:'Michigan St', away:'Oklahoma', hs:0, as:0, status:'SCHEDULED', period:'Mar 19 Â· 7:15 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/127.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/201.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:-115,homeOdds:-105},
       total:{line:148.5,over:-110,under:-110}, ml:{away:-128,home:108},
       sold:[1,9,17,25,33,41,49,57,65,73,81,89], mine:[] },
-    { id:'ari-cre', home:'Creighton', away:'Arizona', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 · 5:15 PM',
+    { id:'ari-cre', home:'Creighton', away:'Arizona', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 Â· 5:15 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/156.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/12.png',
       spread:{awayLine:'-3.5',homeLine:'+3.5',awayOdds:148,homeOdds:-175},
       total:{line:146.5,over:-110,under:-110}, ml:{away:160,home:-192},
@@ -1519,32 +1538,32 @@ const GAMES = {
   ],
 
   MM_WOMEN: [
-    { id:'sc-lsu', home:'South Carolina', away:'LSU', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 · 7:00 PM',
+    { id:'sc-lsu', home:'South Carolina', away:'LSU', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 Â· 7:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/99.png',
       spread:{awayLine:'+5.5',homeLine:'-5.5',awayOdds:200,homeOdds:-250},
       total:{line:140.5,over:-110,under:-110}, ml:{away:215,home:-265},
       sold:[2,10,18,26,34,42,50,58,66,74], mine:[] },
-    { id:'uconn-iowa', home:'UConn', away:'Iowa', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 · 9:30 PM',
+    { id:'uconn-iowa', home:'UConn', away:'Iowa', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 Â· 9:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/41.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/2294.png',
       spread:{awayLine:'+3.5',homeLine:'-3.5',awayOdds:135,homeOdds:-160},
       total:{line:155.5,over:-110,under:-110}, ml:{away:150,home:-182},
       sold:[4,12,20,28,36,44,52,60,68,76,84,92], mine:[] },
-    { id:'tex-nd', home:'Notre Dame', away:'Texas', hs:0, as:0, status:'SCHEDULED', period:'Mar 21 · 7:00 PM',
+    { id:'tex-nd', home:'Notre Dame', away:'Texas', hs:0, as:0, status:'SCHEDULED', period:'Mar 21 Â· 7:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/87.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/251.png',
       spread:{awayLine:'-4.5',homeLine:'+4.5',awayOdds:-110,homeOdds:-110},
       total:{line:145.5,over:-110,under:-110}, ml:{away:-185,home:155},
       sold:[1,8,16,24,32,40,48,56,64,72,80,88], mine:[] },
-    { id:'ucla-ten2', home:'Tennessee', away:'UCLA', hs:0, as:0, status:'SCHEDULED', period:'Mar 21 · 9:30 PM',
+    { id:'ucla-ten2', home:'Tennessee', away:'UCLA', hs:0, as:0, status:'SCHEDULED', period:'Mar 21 Â· 9:30 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/26.png',
       spread:{awayLine:'+2.5',homeLine:'-2.5',awayOdds:110,homeOdds:-130},
       total:{line:143.5,over:-110,under:-110}, ml:{away:122,home:-148},
       sold:[6,14,22,30,38,46,54,62,70,78,86,94], mine:[33] },
-    { id:'okla-ksu', home:'Kansas State', away:'Oklahoma', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 · 5:00 PM',
+    { id:'okla-ksu', home:'Kansas State', away:'Oklahoma', hs:0, as:0, status:'SCHEDULED', period:'Mar 20 Â· 5:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/2306.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/201.png',
       spread:{awayLine:'-2.5',homeLine:'+2.5',awayOdds:-115,homeOdds:-105},
       total:{line:141.5,over:-110,under:-110}, ml:{away:-128,home:108},
       sold:[3,11,19,27,35,43,51,59,67,75,83,91], mine:[] },
-    { id:'ind-ore', home:'Indiana', away:'Oregon', hs:0, as:0, status:'SCHEDULED', period:'Mar 21 · 5:00 PM',
+    { id:'ind-ore', home:'Indiana', away:'Oregon', hs:0, as:0, status:'SCHEDULED', period:'Mar 21 Â· 5:00 PM',
       hLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/84.png', aLogo:'https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png',
       spread:{awayLine:'-1.5',homeLine:'+1.5',awayOdds:-115,homeOdds:-105},
       total:{line:147.5,over:-110,under:-110}, ml:{away:-128,home:108},
@@ -1552,14 +1571,14 @@ const GAMES = {
   ],
 };
 
-// ── STATE ────────────────────────────────────────────────────
+// ââ STATE ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 let currentSport = 'NBA';
 let currentGame = GAMES.NBA[0];
 let currentQty = 5;
 
-// ── STORAGE: API (Netlify) with localStorage fallback ──────────
-// When running on Netlify → shared across ALL devices via server
-// When running locally (file://) → falls back to localStorage for testing
+// ââ STORAGE: API (Netlify) with localStorage fallback ââââââââââ
+// When running on Netlify â shared across ALL devices via server
+// When running locally (file://) â falls back to localStorage for testing
 
 const _cache = {};
 const _sessionInitials = {};
@@ -1610,7 +1629,7 @@ function isHosted() {
   return _apiAvailable === true;
 }
 
-// ── localStorage helpers (local fallback) ──
+// ââ localStorage helpers (local fallback) ââ
 function _lsLoad() {
   try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
 }
@@ -1712,7 +1731,7 @@ async function adminReset(gameId) {
   buildGamesList(currentSport);
 }
 
-// ── TICKER ───────────────────────────────────────────────────
+// ââ TICKER âââââââââââââââââââââââââââââââââââââââââââââââââââ
 function buildTicker() {
   const allGames = [...(GAMES.NBA||[]), ...(GAMES.NHL||[])];
   const wrap = document.querySelector('.ticker-inner');
@@ -1722,7 +1741,7 @@ function buildTicker() {
     return `<div class="ticker-item">
       <img class="ticker-logo" src="${g.aLogo}" onerror="this.style.display='none'">
       <span class="ticker-teams">${g.away}</span>
-      <span class="ticker-score">${isLive ? g.as + ' – ' + g.hs : g.period}</span>
+      <span class="ticker-score">${isLive ? g.as + ' â ' + g.hs : g.period}</span>
       <span class="ticker-teams">${g.home}</span>
       <img class="ticker-logo" src="${g.hLogo}" onerror="this.style.display='none'">
       ${isLive ? '<span class="status-dot status-live" style="font-size:8px;margin-left:4px;">Live</span>' : ''}
@@ -1730,7 +1749,7 @@ function buildTicker() {
   }).join('');
 }
 
-// ── GRID ─────────────────────────────────────────────────────
+// ââ GRID âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length-1; i > 0; i--) {
@@ -1743,7 +1762,7 @@ function shuffle(arr) {
 const INITIALS = ['WM','KJ','DT','AA','RB','LM','CP','JS','MB','TW','GH','PD','NT','BK','SC','FO','YI','QV','ZX','ER'];
 
 async function buildGrid(game) {
-  // Load live server data — syncs across ALL devices
+  // Load live server data â syncs across ALL devices
   const serverData = await fetchSquares(game.id);
   const serverOwners = serverData.owners || {};
   const serverSold = new Set(Object.keys(serverOwners).map(Number));
@@ -1761,13 +1780,13 @@ async function buildGrid(game) {
   document.getElementById('availableCount').textContent = available;
 
   let html = '';
-  // Corner cell — away team (left axis)
+  // Corner cell â away team (left axis)
   html += `<div class="axis-header axis-corner" style="font-size:9px;color:var(--text3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;">
     <span style="font-weight:700;color:var(--text2);">${game.away}</span>
     ${game.status==='LIVE'?`<span style="color:var(--yellow);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;">${game.as}</span>`:''}
   </div>`;
 
-  // Top team banner — home team
+  // Top team banner â home team
   html += `<div class="team-banner">${game.home}${game.status==='LIVE'?` &nbsp; <span style="color:var(--yellow)">${game.hs}</span>`:''}</div>`;
 
   // Number row header
@@ -1817,7 +1836,7 @@ async function buildGrid(game) {
   }, 10000);
 }
 
-// ── ODDS PANEL ───────────────────────────────────────────────
+// ââ ODDS PANEL âââââââââââââââââââââââââââââââââââââââââââââââ
 function fmt(n) { return n > 0 ? `+${n}` : `${n}`; }
 
 function buildOdds(game) {
@@ -1867,11 +1886,11 @@ function buildOdds(game) {
     <div class="legs-empty" style="font-size:11px;color:var(--text3);padding:4px 0;">Click odds above to add legs</div>`;
 }
 
-// ── BOARD HEADER ─────────────────────────────────────────────
+// ââ BOARD HEADER âââââââââââââââââââââââââââââââââââââââââââââ
 function updateBoardHeader(game) {
   document.querySelector('.board-title').textContent = `${game.away} @ ${game.home}`;
 
-  // Today's games sidebar — highlight active
+  // Today's games sidebar â highlight active
   document.querySelectorAll('.game-row').forEach(row => {
     row.classList.toggle('active', row.dataset.id === game.id);
   });
@@ -1882,7 +1901,7 @@ function updatePriceDisplay(val) {
   var qty = document.querySelectorAll('.square.selected').length || 1;
   var lbl = document.getElementById('modalSquaresLabel');
   var tot = document.getElementById('modalTotal');
-  if(lbl) lbl.textContent = qty + ' Square' + (qty>1?'s':'') + ' ×  ───────────────────────────────────────
+  if(lbl) lbl.textContent = qty + ' Square' + (qty>1?'s':'') + ' Ã  âââââââââââââââââââââââââââââââââââââââ
 function buildGamesList(sport) {
   const games = GAMES[sport] || [];
   const list = document.querySelector('.games-list');
@@ -1894,20 +1913,20 @@ function buildGamesList(sport) {
           ? `<span class="status-dot status-live" style="font-size:8px;">Live</span>`
           : `<span class="status-dot status-scheduled" style="font-size:8px;">${g.period}</span>`}
       </div>
-      ${g.status==='LIVE' ? `<div class="game-score" style="margin-top:4px;">${g.as} – ${g.hs}</div>` : ''}
+      ${g.status==='LIVE' ? `<div class="game-score" style="margin-top:4px;">${g.as} â ${g.hs}</div>` : ''}
     </div>`).join('');
 }
 
-// ── GAME SELECT DROPDOWN ─────────────────────────────────────
+// ââ GAME SELECT DROPDOWN âââââââââââââââââââââââââââââââââââââ
 function populateGameDropdown(sport) {
   const games = GAMES[sport] || [];
   const sel = document.getElementById('gameSelect');
   sel.innerHTML = games.map(g =>
-    `<option value="${g.id}">${g.status==='LIVE'?'● ':''}${g.away} @ ${g.home}</option>`
+    `<option value="${g.id}">${g.status==='LIVE'?'â ':''}${g.away} @ ${g.home}</option>`
   ).join('');
 }
 
-// ── LOAD GAME ────────────────────────────────────────────────
+// ââ LOAD GAME ââââââââââââââââââââââââââââââââââââââââââââââââ
 async function loadGame(game) {
   currentGame = game;
   await buildGrid(game);
@@ -1931,7 +1950,7 @@ async function loadGame(game) {
   });
 }
 
-// ── EVENT HANDLERS ───────────────────────────────────────────
+// ââ EVENT HANDLERS âââââââââââââââââââââââââââââââââââââââââââ
 function updateSport(val) {
   currentSport = val;
   const games = GAMES[val] || [];
@@ -1988,7 +2007,7 @@ function updateCTA() {
 }
 
 function openPayModal() {
-  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} × $10`;
+  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} Ã $10`;
   document.getElementById('modalTotal').textContent = `$${(currentQty * 10).toFixed(2)}`;
   document.getElementById('initialsInput').value = '';
   document.getElementById('confirmBtn').disabled = true;
@@ -2037,8 +2056,8 @@ async function confirmPurchase() {
 
   document.getElementById('payModal').classList.remove('open');
   document.getElementById('confirmMsg').innerHTML =
-    `${toAdd} square${toAdd > 1 ? 's' : ''} × $10 = <strong style="color:white;">$${(toAdd * 10).toFixed(2)}</strong>` +
-    `<br><span style="color:var(--green-light);font-size:13px;margin-top:4px;display:block;">Your squares are locked in as <strong>${initials}</strong> ✓ — visible to all players!</span>`;
+    `${toAdd} square${toAdd > 1 ? 's' : ''} Ã $10 = <strong style="color:white;">$${(toAdd * 10).toFixed(2)}</strong>` +
+    `<br><span style="color:var(--green-light);font-size:13px;margin-top:4px;display:block;">Your squares are locked in as <strong>${initials}</strong> â â visible to all players!</span>`;
   setTimeout(() => {
     document.getElementById('confirmModal').classList.add('open');
     buildGrid(game);
@@ -2049,7 +2068,7 @@ function closeConfirm() {
   document.getElementById('confirmModal').classList.remove('open');
 }
 
-// ── INIT ─────────────────────────────────────────────────────
+// ââ INIT âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 document.addEventListener('DOMContentLoaded', async () => {
   buildTicker();
   populateGameDropdown('NBA');
@@ -2144,7 +2163,7 @@ window.addEventListener("load", function() {
 
     // Update date
     const dateEl = document.getElementById('live-date');
-    if (dateEl) dateEl.textContent = game.date + ' · ' + (game.status === 'LIVE' ? 'LIVE' : 'Live Games');
+    if (dateEl) dateEl.textContent = game.date + ' Â· ' + (game.status === 'LIVE' ? 'LIVE' : 'Live Games');
 
     // Update score if live
     const scoreEl = document.querySelector('.live-score, .score-display, #live-score');
@@ -2181,7 +2200,7 @@ window.addEventListener("load", function() {
 
     // Update date
     const dateEl = document.getElementById('live-date');
-    if (dateEl) dateEl.textContent = data.today + ' · Live Games';
+    if (dateEl) dateEl.textContent = data.today + ' Â· Live Games';
 
     // Update ticker
     updateTicker(data.games);
@@ -2209,7 +2228,7 @@ window.addEventListener("load", function() {
 
   // Fix date immediately
   const dateEl = document.getElementById('live-date');
-  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' · Live Games';
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' Â· Live Games';
 
   // Start fetching
   refresh();
@@ -2234,7 +2253,7 @@ window.addEventListener("load", function() {
 
 
  + p;
-  if(tot) tot.textContent = ' ───────────────────────────────────────
+  if(tot) tot.textContent = ' âââââââââââââââââââââââââââââââââââââââ
 function buildGamesList(sport) {
   const games = GAMES[sport] || [];
   const list = document.querySelector('.games-list');
@@ -2246,20 +2265,20 @@ function buildGamesList(sport) {
           ? `<span class="status-dot status-live" style="font-size:8px;">Live</span>`
           : `<span class="status-dot status-scheduled" style="font-size:8px;">${g.period}</span>`}
       </div>
-      ${g.status==='LIVE' ? `<div class="game-score" style="margin-top:4px;">${g.as} – ${g.hs}</div>` : ''}
+      ${g.status==='LIVE' ? `<div class="game-score" style="margin-top:4px;">${g.as} â ${g.hs}</div>` : ''}
     </div>`).join('');
 }
 
-// ── GAME SELECT DROPDOWN ─────────────────────────────────────
+// ââ GAME SELECT DROPDOWN âââââââââââââââââââââââââââââââââââââ
 function populateGameDropdown(sport) {
   const games = GAMES[sport] || [];
   const sel = document.getElementById('gameSelect');
   sel.innerHTML = games.map(g =>
-    `<option value="${g.id}">${g.status==='LIVE'?'● ':''}${g.away} @ ${g.home}</option>`
+    `<option value="${g.id}">${g.status==='LIVE'?'â ':''}${g.away} @ ${g.home}</option>`
   ).join('');
 }
 
-// ── LOAD GAME ────────────────────────────────────────────────
+// ââ LOAD GAME ââââââââââââââââââââââââââââââââââââââââââââââââ
 async function loadGame(game) {
   currentGame = game;
   await buildGrid(game);
@@ -2283,7 +2302,7 @@ async function loadGame(game) {
   });
 }
 
-// ── EVENT HANDLERS ───────────────────────────────────────────
+// ââ EVENT HANDLERS âââââââââââââââââââââââââââââââââââââââââââ
 function updateSport(val) {
   currentSport = val;
   const games = GAMES[val] || [];
@@ -2340,7 +2359,7 @@ function updateCTA() {
 }
 
 function openPayModal() {
-  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} × $10`;
+  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} Ã $10`;
   document.getElementById('modalTotal').textContent = `$${(currentQty * 10).toFixed(2)}`;
   document.getElementById('initialsInput').value = '';
   document.getElementById('confirmBtn').disabled = true;
@@ -2389,8 +2408,8 @@ async function confirmPurchase() {
 
   document.getElementById('payModal').classList.remove('open');
   document.getElementById('confirmMsg').innerHTML =
-    `${toAdd} square${toAdd > 1 ? 's' : ''} × $10 = <strong style="color:white;">$${(toAdd * 10).toFixed(2)}</strong>` +
-    `<br><span style="color:var(--green-light);font-size:13px;margin-top:4px;display:block;">Your squares are locked in as <strong>${initials}</strong> ✓ — visible to all players!</span>`;
+    `${toAdd} square${toAdd > 1 ? 's' : ''} Ã $10 = <strong style="color:white;">$${(toAdd * 10).toFixed(2)}</strong>` +
+    `<br><span style="color:var(--green-light);font-size:13px;margin-top:4px;display:block;">Your squares are locked in as <strong>${initials}</strong> â â visible to all players!</span>`;
   setTimeout(() => {
     document.getElementById('confirmModal').classList.add('open');
     buildGrid(game);
@@ -2401,7 +2420,7 @@ function closeConfirm() {
   document.getElementById('confirmModal').classList.remove('open');
 }
 
-// ── INIT ─────────────────────────────────────────────────────
+// ââ INIT âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 document.addEventListener('DOMContentLoaded', async () => {
   buildTicker();
   populateGameDropdown('NBA');
@@ -2496,7 +2515,7 @@ window.addEventListener("load", function() {
 
     // Update date
     const dateEl = document.getElementById('live-date');
-    if (dateEl) dateEl.textContent = game.date + ' · ' + (game.status === 'LIVE' ? 'LIVE' : 'Live Games');
+    if (dateEl) dateEl.textContent = game.date + ' Â· ' + (game.status === 'LIVE' ? 'LIVE' : 'Live Games');
 
     // Update score if live
     const scoreEl = document.querySelector('.live-score, .score-display, #live-score');
@@ -2533,7 +2552,7 @@ window.addEventListener("load", function() {
 
     // Update date
     const dateEl = document.getElementById('live-date');
-    if (dateEl) dateEl.textContent = data.today + ' · Live Games';
+    if (dateEl) dateEl.textContent = data.today + ' Â· Live Games';
 
     // Update ticker
     updateTicker(data.games);
@@ -2561,7 +2580,7 @@ window.addEventListener("load", function() {
 
   // Fix date immediately
   const dateEl = document.getElementById('live-date');
-  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' · Live Games';
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' Â· Live Games';
 
   // Start fetching
   refresh();
@@ -2588,7 +2607,7 @@ window.addEventListener("load", function() {
  + (qty * p).toFixed(2);
   window._squarePrice = p;
 }
-  // ── SIDEBAR GAMES LIST ───────────────────────────────────────
+  // ââ SIDEBAR GAMES LIST âââââââââââââââââââââââââââââââââââââââ
 function buildGamesList(sport) {
   const games = GAMES[sport] || [];
   const list = document.querySelector('.games-list');
@@ -2600,20 +2619,20 @@ function buildGamesList(sport) {
           ? `<span class="status-dot status-live" style="font-size:8px;">Live</span>`
           : `<span class="status-dot status-scheduled" style="font-size:8px;">${g.period}</span>`}
       </div>
-      ${g.status==='LIVE' ? `<div class="game-score" style="margin-top:4px;">${g.as} – ${g.hs}</div>` : ''}
+      ${g.status==='LIVE' ? `<div class="game-score" style="margin-top:4px;">${g.as} â ${g.hs}</div>` : ''}
     </div>`).join('');
 }
 
-// ── GAME SELECT DROPDOWN ─────────────────────────────────────
+// ââ GAME SELECT DROPDOWN âââââââââââââââââââââââââââââââââââââ
 function populateGameDropdown(sport) {
   const games = GAMES[sport] || [];
   const sel = document.getElementById('gameSelect');
   sel.innerHTML = games.map(g =>
-    `<option value="${g.id}">${g.status==='LIVE'?'● ':''}${g.away} @ ${g.home}</option>`
+    `<option value="${g.id}">${g.status==='LIVE'?'â ':''}${g.away} @ ${g.home}</option>`
   ).join('');
 }
 
-// ── LOAD GAME ────────────────────────────────────────────────
+// ââ LOAD GAME ââââââââââââââââââââââââââââââââââââââââââââââââ
 async function loadGame(game) {
   currentGame = game;
   await buildGrid(game);
@@ -2637,7 +2656,7 @@ async function loadGame(game) {
   });
 }
 
-// ── EVENT HANDLERS ───────────────────────────────────────────
+// ââ EVENT HANDLERS âââââââââââââââââââââââââââââââââââââââââââ
 function updateSport(val) {
   currentSport = val;
   const games = GAMES[val] || [];
@@ -2694,7 +2713,7 @@ function updateCTA() {
 }
 
 function openPayModal() {
-  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} × $10`;
+  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} Ã $10`;
   document.getElementById('modalTotal').textContent = `$${(currentQty * 10).toFixed(2)}`;
   document.getElementById('initialsInput').value = '';
   document.getElementById('confirmBtn').disabled = true;
@@ -2743,8 +2762,8 @@ async function confirmPurchase() {
 
   document.getElementById('payModal').classList.remove('open');
   document.getElementById('confirmMsg').innerHTML =
-    `${toAdd} square${toAdd > 1 ? 's' : ''} × $10 = <strong style="color:white;">$${(toAdd * 10).toFixed(2)}</strong>` +
-    `<br><span style="color:var(--green-light);font-size:13px;margin-top:4px;display:block;">Your squares are locked in as <strong>${initials}</strong> ✓ — visible to all players!</span>`;
+    `${toAdd} square${toAdd > 1 ? 's' : ''} Ã $10 = <strong style="color:white;">$${(toAdd * 10).toFixed(2)}</strong>` +
+    `<br><span style="color:var(--green-light);font-size:13px;margin-top:4px;display:block;">Your squares are locked in as <strong>${initials}</strong> â â visible to all players!</span>`;
   setTimeout(() => {
     document.getElementById('confirmModal').classList.add('open');
     buildGrid(game);
@@ -2755,7 +2774,7 @@ function closeConfirm() {
   document.getElementById('confirmModal').classList.remove('open');
 }
 
-// ── INIT ─────────────────────────────────────────────────────
+// ââ INIT âââââââââââââââââââââââââââââââââââââââââââââââââââââ
 document.addEventListener('DOMContentLoaded', async () => {
   buildTicker();
   populateGameDropdown('NBA');
@@ -2850,7 +2869,7 @@ window.addEventListener("load", function() {
 
     // Update date
     const dateEl = document.getElementById('live-date');
-    if (dateEl) dateEl.textContent = game.date + ' · ' + (game.status === 'LIVE' ? 'LIVE' : 'Live Games');
+    if (dateEl) dateEl.textContent = game.date + ' Â· ' + (game.status === 'LIVE' ? 'LIVE' : 'Live Games');
 
     // Update score if live
     const scoreEl = document.querySelector('.live-score, .score-display, #live-score');
@@ -2887,7 +2906,7 @@ window.addEventListener("load", function() {
 
     // Update date
     const dateEl = document.getElementById('live-date');
-    if (dateEl) dateEl.textContent = data.today + ' · Live Games';
+    if (dateEl) dateEl.textContent = data.today + ' Â· Live Games';
 
     // Update ticker
     updateTicker(data.games);
@@ -2915,7 +2934,7 @@ window.addEventListener("load", function() {
 
   // Fix date immediately
   const dateEl = document.getElementById('live-date');
-  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' · Live Games';
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) + ' Â· Live Games';
 
   // Start fetching
   refresh();
