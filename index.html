@@ -1154,7 +1154,8 @@
       </div>
     </div>
 
-    <!-- PROPS_PLACEHOLDER -->
+    <div id="propsPanel" style="margin-top:16px;background:#111111;border:1px solid #222;border-radius:12px;padding:16px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div><div style="font-size:9px;font-weight:800;letter-spacing:.1em;color:#666;text-transform:uppercase;">Player Props</div><div style="font-size:14px;font-weight:800;color:#fff;">Points Squares</div></div><button onclick="togglePropsSetup()" style="font-size:10px;background:#1a1a1a;border:1px solid #333;color:#aaa;padding:4px 10px;border-radius:6px;cursor:pointer;">Setup</button></div><div id="propsSetupForm" style="display:none;background:#0d0d0d;border:1px solid #2a2a2a;border-radius:8px;padding:12px;margin-bottom:12px;"><div style="font-size:10px;color:#888;margin-bottom:8px;font-weight:800;">ADMIN SETUP</div><input id="propsHomePlayer" placeholder="Home Star Name" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:7px 10px;border-radius:6px;font-size:12px;margin-bottom:6px;outline:none;"><input id="propsAwayPlayer" placeholder="Away Star Name" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:7px 10px;border-radius:6px;font-size:12px;margin-bottom:6px;outline:none;"><input id="propsPrice" type="number" min="1" placeholder="$ Price per square" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:7px 10px;border-radius:6px;font-size:12px;margin-bottom:6px;outline:none;"><input id="propsPin" type="password" placeholder="Admin PIN" style="width:100%;box-sizing:border-box;background:#1a1a1a;border:1px solid #333;color:#fff;padding:7px 10px;border-radius:6px;font-size:12px;margin-bottom:10px;outline:none;"><button onclick="submitPropsSetup()" style="width:100%;background:#16a34a;color:#fff;border:none;padding:9px;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;">CREATE PROPS BOARDS</button></div><div id="propsBoardsContainer"><div style="text-align:center;color:#444;font-size:12px;padding:20px 0;line-height:1.6;">No props set up yet.<br>Click Setup to add players.</div></div></div>
+    
     <!-- TODAY'S GAMES -->
     <div class="games-card">
       <div class="games-card-header">
@@ -2212,6 +2213,7 @@ window.addEventListener("load", function() {
 </script>
 </body>
 </html>
+
 
 
 
