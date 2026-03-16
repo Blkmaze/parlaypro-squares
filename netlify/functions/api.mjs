@@ -1,4 +1,4 @@
- // Zero imports - uses Netlify Blobs REST API with the token injected at runtime
+// Zero imports - uses Netlify Blobs REST API with the token injected at runtime
 const SITE_ID = "658f40e1-9d0f-4072-80a5-d6d0eb35d77e";
 const STORE = "sq3";
 const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
