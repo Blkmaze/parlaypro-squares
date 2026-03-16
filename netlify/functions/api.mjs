@@ -33,6 +33,8 @@ export default async (req, context) => {
   const url = new URL(req.url);
   const path = url.pathname;
   const method = req.method.toUpperCase();
+  let body = {};
+  if (method === "POST") { try { body = await req.json(); } catch {} }
 
   const token = process.env.NETLIFY_TOKEN;
   const emptyBoard = { owners: {}, rowNums: null, colNums: null, numbersLocked: false };
@@ -224,5 +226,6 @@ export default async (req, context) => {
 export const config = {
   path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares"]
 };
+
 
 
