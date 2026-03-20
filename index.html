@@ -1827,6 +1827,7 @@ async function loadGame(game) {
   updateBoardHeader(game);
   updateCTA();
   loadPaymentLockState(); // refresh payment lock state whenever game changes
+  loadPendingList();     // always refresh pending payments when game changes
 
   document.getElementById('gameSelect').value = game.id;
 
@@ -2045,8 +2046,8 @@ async function confirmPurchase() {
     document.getElementById('payModal').classList.remove('open');
     document.getElementById('confirmMsg').innerHTML =
       `${newIdxs.length} square${newIdxs.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
-      `<br><span style="color:#facc15;font-size:13px;margin-top:6px;display:block;">⏳ Reserved as <strong>${initials}</strong> — pending Willie's confirmation</span>` +
-      `<br><span style="color:var(--text3);font-size:11px;">Your squares will be locked in once payment is verified.</span>`;
+      `<br><span style="color:${_selectedPayMethod==='cash'?'#facc15':'#60a5fa'};font-size:13px;margin-top:6px;display:block;">${_selectedPayMethod==='cash'?'💵 Pay Willie cash — your squares are reserved':'⏳'} Reserved as <strong>${initials}</strong></span>` +
+      `<br><span style="color:var(--text3);font-size:11px;">${_selectedPayMethod==='cash'?'Squares lock in when Willie confirms cash received.':'Squares lock in once Willie verifies your '+(_selectedPayMethod==='cashapp'?'Cash App':'PayPal')+' payment.'}</span>`;
     setTimeout(() => {
       document.getElementById('confirmModal').classList.add('open');
       buildGrid(game);
@@ -2167,8 +2168,15 @@ function loadPaymentLockState() {
   if (!game) return;
   var unlocked = localStorage.getItem('pay_unlocked_' + game.id) === '1';
   applyPaymentLockState(unlocked);
-  // Always load pending list in admin view
-  if (document.getElementById('pendingPayList')) loadPendingList();
+  // Load pending list + start auto-refresh
+  if (document.getElementById('pendingPayList')) {
+    loadPendingList();
+    if (!window._pendingRefreshTimer) {
+      window._pendingRefreshTimer = setInterval(function() {
+        if (document.getElementById('pendingPayList')) loadPendingList();
+      }, 30000); // refresh every 30s
+    }
+  }
 }
 
 async function loadPendingList() {
@@ -2198,8 +2206,8 @@ async function loadPendingList() {
         '<span class="initials">' + init + '</span>' +
         '<span class="sq-count">' + info.indices.length + ' sq — $' + info.amount + ' via ' + payIcon + info.payMethod + '</span>' +
         '<div style="display:flex;gap:4px;margin-left:auto;">' +
-        '<button class="btn-confirm-pay" onclick="confirmPending('' + game.id + '',[' + info.indices.join(',') + '])">✅ Confirm</button>' +
-        '<button class="btn-confirm-pay" style="background:#ef4444;color:white;" onclick="rejectPending('' + game.id + '',[' + info.indices.join(',') + '])">✗ Reject</button>' +
+        '<button class="btn-confirm-pay" onclick="confirmPending(\'' + game.id + '\',[' + info.indices.join(',') + '])">✅ Confirm</button>' +
+        '<button class="btn-confirm-pay" style="background:#ef4444;color:white;" onclick="rejectPending(\'' + game.id + '\',[' + info.indices.join(',') + '])">✗ Reject</button>' +
         '</div></div>';
     }).join('');
   } catch(e) {
