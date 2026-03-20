@@ -890,6 +890,27 @@
   .confirm-btn:hover { background: #15803d; }
 
   /* scrollbar */
+  .tally-strip { padding: 12px 16px; border-top: 0.5px solid var(--border); }
+  .tally-strip-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .tally-strip-label { font-size: 9px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; }
+  .pot-toggle-btn { font-size: 9px; padding: 2px 8px; border-radius: 100px; border: 0.5px solid var(--border2); background: var(--surface3); color: var(--text2); cursor: pointer; transition: all .15s; }
+  .pot-toggle-btn.active { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.4); color: var(--green-light); }
+  .tally-metrics { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 6px; margin-bottom: 8px; }
+  .tm { background: var(--surface3); border-radius: 7px; padding: 7px 9px; }
+  .tm-l { font-size: 9px; color: var(--text3); margin-bottom: 3px; }
+  .tm-v { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text); line-height: 1; }
+  .tm-v.green { color: var(--green-light); }
+  .prog-wrap { background: var(--surface3); border-radius: 100px; height: 5px; overflow: hidden; margin-bottom: 3px; }
+  .prog-fill { height: 100%; border-radius: 100px; background: var(--green); transition: width .4s; }
+  .prog-txt { display: flex; justify-content: space-between; font-size: 9px; color: var(--text3); margin-bottom: 8px; }
+  .payout-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; }
+  .pq { background: var(--surface3); border-radius: 6px; padding: 6px 4px; text-align: center; border: 0.5px solid transparent; }
+  .pq.pq-active { background: rgba(250,204,21,.1); border-color: var(--yellow); }
+  .pq.pq-paid { background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.3); }
+  .pq-n { font-size: 9px; color: var(--text3); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .04em; }
+  .pq-a { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text); }
+  .pq-a.yellow { color: var(--yellow); }
+  .pq-a.green { color: var(--green-light); }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
@@ -1213,6 +1234,26 @@
         </button>
         <div class="cta-sub">Squares assigned randomly after payment verified</div>
       </div>
+    </div>
+
+    <!-- TALLY + PAYOUT STRIP -->
+    <div class="tally-strip" id="tallyStrip">
+      <div class="tally-strip-hdr">
+        <span class="tally-strip-label">Board tally</span>
+        <div style="display:flex;gap:5px;align-items:center;font-size:10px;color:var(--text3);">
+          <span>Payout:</span>
+          <button class="pot-toggle-btn active" id="potBtnCollected" onclick="setPotMode('collected')">Collected</button>
+          <button class="pot-toggle-btn" id="potBtnFull" onclick="setPotMode('full')">Full pot</button>
+        </div>
+      </div>
+      <div class="tally-metrics">
+        <div class="tm"><div class="tm-l">Squares sold</div><div class="tm-v" id="tallySlod">0 / 100</div></div>
+        <div class="tm"><div class="tm-l">Collected</div><div class="tm-v green" id="tallyCollected">$0</div></div>
+        <div class="tm"><div class="tm-l">Full pot</div><div class="tm-v" id="tallyPot">$0</div></div>
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" id="tallyProg" style="width:0%"></div></div>
+      <div class="prog-txt"><span id="tallyProgL">0 sold</span><span id="tallyProgR">100 remaining</span></div>
+      <div class="payout-row" id="tallyPayouts"></div>
     </div>
 
     <!-- LEGEND -->
@@ -1622,6 +1663,7 @@ async function buildGrid(game) {
   }
 
   document.getElementById('squaresGrid').innerHTML = html;
+  if (window.currentGame) { updateTally(window.currentGame); }
 }
 
 // ── ODDS BUILDER ─────────────────────────────────────────────
@@ -1864,8 +1906,9 @@ async function loadGame(game) {
   buildOdds(game);
   updateBoardHeader(game);
   updateCTA();
-  loadPaymentLockState(); // refresh payment lock state whenever game changes
-  loadPendingList();     // always refresh pending payments when game changes
+  loadPaymentLockState();
+  loadPendingList();
+  updateTally(game);
 
   document.getElementById('gameSelect').value = game.id;
 
@@ -2343,6 +2386,51 @@ async function confirmAllPending() {
   if (d.ok) { loadPendingList(); _cache = {}; buildGrid(game); alert('✅ ' + (d.confirmed||[]).length + ' squares confirmed!'); }
   else alert('Error: ' + d.error);
 }
+
+// ── TALLY + PAYOUT STRIP ─────────────────────────────────────
+var _potMode = 'collected';
+
+function setPotMode(mode) {
+  _potMode = mode;
+  document.getElementById('potBtnCollected').classList.toggle('active', mode === 'collected');
+  document.getElementById('potBtnFull').classList.toggle('active', mode === 'full');
+  if (window.currentGame) updateTally(window.currentGame);
+}
+
+async function updateTally(game) {
+  if (!game) return;
+  var price   = parseFloat(document.getElementById('squarePrice').value) || 10;
+  var sData   = _cache[game.id] || await fetchSquares(game.id);
+  var sold    = Object.keys(sData.owners  || {}).length;
+  var pending = Object.keys(sData.pending || {}).length;
+  var total   = sold + pending;
+  var pot       = 100 * price;
+  var collected = total * price;
+  var base      = _potMode === 'full' ? pot : collected;
+  var qPay      = base * 0.20;
+  var period    = parseInt(game.period) || 0;
+  var isLive    = game.status === 'LIVE';
+  var isFinal   = game.status === 'FINAL';
+
+  document.getElementById('tallySlod').textContent      = total + ' / 100';
+  document.getElementById('tallyCollected').textContent = '$' + Math.round(collected).toLocaleString();
+  document.getElementById('tallyPot').textContent       = '$' + Math.round(pot).toLocaleString();
+  document.getElementById('tallyProg').style.width      = total + '%';
+  document.getElementById('tallyProgL').textContent     = total + ' sold';
+  document.getElementById('tallyProgR').textContent     = (100 - total) + ' remaining';
+
+  var qtrs  = ['Q1', 'Half', 'Q3', 'Final'];
+  var pHtml = '';
+  qtrs.forEach(function(name, i) {
+    var isPaid   = isFinal || period > i + 1;
+    var isActive = isLive && period === i + 1;
+    var cls  = isPaid ? 'pq pq-paid'   : isActive ? 'pq pq-active' : 'pq';
+    var aCls = isPaid ? 'pq-a green'   : isActive ? 'pq-a yellow'  : 'pq-a';
+    pHtml += '<div class="' + cls + '"><div class="pq-n">' + name + '</div><div class="' + aCls + '">$' + Math.round(qPay).toLocaleString() + '</div></div>';
+  });
+  document.getElementById('tallyPayouts').innerHTML = pHtml;
+}
+// ── END TALLY ─────────────────────────────────────────────────
 
 // ── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
