@@ -157,7 +157,9 @@ export default async function handler(req, context) {
     if (!gameId || !pin) return json({ error: "Missing fields" }, 400);
     if (!validPin(pin)) return json({ error: "Invalid PIN" }, 403);
     try {
-      await blobSet(token, gameId, empty);
+      // resetAt timestamp lets all polling devices detect the reset immediately
+      var resetBoard = { owners: {}, pending: {}, rowNums: null, colNums: null, numbersLocked: false, resetAt: Date.now() };
+      await blobSet(token, gameId, resetBoard);
       return json({ ok: true });
     } catch(e) { return json({ error: e.message }, 500); }
   }

@@ -1436,7 +1436,8 @@ let currentDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 let currentQty = 5;
 let currentBoardVersion = null;
 let espnGames = {}; // { sport: [games...] }
-let _cache = {}; // { gameId: serverData }
+let _cache = {};
+let _lastResetAt = {}; // track server resetAt per game to detect resets on other devices
 
 const INITIALS = ['WM','KJ','DT','AA','RB','LM','CP','JS','MB','TW','GH','PD','NT','BK','SC','FO','YI','QV','ZX','ER'];
 
@@ -1758,20 +1759,30 @@ function updateBoardHeader(game) {
 // ── SERVER SYNC ──────────────────────────────────────────────
 async function fetchSquares(gameId) {
   try {
-    logStatus('Loading squares for game ' + gameId + '...', false);
-    const res = await fetch(`/api/squares?gameId=${encodeURIComponent(gameId)}`);
-    if (!res.ok) {
-      logStatus('Squares API error: HTTP ' + res.status + ' for game ' + gameId, true);
-      return _cache[gameId] || { owners: {} };
+    const res = await fetch('/api/squares?gameId=' + encodeURIComponent(gameId));
+    if (!res.ok) return _cache[gameId] || { owners: {}, pending: {} };
+    const text = await res.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch(_) {}
+    data = data || { owners: {}, pending: {} };
+
+    // Detect reset: if server resetAt is newer than what we knew, wipe local state
+    const prevReset = _lastResetAt[gameId] || 0;
+    const serverReset = data.resetAt || 0;
+    if (serverReset > prevReset && prevReset > 0) {
+      // Server was reset after we loaded — clear local squares
+      localStorage.removeItem('my_' + gameId);
+      localStorage.removeItem('initials_' + gameId);
+      logStatus('Board was reset — cleared local squares', false);
     }
-    const data = await res.json();
-    _cache[gameId] = data || { owners: {} };
-    const ownCount = Object.keys((_cache[gameId].owners || {})).length;
+    _lastResetAt[gameId] = serverReset;
+    _cache[gameId] = data;
+    const ownCount = Object.keys(data.owners || {}).length;
     logStatus('Game ' + gameId + ': ' + ownCount + ' squares claimed', false);
     return _cache[gameId];
   } catch (e) {
     logStatus('Fetch squares failed: ' + e.message, true);
-    return _cache[gameId] || { owners: {} };
+    return _cache[gameId] || { owners: {}, pending: {} };
   }
 }
 
