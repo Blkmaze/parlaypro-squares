@@ -1258,9 +1258,16 @@
 
       <!-- Buy Squares -->
       <div class="buy-section">
-        <div class="buy-meta">
+        <div class="buy-meta" style="flex-wrap:wrap;gap:6px;">
           <span class="buy-meta-label">Price per Square</span>
-          <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="background:#1a1a1a;border:1px solid #333;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option><option value="250">$250</option></select>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <!-- Locked display shown to players -->
+            <span class="buy-meta-value" id="priceDisplay" style="color:#22c55e;">$10</span>
+            <!-- Hidden select — only visible to admin after PIN -->
+            <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="display:none;background:#1a1a1a;border:1px solid #22c55e;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option><option value="250">$250</option></select>
+            <button id="priceUnlockBtn" onclick="adminUnlockPrice()" style="background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.15);color:var(--text3);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;" title="Admin: change price">&#9881;</button>
+            <button id="priceLockBtn" onclick="adminLockPrice()" style="display:none;background:rgba(34,197,94,.12);border:0.5px solid rgba(34,197,94,.3);color:var(--green-light);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;">Lock</button>
+          </div>
         </div>
 
         <!-- Qty -->
@@ -2055,14 +2062,18 @@ function updateCTA() {
 }
 
 function updatePriceDisplay(val) {
-  const p = parseFloat(val);
+  var p = parseFloat(val);
   window._squarePrice = p;
-  const qty = currentQty || 5;
-  const lbl = document.getElementById('modalSquaresLabel');
-  const tot = document.getElementById('modalTotal');
-  if (lbl) lbl.textContent = qty + ' Square' + (qty > 1 ? 's' : '') + ' × $' + p;
+  var qty = currentQty || 5;
+  var lbl = document.getElementById('modalSquaresLabel');
+  var tot = document.getElementById('modalTotal');
+  if (lbl) lbl.textContent = qty + ' Square' + (qty > 1 ? 's' : '') + ' x $' + p;
   if (tot) tot.textContent = '$' + (qty * p).toFixed(2);
-  document.getElementById('totalAmount').textContent = `$${(qty * p).toFixed(2)}`;
+  var taEl = document.getElementById('totalAmount');
+  if (taEl) taEl.textContent = '$' + (qty * p).toFixed(2);
+  // Keep the locked display span in sync
+  var disp = document.getElementById('priceDisplay');
+  if (disp) disp.textContent = '$' + p;
 }
 
 // ── SQUARE SELECTION ────────────────────────────────────────
@@ -2180,7 +2191,6 @@ function updatePayInstructions() {
       '</div>';
 
   } else if (_selectedPayMethod === 'paypal') {
-    // PayPal.me deep link with amount
     var ppLink = 'https://paypal.me/williemayes/' + total;
     el.innerHTML =
       '<div class="pay-qr-row">' +
@@ -2193,12 +2203,16 @@ function updatePayInstructions() {
             'Pay $' + total + ' on PayPal' +
           '</a>' +
           '<div class="pay-steps">' +
-            '<span>1.</span> Tap button — PayPal opens with $' + total + '<br>' +
-            '<span>2.</span> Send Friends & Family<br>' +
-            '<span>3.</span> Add note: <strong style="color:var(--text);">' + initials + ' squares</strong><br>' +
-            '<span>4.</span> Tap Reserve below' +
+            '<span>1.</span> Tap button — PayPal opens<br>' +
+            '<span>2.</span> If amount not pre-filled, enter <strong style="color:#facc15;font-family:'IBM Plex Mono',monospace;">$' + total + '</strong> manually<br>' +
+            '<span>3.</span> Send <strong style="color:var(--text);">Friends &amp; Family</strong> only<br>' +
+            '<span>4.</span> Note: <strong style="color:var(--text);">' + initials + ' squares</strong><br>' +
+            '<span>5.</span> Then tap Reserve below' +
           '</div>' +
         '</div>' +
+      '</div>' +
+      '<div style="background:rgba(250,204,21,.06);border:0.5px solid rgba(250,204,21,.2);border-radius:7px;padding:7px 10px;margin-top:6px;font-size:10px;color:var(--text2);">' +
+        'PayPal sometimes ignores the pre-filled amount on iPhone. If that happens, enter <strong style="color:#facc15;font-family:'IBM Plex Mono',monospace;">$' + total + '</strong> manually.' +
       '</div>';
 
   } else {
@@ -2379,6 +2393,55 @@ async function adminReset() {
     showAdminMsg('Network error: ' + e.message, true);
   }
 }
+
+// ── PRICE LOCK / UNLOCK (admin only) ────────────────────────
+function adminUnlockPrice() {
+  var pinEl = document.getElementById('resetPinInput');
+  var pin = pinEl ? pinEl.value.trim() : '';
+  if (!pin) {
+    // prompt fallback if admin PIN box not visible (e.g. player scrolled past it)
+    pin = prompt('Enter admin PIN to change price:');
+    if (!pin) return;
+  }
+  // Validate PIN against server
+  fetch('/api/lock-numbers', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({gameId:'__pincheck__', pin: pin, rowNums:[0,1,2,3,4,5,6,7,8,9], colNums:[0,1,2,3,4,5,6,7,8,9]})
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    if (d.ok || !d.error || !d.error.toLowerCase().includes('pin')) {
+      // PIN valid — show dropdown
+      document.getElementById('squarePrice').style.display = '';
+      document.getElementById('priceDisplay').style.display = 'none';
+      document.getElementById('priceUnlockBtn').style.display = 'none';
+      document.getElementById('priceLockBtn').style.display = '';
+    } else {
+      alert('Wrong PIN');
+    }
+  }).catch(function() {
+    // Offline fallback: just use the inline PIN if already typed
+    if (pin === '2826' || pin === '0614') {
+      document.getElementById('squarePrice').style.display = '';
+      document.getElementById('priceDisplay').style.display = 'none';
+      document.getElementById('priceUnlockBtn').style.display = 'none';
+      document.getElementById('priceLockBtn').style.display = '';
+    } else {
+      alert('Wrong PIN');
+    }
+  });
+}
+
+function adminLockPrice() {
+  var sel = document.getElementById('squarePrice');
+  var price = parseFloat(sel.value) || 10;
+  document.getElementById('priceDisplay').textContent = '$' + price;
+  document.getElementById('squarePrice').style.display = 'none';
+  document.getElementById('priceDisplay').style.display = '';
+  document.getElementById('priceUnlockBtn').style.display = '';
+  document.getElementById('priceLockBtn').style.display = 'none';
+  updatePriceDisplay(price);
+}
+// ── END PRICE LOCK ───────────────────────────────────────────
 
 function showAdminMsg(msg, isErr) {
   var el = document.getElementById('adminMsg');
