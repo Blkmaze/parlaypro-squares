@@ -1372,7 +1372,8 @@ const SPORT_MAP = {
 };
 
 let currentSport = 'NBA';
-let currentGame = null;
+window.currentGame = null; // global so adminReset & all functions see it
+var currentGame = window.currentGame;
 let currentDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 let currentQty = 5;
 let currentBoardVersion = null;
@@ -1769,6 +1770,7 @@ async function loadGame(game) {
   if (!game) { logStatus('loadGame called with no game', true); return; }
   logStatus('Loading game: ' + game.away + ' @ ' + game.home + ' (ID: ' + game.id + ')', false);
   currentGame = game;
+  window.currentGame = game; // keep global in sync
   try {
     await buildGrid(game);
   } catch (e) {
@@ -1785,6 +1787,7 @@ async function loadGame(game) {
   buildOdds(game);
   updateBoardHeader(game);
   updateCTA();
+  loadPaymentLockState(); // refresh payment lock state whenever game changes
 
   document.getElementById('gameSelect').value = game.id;
 
@@ -1994,14 +1997,14 @@ function applyPaymentLockState(unlocked) {
   if (unlocked) {
     cashCard.classList.remove('pay-locked');
     paypalCard.classList.remove('pay-locked');
-    if (ctaBtn) ctaBtn.classList.remove('pay-locked');
+    if (ctaBtn) { ctaBtn.classList.remove('pay-locked'); ctaBtn.style.pointerEvents = ''; ctaBtn.style.opacity = ''; }
     if (unlockNote) unlockNote.classList.remove('visible');
     if (unlockBtn) unlockBtn.style.display = 'none';
     if (lockBtn) lockBtn.style.display = '';
   } else {
     cashCard.classList.add('pay-locked');
     paypalCard.classList.add('pay-locked');
-    if (ctaBtn) ctaBtn.classList.add('pay-locked');
+    if (ctaBtn) { ctaBtn.classList.add('pay-locked'); }
     if (unlockNote) unlockNote.classList.add('visible');
     if (unlockBtn) unlockBtn.style.display = '';
     if (lockBtn) lockBtn.style.display = 'none';
