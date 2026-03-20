@@ -1568,10 +1568,12 @@ async function buildGrid(game) {
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ gameId: game.id, rowNums: generatedRow, colNums: generatedCol })
       });
-      const initData = await initRes.json();
+      const initText = await initRes.text();
+      let initData = {};
+      try { initData = JSON.parse(initText); } catch(_) {}
       // Use whatever the server returned (may be another device's already-stored numbers)
-      topNums = initData.rowNums || generatedRow;
-      leftNums = initData.colNums || generatedCol;
+      topNums = (initData.rowNums && initData.rowNums.length===10) ? initData.rowNums : generatedRow;
+      leftNums = (initData.colNums && initData.colNums.length===10) ? initData.colNums : generatedCol;
       // Update local cache with server numbers
       _cache[game.id] = { ...serverData, rowNums: topNums, colNums: leftNums };
     } catch(e) {
