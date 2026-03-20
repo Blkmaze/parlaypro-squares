@@ -2083,8 +2083,10 @@ async function confirmPurchase() {
         // Server assigned successfully
         newIdxs = d.indices;
       } else if (d && d.error) {
-        throw new Error(d.error);
+        throw new Error('Server: ' + d.error);
       } else {
+        // Log what we got for debugging
+        console.warn('auto-assign unexpected response:', text.substring(0, 200));
         // Fallback: client picks squares then calls /api/claim-square
         const fresh = await fetchSquares(game.id);
         const taken = new Set([
@@ -2108,7 +2110,7 @@ async function confirmPurchase() {
         const claimText = await claimRes.text();
         let claimD = {};
         try { claimD = JSON.parse(claimText); } catch(_) {}
-        if (!claimRes.ok) throw new Error(claimD.error || 'Failed to claim');
+        if (!claimRes.ok) throw new Error(claimD.error || ('HTTP ' + claimRes.status + ': ' + claimText.substring(0, 100)));
         newIdxs = picked;
       }
 
@@ -2118,7 +2120,7 @@ async function confirmPurchase() {
       _manuallySelected.clear();
     } catch(e) {
       btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
-      alert('Could not claim squares: ' + e.message); return;
+      alert('Error: ' + e.message); return;
     }
   }
 
