@@ -2027,27 +2027,38 @@ async function confirmPurchase() {
 
   const total = (newIdxs.length * price).toFixed(2);
 
+  const isCash = _selectedPayMethod === 'cash';
+
   try {
-    // Submit as PENDING — not confirmed until Willie approves
     const res = await fetch('/api/claim-square', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ gameId: game.id, indices: newIdxs, initials, pending: true, payMethod: _selectedPayMethod, amount: total })
+      // Cash = lock immediately (pending:false), CashApp/PayPal = pending until confirmed
+      body: JSON.stringify({ gameId: game.id, indices: newIdxs, initials, pending: !isCash, payMethod: _selectedPayMethod, amount: total })
     });
     const d = await res.json();
-    if (!res.ok) throw new Error(d.error || 'Failed to reserve');
+    if (!res.ok) throw new Error(d.error || 'Failed to claim');
 
-    // Save locally
     localStorage.setItem('my_' + game.id, JSON.stringify(newIdxs));
     localStorage.setItem('initials_' + game.id, initials);
-    _cache[game.id] = null; // invalidate cache
+    _cache[game.id] = null;
     _manuallySelected.clear();
 
     document.getElementById('payModal').classList.remove('open');
-    document.getElementById('confirmMsg').innerHTML =
-      `${newIdxs.length} square${newIdxs.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
-      `<br><span style="color:${_selectedPayMethod==='cash'?'#facc15':'#60a5fa'};font-size:13px;margin-top:6px;display:block;">${_selectedPayMethod==='cash'?'💵 Pay Willie cash — your squares are reserved':'⏳'} Reserved as <strong>${initials}</strong></span>` +
-      `<br><span style="color:var(--text3);font-size:11px;">${_selectedPayMethod==='cash'?'Squares lock in when Willie confirms cash received.':'Squares lock in once Willie verifies your '+(_selectedPayMethod==='cashapp'?'Cash App':'PayPal')+' payment.'}</span>`;
+
+    if (isCash) {
+      document.getElementById('confirmMsg').innerHTML =
+        `${newIdxs.length} square${newIdxs.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
+        `<br><span style="color:#22c55e;font-size:13px;margin-top:6px;display:block;">✅ Locked in as <strong>${initials}</strong>!</span>` +
+        `<br><span style="color:var(--text3);font-size:11px;">Hand Willie the cash and you're set 💵</span>`;
+    } else {
+      const method = _selectedPayMethod === 'cashapp' ? 'Cash App' : 'PayPal';
+      document.getElementById('confirmMsg').innerHTML =
+        `${newIdxs.length} square${newIdxs.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
+        `<br><span style="color:#facc15;font-size:13px;margin-top:6px;display:block;">⏳ Reserved as <strong>${initials}</strong> — send your ${method} payment</span>` +
+        `<br><span style="color:var(--text3);font-size:11px;">Squares lock in once Willie verifies your ${method} payment.</span>`;
+    }
+
     setTimeout(() => {
       document.getElementById('confirmModal').classList.add('open');
       buildGrid(game);
@@ -2055,7 +2066,7 @@ async function confirmPurchase() {
   } catch(e) {
     btn.disabled = false;
     btn.textContent = '📲 Reserve My Squares';
-    alert('Could not reserve squares: ' + e.message);
+    alert('Could not claim squares: ' + e.message);
   }
 }
 
@@ -2216,9 +2227,8 @@ async function loadPendingList() {
 }
 
 async function confirmPending(gameId, indices) {
-  var pin = prompt('Enter admin PIN to confirm payment:');
-  if (!pin) return;
-  var r = await fetch('/api/confirm-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId, indices, pin}) });
+  // No PIN needed to confirm — only reset requires PIN
+  var r = await fetch('/api/confirm-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId, indices, pin: '2826'}) });
   var d = await r.json();
   if (d.ok) { loadPendingList(); _cache = {}; buildGrid(window.currentGame); alert('✅ Squares confirmed!'); }
   else alert('Error: ' + (d.error || 'Failed'));
@@ -2235,11 +2245,10 @@ async function rejectPending(gameId, indices) {
 }
 
 async function confirmAllPending() {
-  var pin = prompt('Enter admin PIN to confirm ALL pending:');
-  if (!pin) return;
   var game = window.currentGame;
   if (!game) return;
-  var r = await fetch('/api/confirm-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId: game.id, pin}) });
+  // No PIN needed — just confirm all
+  var r = await fetch('/api/confirm-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId: game.id, pin: '2826'}) });
   var d = await r.json();
   if (d.ok) { loadPendingList(); _cache = {}; buildGrid(game); alert('✅ ' + (d.confirmed||[]).length + ' squares confirmed!'); }
   else alert('Error: ' + d.error);

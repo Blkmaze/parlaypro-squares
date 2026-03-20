@@ -147,12 +147,11 @@ Go to admin panel to confirm ✅`;
   }
 
   // ── POST /api/confirm-pending ─────────────────────────────
-  // Admin confirms a pending square claim (payment received)
+  // Admin confirms a pending square claim — no PIN needed, just tap Confirm
   if (path === "/api/confirm-pending" && method === "POST") {
     if (!token) return json({ error: "Server not configured" }, 500);
-    const { gameId, indices, pin } = body;
-    if (!gameId || !pin) return json({ error: "Missing fields" }, 400);
-    if (!validPin(pin)) return json({ error: "Invalid PIN" }, 403);
+    const { gameId, indices } = body;
+    if (!gameId) return json({ error: "Missing gameId" }, 400);
     try {
       const data = await blobGet(token, gameId) || emptyBoard;
       const owners = data.owners || {};
