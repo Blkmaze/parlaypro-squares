@@ -890,70 +890,6 @@
   .confirm-btn:hover { background: #15803d; }
 
   /* scrollbar */
-
-  /* ── SCORE + TALLY STRIP ─────────────────────────────────── */
-  .score-strip { border-top: 0.5px solid var(--border); }
-  .score-live-bar { display:flex;align-items:center;justify-content:space-between;padding:10px 14px;gap:8px;background:var(--surface2); }
-  .slb-team { display:flex;align-items:center;gap:6px;flex:1; }
-  .slb-abbr { font-size:12px;color:var(--text2);font-weight:500; }
-  .slb-score { font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:var(--text);line-height:1; }
-  .slb-center { text-align:center;flex-shrink:0; }
-  .slb-badge { font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;letter-spacing:.04em; }
-  .slb-badge.live { background:rgba(239,68,68,.15);color:#f87171; }
-  .slb-badge.final { background:rgba(34,197,94,.15);color:var(--green-light); }
-  .slb-badge.pre { background:var(--surface3);color:var(--text3); }
-  .slb-period { font-size:10px;color:var(--text2);margin-top:2px; }
-  .qtr-table { padding:8px 14px 10px;border-top:0.5px solid var(--border); }
-  .qtr-label { font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px; }
-  .qtr-grid { display:grid;grid-template-columns:36px repeat(4,1fr) 40px;gap:2px; }
-  .qcell { border-radius:4px;padding:4px 3px;text-align:center;font-size:11px;border:0.5px solid transparent; }
-  .qcell.hdr { font-size:9px;color:var(--text3);background:transparent; }
-  .qcell.tname { background:transparent;font-size:11px;font-weight:500;color:var(--text2);text-align:left;display:flex;align-items:center; }
-  .qcell.val { background:var(--surface3);border-color:var(--border);font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--text); }
-  .qcell.val.cur { background:rgba(250,204,21,.12);border-color:var(--yellow);color:var(--yellow); }
-  .qcell.val.done { background:var(--surface3);border-color:var(--border); }
-  .qcell.val.tot { background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.25);color:var(--green-light); }
-  .qcell.val.empty { color:var(--text3); }
-  .win-digits { display:flex;align-items:center;gap:6px;padding:6px 14px 8px;font-size:10px;color:var(--text2);flex-wrap:wrap;border-top:0.5px solid var(--border); }
-  .win-digit-badge { background:rgba(250,204,21,.12);border:1px solid var(--yellow);border-radius:4px;padding:1px 6px;font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--yellow);font-size:11px; }
-  .tally-strip { padding:12px 14px;border-top:0.5px solid var(--border); }
-  .tally-strip-hdr { display:flex;align-items:center;justify-content:space-between;margin-bottom:8px; }
-  .tally-strip-label { font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em; }
-  .pot-toggle { display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3); }
-  .pot-toggle-btn { font-size:9px;padding:2px 7px;border-radius:100px;border:0.5px solid var(--border2);background:var(--surface3);color:var(--text2);cursor:pointer;transition:all .15s; }
-  .pot-toggle-btn.active { background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.4);color:var(--green-light); }
-  .tally-metrics { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px; }
-  .tm { background:var(--surface3);border-radius:7px;padding:7px 9px; }
-  .tm-l { font-size:9px;color:var(--text3);margin-bottom:3px; }
-  .tm-v { font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--text);line-height:1; }
-  .tm-v.green { color:var(--green-light); }
-  .prog-wrap { background:var(--surface3);border-radius:100px;height:5px;overflow:hidden;margin-bottom:3px; }
-  .prog-fill { height:100%;border-radius:100px;background:var(--green);transition:width .4s; }
-  .prog-txt { display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:8px; }
-  .payout-row { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px; }
-  .pq { background:var(--surface3);border-radius:6px;padding:6px 4px;text-align:center;border:0.5px solid transparent; }
-  .pq.pq-active { background:rgba(250,204,21,.1);border-color:var(--yellow); }
-  .pq.pq-paid { background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3); }
-  .pq-n { font-size:9px;color:var(--text3);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em; }
-  .pq-a { font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--text); }
-  .pq-a.yellow { color:var(--yellow); }
-  .pq-a.green { color:var(--green-light); }
-  .pq-w { font-size:9px;color:var(--green-light);margin-top:2px; }
-
-  .pay-action-panel { border-radius: 10px; overflow: hidden; margin: 10px 0; }
-  .pay-qr-row { display: flex; gap: 10px; align-items: flex-start; padding: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 10px; }
-  .pay-qr-box { flex-shrink: 0; text-align: center; }
-  .pay-qr-img { width: 72px; height: 72px; background: #fff; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; overflow: hidden; }
-  .pay-qr-label { font-size: 9px; color: var(--text3); }
-  .pay-link-btn { display: block; width: 100%; padding: 11px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; margin-bottom: 8px; transition: opacity .15s; }
-  .pay-link-btn:hover { opacity: .88; }
-  .pay-link-btn.cashapp { background: #00C244; color: #fff; }
-  .pay-link-btn.paypal  { background: #0070ba; color: #fff; }
-  .pay-steps { font-size: 11px; color: var(--text2); line-height: 1.7; }
-  .pay-steps span { color: var(--text3); }
-  .cash-box { background: rgba(34,197,94,.06); border: 1px solid rgba(34,197,94,.2); border-radius: 10px; padding: 16px; text-align: center; margin: 10px 0; }
-  .cash-box-amt { font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 700; color: var(--green-light); margin-bottom: 6px; }
-  .cash-box-note { font-size: 12px; color: var(--text2); }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
@@ -1083,42 +1019,6 @@
     <div class="grid-wrap">
       <div class="grid-container" id="squaresGrid">
         <!-- populated by JS -->
-      </div>
-    </div>
-
-    <!-- SCORE STRIP + TALLY -->
-    <div class="score-strip" id="scoreStrip" style="display:none;">
-      <!-- Live score bar -->
-      <div class="score-live-bar" id="livScoreBar">
-        <div class="slb-team"><span class="slb-abbr" id="slbAwayAbbr">AWAY</span><span class="slb-score" id="slbAwayScore">0</span></div>
-        <div class="slb-center">
-          <div id="slbBadge" class="slb-badge pre">—</div>
-          <div class="slb-period" id="slbPeriod"></div>
-        </div>
-        <div class="slb-team" style="justify-content:flex-end;"><span class="slb-score" id="slbHomeScore">0</span><span class="slb-abbr" id="slbHomeAbbr">HOME</span></div>
-      </div>
-      <!-- Quarter table -->
-      <div class="qtr-table" id="qtrTable" style="display:none;"></div>
-      <!-- Winning digits -->
-      <div class="win-digits" id="winDigits" style="display:none;"></div>
-      <!-- Tally -->
-      <div class="tally-strip">
-        <div class="tally-strip-hdr">
-          <span class="tally-strip-label">Board tally</span>
-          <div class="pot-toggle">
-            <span>Payout based on:</span>
-            <button class="pot-toggle-btn active" id="potBtnCollected" onclick="setPotMode('collected')">Collected</button>
-            <button class="pot-toggle-btn" id="potBtnFull" onclick="setPotMode('full')">Full pot</button>
-          </div>
-        </div>
-        <div class="tally-metrics">
-          <div class="tm"><div class="tm-l">Squares sold</div><div class="tm-v" id="tallySlod">0 / 100</div></div>
-          <div class="tm"><div class="tm-l">Collected</div><div class="tm-v green" id="tallyCollected">$0</div></div>
-          <div class="tm"><div class="tm-l">Full pot</div><div class="tm-v" id="tallyPot">$0</div></div>
-        </div>
-        <div class="prog-wrap"><div class="prog-fill" id="tallyProg" style="width:0%"></div></div>
-        <div class="prog-txt"><span id="tallyProgL">0 sold</span><span id="tallyProgR">100 remaining</span></div>
-        <div class="payout-row" id="tallyPayouts"></div>
       </div>
     </div>
   </div>
@@ -1258,16 +1158,9 @@
 
       <!-- Buy Squares -->
       <div class="buy-section">
-        <div class="buy-meta" style="flex-wrap:wrap;gap:6px;">
+        <div class="buy-meta">
           <span class="buy-meta-label">Price per Square</span>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <!-- Locked display shown to players -->
-            <span class="buy-meta-value" id="priceDisplay" style="color:#22c55e;">$10</span>
-            <!-- Hidden select — only visible to admin after PIN -->
-            <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="display:none;background:#1a1a1a;border:1px solid #22c55e;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option><option value="250">$250</option></select>
-            <button id="priceUnlockBtn" onclick="adminUnlockPrice()" style="background:rgba(255,255,255,.06);border:0.5px solid rgba(255,255,255,.15);color:var(--text3);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;" title="Admin: change price">&#9881;</button>
-            <button id="priceLockBtn" onclick="adminLockPrice()" style="display:none;background:rgba(34,197,94,.12);border:0.5px solid rgba(34,197,94,.3);color:var(--green-light);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;">Lock</button>
-          </div>
+          <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="background:#1a1a1a;border:1px solid #333;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option><option value="250">$250</option></select>
         </div>
 
         <!-- Qty -->
@@ -1481,8 +1374,8 @@
         </div>
       </div>
 
-      <!-- Payment panel — updated by updatePayInstructions() -->
-      <div id="payInstructions"></div>
+      <!-- Payment instructions -->
+      <div id="payInstructions" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12px;color:var(--text2);"></div>
 
       <button class="modal-cta" id="confirmBtn" disabled onclick="confirmPurchase()">
         📲 Reserve My Squares
@@ -1729,8 +1622,6 @@ async function buildGrid(game) {
   }
 
   document.getElementById('squaresGrid').innerHTML = html;
-  // refresh tally + highlights on every grid rebuild (polls every 8s)
-  if (window.currentGame) { updateScoreStrip(window.currentGame); }
 }
 
 // ── ODDS BUILDER ─────────────────────────────────────────────
@@ -1973,9 +1864,8 @@ async function loadGame(game) {
   buildOdds(game);
   updateBoardHeader(game);
   updateCTA();
-  loadPaymentLockState();
-  loadPendingList();
-  updateScoreStrip(game); // refresh score strip + tally on game change
+  loadPaymentLockState(); // refresh payment lock state whenever game changes
+  loadPendingList();     // always refresh pending payments when game changes
 
   document.getElementById('gameSelect').value = game.id;
 
@@ -2062,18 +1952,14 @@ function updateCTA() {
 }
 
 function updatePriceDisplay(val) {
-  var p = parseFloat(val);
+  const p = parseFloat(val);
   window._squarePrice = p;
-  var qty = currentQty || 5;
-  var lbl = document.getElementById('modalSquaresLabel');
-  var tot = document.getElementById('modalTotal');
-  if (lbl) lbl.textContent = qty + ' Square' + (qty > 1 ? 's' : '') + ' x $' + p;
+  const qty = currentQty || 5;
+  const lbl = document.getElementById('modalSquaresLabel');
+  const tot = document.getElementById('modalTotal');
+  if (lbl) lbl.textContent = qty + ' Square' + (qty > 1 ? 's' : '') + ' × $' + p;
   if (tot) tot.textContent = '$' + (qty * p).toFixed(2);
-  var taEl = document.getElementById('totalAmount');
-  if (taEl) taEl.textContent = '$' + (qty * p).toFixed(2);
-  // Keep the locked display span in sync
-  var disp = document.getElementById('priceDisplay');
-  if (disp) disp.textContent = '$' + p;
+  document.getElementById('totalAmount').textContent = `$${(qty * p).toFixed(2)}`;
 }
 
 // ── SQUARE SELECTION ────────────────────────────────────────
@@ -2135,102 +2021,24 @@ function selectPay(el, method) {
   updatePayInstructions();
 }
 
-function makeQRSvg(color) {
-  // Simple QR-pattern placeholder SVG — real QR renders via qr-code-styling or similar
-  // For now shows a stylised pattern so the UI looks right
-  var c = color || '#000';
-  return '<svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">' +
-    '<rect width="72" height="72" fill="white"/>' +
-    '<rect x="4" y="4" width="24" height="24" fill="none" stroke="' + c + '" stroke-width="2.5"/>' +
-    '<rect x="9" y="9" width="14" height="14" fill="' + c + '"/>' +
-    '<rect x="44" y="4" width="24" height="24" fill="none" stroke="' + c + '" stroke-width="2.5"/>' +
-    '<rect x="49" y="9" width="14" height="14" fill="' + c + '"/>' +
-    '<rect x="4" y="44" width="24" height="24" fill="none" stroke="' + c + '" stroke-width="2.5"/>' +
-    '<rect x="9" y="49" width="14" height="14" fill="' + c + '"/>' +
-    '<rect x="34" y="34" width="5" height="5" fill="' + c + '"/>' +
-    '<rect x="41" y="34" width="5" height="5" fill="' + c + '"/>' +
-    '<rect x="48" y="34" width="5" height="5" fill="' + c + '"/>' +
-    '<rect x="55" y="34" width="5" height="5" fill="' + c + '"/>' +
-    '<rect x="34" y="41" width="5" height="5" fill="' + c + '"/>' +
-    '<rect x="48" y="41" width="5" height="5" fill="' + c + '"/>' +
-    '<rect x="55" y="41" width="5" height="5" fill="' + c + '"/>' +
-    '<rect x="34" y="48" width="5" height="5" fill="' + c + '"/>' +
-    '<rect x="41" y="48" width="5" height="5" fill="' + c + '"/>' +
-    '<rect x="34" y="55" width="5" height="5" fill="' + c + '"/>' +
-    '<rect x="55" y="55" width="5" height="5" fill="' + c + '"/>' +
-    '</svg>';
-}
-
 function updatePayInstructions() {
-  var el = document.getElementById('payInstructions');
+  const el = document.getElementById('payInstructions');
   if (!el) return;
-  var price   = parseFloat(document.getElementById('squarePrice').value) || 10;
-  var qty     = _manuallySelected.size > 0 ? _manuallySelected.size : currentQty;
-  var total   = (qty * price).toFixed(2);
-  var initials = (document.getElementById('initialsInput').value.trim().toUpperCase() || 'YourInitials');
-
+  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
+  const qty = _manuallySelected.size > 0 ? _manuallySelected.size : currentQty;
+  const total = (qty * price).toFixed(2);
   if (_selectedPayMethod === 'cashapp') {
-    // Deep link: opens Cash App with amount pre-filled
-    var deepLink = 'https://cash.app/$7707438091/' + total;
-    el.innerHTML =
-      '<div class="pay-qr-row">' +
-        '<div class="pay-qr-box">' +
-          '<div class="pay-qr-img">' + makeQRSvg('#00C244') + '</div>' +
-          '<div class="pay-qr-label">Scan or tap button</div>' +
-        '</div>' +
-        '<div style="flex:1;">' +
-          '<a class="pay-link-btn cashapp" href="' + deepLink + '" target="_blank">' +
-            'Pay $' + total + ' on Cash App' +
-          '</a>' +
-          '<div class="pay-steps">' +
-            '<span>1.</span> Tap button above — Cash App opens with $' + total + ' ready<br>' +
-            '<span>2.</span> Add note: <strong style="color:var(--text);">' + initials + ' squares</strong><br>' +
-            '<span>3.</span> Hit Pay, then tap Reserve below' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-
+    el.innerHTML = '💚 Send <strong style="color:#22c55e;">$' + total + '</strong> to <strong style="color:#22c55e;">$7707438091</strong> on Cash App<br><span style="font-size:10px;color:var(--text3);">Include your initials in the note</span>';
   } else if (_selectedPayMethod === 'paypal') {
-    var ppLink = 'https://paypal.me/williemayes/' + total;
-    el.innerHTML =
-      '<div class="pay-qr-row">' +
-        '<div class="pay-qr-box">' +
-          '<div class="pay-qr-img">' + makeQRSvg('#0070ba') + '</div>' +
-          '<div class="pay-qr-label">Scan or tap button</div>' +
-        '</div>' +
-        '<div style="flex:1;">' +
-          '<a class="pay-link-btn paypal" href="' + ppLink + '" target="_blank">' +
-            'Pay $' + total + ' on PayPal' +
-          '</a>' +
-          '<div class="pay-steps">' +
-            '<span>1.</span> Tap button — PayPal opens<br>' +
-            '<span>2.</span> If amount not pre-filled, enter <strong style="color:#facc15;font-family:'IBM Plex Mono',monospace;">$' + total + '</strong> manually<br>' +
-            '<span>3.</span> Send <strong style="color:var(--text);">Friends &amp; Family</strong> only<br>' +
-            '<span>4.</span> Note: <strong style="color:var(--text);">' + initials + ' squares</strong><br>' +
-            '<span>5.</span> Then tap Reserve below' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div style="background:rgba(250,204,21,.06);border:0.5px solid rgba(250,204,21,.2);border-radius:7px;padding:7px 10px;margin-top:6px;font-size:10px;color:var(--text2);">' +
-        'PayPal sometimes ignores the pre-filled amount on iPhone. If that happens, enter <strong style="color:#facc15;font-family:'IBM Plex Mono',monospace;">$' + total + '</strong> manually.' +
-      '</div>';
-
+    el.innerHTML = '💙 Send <strong style="color:#60a5fa;">$' + total + '</strong> to <strong style="color:#60a5fa;">willie.mayes@gmail.com</strong> on PayPal<br><span style="font-size:10px;color:var(--text3);">Friends & Family — include your initials</span>';
   } else {
-    // Cash — instant, no QR needed
-    el.innerHTML =
-      '<div class="cash-box">' +
-        '<div class="cash-box-amt">$' + total + '</div>' +
-        '<div class="cash-box-note">Hand Willie <strong style="color:var(--green-light);">$' + total + '</strong> cash<br>' +
-        '<span style="font-size:11px;color:var(--text3);">Your squares lock in the moment he receives it</span>' +
-        '</div>' +
-      '</div>';
+    el.innerHTML = '💵 Bring <strong style="color:#facc15;">$' + total + '</strong> cash in person<br><span style="font-size:10px;color:var(--text3);">Willie will lock in your squares when he receives it</span>';
   }
 }
 
 function checkInitials() {
-  var val = document.getElementById('initialsInput').value.trim();
+  const val = document.getElementById('initialsInput').value.trim();
   document.getElementById('confirmBtn').disabled = val.length < 2;
-  updatePayInstructions(); // update note text live as initials are typed
 }
 
 async function confirmPurchase() {
@@ -2394,55 +2202,6 @@ async function adminReset() {
   }
 }
 
-// ── PRICE LOCK / UNLOCK (admin only) ────────────────────────
-function adminUnlockPrice() {
-  var pinEl = document.getElementById('resetPinInput');
-  var pin = pinEl ? pinEl.value.trim() : '';
-  if (!pin) {
-    // prompt fallback if admin PIN box not visible (e.g. player scrolled past it)
-    pin = prompt('Enter admin PIN to change price:');
-    if (!pin) return;
-  }
-  // Validate PIN against server
-  fetch('/api/lock-numbers', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({gameId:'__pincheck__', pin: pin, rowNums:[0,1,2,3,4,5,6,7,8,9], colNums:[0,1,2,3,4,5,6,7,8,9]})
-  }).then(function(r){ return r.json(); }).then(function(d) {
-    if (d.ok || !d.error || !d.error.toLowerCase().includes('pin')) {
-      // PIN valid — show dropdown
-      document.getElementById('squarePrice').style.display = '';
-      document.getElementById('priceDisplay').style.display = 'none';
-      document.getElementById('priceUnlockBtn').style.display = 'none';
-      document.getElementById('priceLockBtn').style.display = '';
-    } else {
-      alert('Wrong PIN');
-    }
-  }).catch(function() {
-    // Offline fallback: just use the inline PIN if already typed
-    if (pin === '2826' || pin === '0614') {
-      document.getElementById('squarePrice').style.display = '';
-      document.getElementById('priceDisplay').style.display = 'none';
-      document.getElementById('priceUnlockBtn').style.display = 'none';
-      document.getElementById('priceLockBtn').style.display = '';
-    } else {
-      alert('Wrong PIN');
-    }
-  });
-}
-
-function adminLockPrice() {
-  var sel = document.getElementById('squarePrice');
-  var price = parseFloat(sel.value) || 10;
-  document.getElementById('priceDisplay').textContent = '$' + price;
-  document.getElementById('squarePrice').style.display = 'none';
-  document.getElementById('priceDisplay').style.display = '';
-  document.getElementById('priceUnlockBtn').style.display = '';
-  document.getElementById('priceLockBtn').style.display = 'none';
-  updatePriceDisplay(price);
-}
-// ── END PRICE LOCK ───────────────────────────────────────────
-
 function showAdminMsg(msg, isErr) {
   var el = document.getElementById('adminMsg');
   if (!el) return;
@@ -2584,198 +2343,6 @@ async function confirmAllPending() {
   if (d.ok) { loadPendingList(); _cache = {}; buildGrid(game); alert('✅ ' + (d.confirmed||[]).length + ' squares confirmed!'); }
   else alert('Error: ' + d.error);
 }
-
-
-// ── SCORE STRIP + TALLY ───────────────────────────────────
-var _potMode = 'collected'; // 'collected' or 'full'
-
-function setPotMode(mode) {
-  _potMode = mode;
-  document.getElementById('potBtnCollected').classList.toggle('active', mode === 'collected');
-  document.getElementById('potBtnFull').classList.toggle('active', mode === 'full');
-  if (window.currentGame) updateScoreStrip(window.currentGame);
-}
-
-function updateScoreStrip(game) {
-  if (!game) return;
-  var strip = document.getElementById('scoreStrip');
-  if (strip) strip.style.display = 'block';
-
-  // ── Score bar ──
-  var isLive  = game.status === 'LIVE';
-  var isFinal = game.status === 'FINAL';
-  var badge   = document.getElementById('slbBadge');
-  document.getElementById('slbAwayAbbr').textContent  = game.away  || '';
-  document.getElementById('slbHomeAbbr').textContent  = game.home  || '';
-  document.getElementById('slbAwayScore').textContent = (isLive||isFinal) ? (game.awayScore||0) : '—';
-  document.getElementById('slbHomeScore').textContent = (isLive||isFinal) ? (game.homeScore||0) : '—';
-  if (isLive) {
-    badge.textContent = 'LIVE';
-    badge.className   = 'slb-badge live';
-    var pEl = document.getElementById('slbPeriod');
-    var pNum = game.period || '';
-    var pName = pNum ? (game.sport === 'NHL' || game.sport === 'nhl' ? 'P' : 'Q') + pNum : '';
-    pEl.textContent = pName + (game.clock ? ' ' + game.clock : '');
-  } else if (isFinal) {
-    badge.textContent = 'FINAL';
-    badge.className   = 'slb-badge final';
-    document.getElementById('slbPeriod').textContent = '';
-  } else {
-    badge.textContent = game.time || 'Scheduled';
-    badge.className   = 'slb-badge pre';
-    document.getElementById('slbPeriod').textContent = '';
-  }
-
-  // ── Quarter table ──
-  var period   = parseInt(game.period) || 0;
-  var qtrEl    = document.getElementById('qtrTable');
-  var digEl    = document.getElementById('winDigits');
-  var awayScores = game.periodScores && game.periodScores.away || [];
-  var homeScores = game.periodScores && game.periodScores.home || [];
-
-  // Only show qtr table if game has started
-  if (period > 0 || isFinal) {
-    qtrEl.style.display = 'block';
-    var maxQ = Math.max(4, period);
-    var qHtml = '<div class="qtr-label">Quarter by quarter</div><div class="qtr-grid">';
-    // header row
-    qHtml += '<div class="qcell hdr"></div>';
-    for (var q = 0; q < 4; q++) qHtml += '<div class="qcell hdr">Q'+(q+1)+'</div>';
-    qHtml += '<div class="qcell hdr">TOT</div></div>';
-    // team rows
-    var teams = [
-      { abbr: game.away, scores: awayScores, total: parseInt(game.awayScore)||0 },
-      { abbr: game.home, scores: homeScores, total: parseInt(game.homeScore)||0 }
-    ];
-    teams.forEach(function(t) {
-      qHtml += '<div class="qtr-grid" style="margin-top:2px;">';
-      qHtml += '<div class="qcell tname">'+t.abbr+'</div>';
-      for (var q = 0; q < 4; q++) {
-        var qDone = isFinal || q < period - 1;
-        var qCur  = q === period - 1 && isLive;
-        var val   = t.scores[q] !== undefined ? t.scores[q] : '';
-        var cls   = 'qcell val' + (qCur ? ' cur' : qDone ? ' done' : ' empty');
-        qHtml += '<div class="'+cls+'">'+(val !== '' ? val : '—')+'</div>';
-      }
-      qHtml += '<div class="qcell val tot">'+t.total+'</div>';
-      qHtml += '</div>';
-    });
-    qtrEl.innerHTML = qHtml;
-
-    // ── Winning digits ──
-    var awayD = parseInt(game.awayScore) % 10;
-    var homeD = parseInt(game.homeScore) % 10;
-    digEl.style.display = 'flex';
-    digEl.innerHTML =
-      '<span style="color:var(--text3);">Winning digits:</span>' +
-      '<span class="win-digit-badge">'+(game.away||'Away')+' '+awayD+'</span>' +
-      '<span class="win-digit-badge">'+(game.home||'Home')+' '+homeD+'</span>' +
-      '<span style="color:var(--text3);font-size:9px;">col '+awayD+' + row '+homeD+'</span>';
-
-    // Highlight winning squares on the grid
-    highlightWinners(awayD, homeD);
-  } else {
-    qtrEl.style.display = 'none';
-    digEl.style.display = 'none';
-  }
-
-  // ── Tally (reads from server data) ──
-  updateTally(game);
-}
-
-function highlightWinners(awayDigit, homeDigit) {
-  // Find axis headers and cells, highlight matching row/col
-  var topHeaders  = document.querySelectorAll('.axis-header.axis-top');
-  var leftHeaders = document.querySelectorAll('.axis-header.axis-left');
-  var cells       = document.querySelectorAll('.cell');
-
-  // Build maps: index -> number value
-  var colNums = [], rowNums = [];
-  topHeaders.forEach(function(el, i)  { colNums[i] = parseInt(el.textContent.trim()); });
-  leftHeaders.forEach(function(el, i) { rowNums[i] = parseInt(el.textContent.trim()); });
-
-  // Highlight axis headers
-  topHeaders.forEach(function(el, i) {
-    if (colNums[i] === awayDigit) {
-      el.style.background = 'rgba(250,204,21,.18)';
-      el.style.borderColor = 'var(--yellow)';
-      el.style.color = 'var(--yellow)';
-    } else {
-      el.style.background = ''; el.style.borderColor = ''; el.style.color = '';
-    }
-  });
-  leftHeaders.forEach(function(el, i) {
-    if (rowNums[i] === homeDigit) {
-      el.style.background = 'rgba(250,204,21,.18)';
-      el.style.borderColor = 'var(--yellow)';
-      el.style.color = 'var(--yellow)';
-    } else {
-      el.style.background = ''; el.style.borderColor = ''; el.style.color = '';
-    }
-  });
-
-  // Highlight winning cell
-  cells.forEach(function(el) {
-    var idx = parseInt(el.dataset.idx);
-    var row = Math.floor(idx / 10);
-    var col = idx % 10;
-    var isWin = (colNums[col] === awayDigit && rowNums[row] === homeDigit);
-    if (isWin) {
-      el.style.background   = 'rgba(250,204,21,.22)';
-      el.style.borderColor  = 'var(--yellow)';
-      el.style.outline      = '2px solid var(--yellow)';
-      el.style.zIndex       = '3';
-      el.style.transform    = 'scale(1.12)';
-    } else {
-      // only reset non-sold cells
-      if (!el.classList.contains('cell-sold') && !el.classList.contains('cell-mine') && !el.classList.contains('cell-pending')) {
-        el.style.background = ''; el.style.borderColor = '';
-      }
-      el.style.outline   = '';
-      el.style.zIndex    = '';
-      el.style.transform = '';
-    }
-  });
-}
-
-async function updateTally(game) {
-  if (!game) return;
-  var price = parseFloat(document.getElementById('squarePrice').value) || 10;
-
-  // Count sold + pending from server data
-  var sData   = _cache[game.id] || await fetchSquares(game.id);
-  var sold    = Object.keys(sData.owners  || {}).length;
-  var pending = Object.keys(sData.pending || {}).length;
-  var total   = sold + pending;
-  var pot     = 100 * price;
-  var collected = total * price;
-  var base    = _potMode === 'full' ? pot : collected;
-  var qPay    = base * 0.20;
-
-  document.getElementById('tallySlod').textContent    = total + ' / 100';
-  document.getElementById('tallyCollected').textContent = '$' + Math.round(collected).toLocaleString();
-  document.getElementById('tallyPot').textContent     = '$' + Math.round(pot).toLocaleString();
-  document.getElementById('tallyProg').style.width    = total + '%';
-  document.getElementById('tallyProgL').textContent   = total + ' sold';
-  document.getElementById('tallyProgR').textContent   = (100 - total) + ' remaining';
-
-  // Payout boxes
-  var period  = parseInt(game.period) || 0;
-  var isFinal = game.status === 'FINAL';
-  var isLive  = game.status === 'LIVE';
-  var qtrs    = ['Q1','Half','Q3','Final'];
-  // Q is "paid" (past) if period > q+1, or final
-  var pHtml   = '';
-  qtrs.forEach(function(name, i) {
-    var isPaid   = isFinal || period > i + 1;
-    var isActive = isLive && period === i + 1;
-    var cls  = isPaid ? 'pq pq-paid' : isActive ? 'pq pq-active' : 'pq';
-    var aCls = isPaid ? 'pq-a green'  : isActive ? 'pq-a yellow'  : 'pq-a';
-    pHtml += '<div class="'+cls+'"><div class="pq-n">'+name+'</div><div class="'+aCls+'">$'+Math.round(qPay).toLocaleString()+'</div></div>';
-  });
-  document.getElementById('tallyPayouts').innerHTML = pHtml;
-}
-// ── END SCORE STRIP + TALLY ───────────────────────────────
 
 // ── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
