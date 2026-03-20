@@ -1338,6 +1338,7 @@
       <div class="modal-icon">🎯</div>
       <div class="modal-title">Claim Your Squares</div>
       <div class="modal-sub" id="modalSubText">Enter your initials, pick how you'll pay, then hit send.</div>
+      <div id="modalDebug" style="display:none;background:#1a0000;border:1px solid #ef4444;border-radius:6px;padding:8px;margin-top:8px;font-size:10px;color:#fca5a5;font-family:monospace;word-break:break-all;"></div>
     </div>
     <div class="modal-body">
       <!-- Selected squares preview -->
@@ -2120,6 +2121,8 @@ async function confirmPurchase() {
       _manuallySelected.clear();
     } catch(e) {
       btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
+      const dbg = document.getElementById('modalDebug');
+      if (dbg) { dbg.style.display='block'; dbg.textContent = 'ERR: ' + e.message; }
       alert('Error: ' + e.message); return;
     }
   }
