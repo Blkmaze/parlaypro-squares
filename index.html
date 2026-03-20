@@ -911,6 +911,28 @@
   .pq-a { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text); }
   .pq-a.yellow { color: var(--yellow); }
   .pq-a.green { color: var(--green-light); }
+  .score-live-bar { display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--surface2);border-bottom:0.5px solid var(--border);gap:8px; }
+  .slb-team { display:flex;align-items:center;gap:6px;flex:1; }
+  .slb-abbr { font-size:12px;color:var(--text2);font-weight:500; }
+  .slb-score { font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:var(--text);line-height:1; }
+  .slb-center { text-align:center;flex-shrink:0; }
+  .slb-badge { font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;letter-spacing:.04em; }
+  .slb-badge.live { background:rgba(239,68,68,.15);color:#f87171; }
+  .slb-badge.final { background:rgba(34,197,94,.15);color:var(--green-light); }
+  .slb-badge.pre { background:var(--surface3);color:var(--text3); }
+  .slb-clock { font-size:10px;color:var(--yellow);margin-top:2px; }
+  .qtr-table-wrap { padding:8px 14px 10px;border-bottom:0.5px solid var(--border); }
+  .qtr-table-label { font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px; }
+  .qtr-row-grid { display:grid;grid-template-columns:36px repeat(4,1fr) 42px;gap:2px;margin-bottom:2px; }
+  .qc { border-radius:4px;padding:4px 3px;text-align:center;font-size:10px; }
+  .qc.hdr { background:transparent;color:var(--text3); }
+  .qc.tname { background:transparent;font-size:11px;font-weight:500;color:var(--text2);text-align:left;display:flex;align-items:center; }
+  .qc.val { background:var(--surface3);border:0.5px solid var(--border);font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--text); }
+  .qc.cur { background:rgba(250,204,21,.12);border-color:var(--yellow);color:var(--yellow); }
+  .qc.tot { background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.25);color:var(--green-light); }
+  .qc.empty { color:var(--text3); }
+  .win-digits-row { display:flex;align-items:center;gap:6px;padding:6px 14px 8px;font-size:10px;color:var(--text2);flex-wrap:wrap;border-bottom:0.5px solid var(--border); }
+  .win-digit-badge { background:rgba(250,204,21,.12);border:1px solid var(--yellow);border-radius:4px;padding:1px 6px;font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--yellow);font-size:11px; }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
@@ -1051,6 +1073,26 @@
       <div class="grid-container" id="squaresGrid">
         <!-- populated by JS -->
       </div>
+    </div>
+
+    <!-- LIVE SCORE BAR + QUARTER TABLE -->
+    <div id="scoreStrip" style="display:none;">
+      <div class="score-live-bar">
+        <div class="slb-team">
+          <span class="slb-abbr" id="slbAwayAbbr">AWAY</span>
+          <span class="slb-score" id="slbAwayScore">0</span>
+        </div>
+        <div class="slb-center">
+          <div id="slbBadge" class="slb-badge pre">—</div>
+          <div class="slb-clock" id="slbClock"></div>
+        </div>
+        <div class="slb-team" style="justify-content:flex-end;">
+          <span class="slb-score" id="slbHomeScore">0</span>
+          <span class="slb-abbr" id="slbHomeAbbr">HOME</span>
+        </div>
+      </div>
+      <div class="qtr-table-wrap" id="qtrTableWrap" style="display:none;"></div>
+      <div class="win-digits-row" id="winDigitsRow" style="display:none;"></div>
     </div>
 
     <!-- TALLY + PAYOUT STRIP -->
@@ -1674,7 +1716,7 @@ async function buildGrid(game) {
   }
 
   document.getElementById('squaresGrid').innerHTML = html;
-  if (window.currentGame) { updateTally(window.currentGame); }
+  if (window.currentGame) { updateScoreStrip(window.currentGame); }
 }
 
 // ── ODDS BUILDER ─────────────────────────────────────────────
@@ -1919,7 +1961,7 @@ async function loadGame(game) {
   updateCTA();
   loadPaymentLockState();
   loadPendingList();
-  updateTally(game);
+  updateScoreStrip(game);
 
   document.getElementById('gameSelect').value = game.id;
 
@@ -2397,6 +2439,126 @@ async function confirmAllPending() {
   if (d.ok) { loadPendingList(); _cache = {}; buildGrid(game); alert('✅ ' + (d.confirmed||[]).length + ' squares confirmed!'); }
   else alert('Error: ' + d.error);
 }
+
+// ── LIVE SCORE BAR + QUARTER TABLE ──────────────────────────
+function updateScoreStrip(game) {
+  if (!game) return;
+  var strip = document.getElementById('scoreStrip');
+  if (strip) strip.style.display = 'block';
+
+  var isLive  = game.status === 'LIVE';
+  var isFinal = game.status === 'FINAL';
+
+  // Score bar
+  var badge = document.getElementById('slbBadge');
+  document.getElementById('slbAwayAbbr').textContent  = game.away  || '';
+  document.getElementById('slbHomeAbbr').textContent  = game.home  || '';
+  document.getElementById('slbAwayScore').textContent = (isLive||isFinal) ? (game.awayScore||0) : '—';
+  document.getElementById('slbHomeScore').textContent = (isLive||isFinal) ? (game.homeScore||0) : '—';
+
+  var clockEl = document.getElementById('slbClock');
+  if (isLive) {
+    badge.textContent = 'LIVE'; badge.className = 'slb-badge live';
+    var pNum  = game.period || '';
+    var pLetter = (game.sport === 'NHL' || game.sport === 'nhl') ? 'P' : 'Q';
+    clockEl.textContent = pNum ? (pLetter + pNum + (game.clock ? ' · ' + game.clock : '')) : '';
+  } else if (isFinal) {
+    badge.textContent = 'FINAL'; badge.className = 'slb-badge final';
+    clockEl.textContent = '';
+  } else {
+    badge.textContent = game.time || 'Scheduled'; badge.className = 'slb-badge pre';
+    clockEl.textContent = '';
+  }
+
+  // Quarter table
+  var period = parseInt(game.period) || 0;
+  var qtrWrap = document.getElementById('qtrTableWrap');
+  var digRow  = document.getElementById('winDigitsRow');
+
+  if (period > 0 || isFinal) {
+    qtrWrap.style.display = 'block';
+    var awayScores = (game.periodScores && game.periodScores.away) || [];
+    var homeScores = (game.periodScores && game.periodScores.home) || [];
+
+    var qHtml = '<div class="qtr-table-label">Quarter breakdown</div>';
+    // header row
+    qHtml += '<div class="qtr-row-grid">';
+    qHtml += '<div class="qc hdr"></div>';
+    for (var q = 0; q < 4; q++) qHtml += '<div class="qc hdr">Q'+(q+1)+'</div>';
+    qHtml += '<div class="qc hdr">TOT</div></div>';
+    // team rows
+    var teams = [
+      { abbr: game.away, scores: awayScores, total: parseInt(game.awayScore)||0 },
+      { abbr: game.home, scores: homeScores, total: parseInt(game.homeScore)||0 }
+    ];
+    teams.forEach(function(t) {
+      qHtml += '<div class="qtr-row-grid">';
+      qHtml += '<div class="qc tname">' + (t.abbr||'') + '</div>';
+      for (var q = 0; q < 4; q++) {
+        var done = isFinal || q < period - 1;
+        var cur  = q === period - 1 && isLive;
+        var val  = t.scores[q] !== undefined ? t.scores[q] : '';
+        var cls  = cur ? 'qc cur' : (done ? 'qc val' : 'qc val empty');
+        qHtml += '<div class="' + cls + '">' + (val !== '' ? val : '—') + '</div>';
+      }
+      qHtml += '<div class="qc tot">' + t.total + '</div>';
+      qHtml += '</div>';
+    });
+    qtrWrap.innerHTML = qHtml;
+
+    // Winning digits + grid highlight
+    var awayD = parseInt(game.awayScore) % 10;
+    var homeD = parseInt(game.homeScore) % 10;
+    digRow.style.display = 'flex';
+    digRow.innerHTML =
+      '<span style="color:var(--text3);">Winning digits:</span>' +
+      '<span class="win-digit-badge">' + (game.away||'Away') + ' ' + awayD + '</span>' +
+      '<span class="win-digit-badge">' + (game.home||'Home') + ' ' + homeD + '</span>' +
+      '<span style="color:var(--text3);font-size:9px;">col ' + awayD + ' + row ' + homeD + '</span>';
+
+    highlightWinners(awayD, homeD);
+  } else {
+    qtrWrap.style.display = 'none';
+    digRow.style.display  = 'none';
+  }
+
+  updateTally(game);
+}
+
+function highlightWinners(awayDigit, homeDigit) {
+  var topHeaders  = document.querySelectorAll('.axis-header.axis-top');
+  var leftHeaders = document.querySelectorAll('.axis-header.axis-left');
+  var cells       = document.querySelectorAll('.cell');
+  var colNums = [], rowNums = [];
+  topHeaders.forEach(function(el, i)  { colNums[i] = parseInt(el.textContent.trim()); });
+  leftHeaders.forEach(function(el, i) { rowNums[i] = parseInt(el.textContent.trim()); });
+
+  topHeaders.forEach(function(el, i) {
+    if (colNums[i] === awayDigit) {
+      el.style.background = 'rgba(250,204,21,.18)'; el.style.borderColor = 'var(--yellow)'; el.style.color = 'var(--yellow)';
+    } else { el.style.background = ''; el.style.borderColor = ''; el.style.color = ''; }
+  });
+  leftHeaders.forEach(function(el, i) {
+    if (rowNums[i] === homeDigit) {
+      el.style.background = 'rgba(250,204,21,.18)'; el.style.borderColor = 'var(--yellow)'; el.style.color = 'var(--yellow)';
+    } else { el.style.background = ''; el.style.borderColor = ''; el.style.color = ''; }
+  });
+  cells.forEach(function(el) {
+    var idx = parseInt(el.dataset.idx);
+    var row = Math.floor(idx / 10), col = idx % 10;
+    var isWin = (colNums[col] === awayDigit && rowNums[row] === homeDigit);
+    if (isWin) {
+      el.style.background = 'rgba(250,204,21,.22)'; el.style.borderColor = 'var(--yellow)';
+      el.style.outline = '2px solid var(--yellow)'; el.style.zIndex = '3'; el.style.transform = 'scale(1.12)';
+    } else {
+      if (!el.classList.contains('cell-sold') && !el.classList.contains('cell-mine') && !el.classList.contains('cell-pending')) {
+        el.style.background = ''; el.style.borderColor = '';
+      }
+      el.style.outline = ''; el.style.zIndex = ''; el.style.transform = '';
+    }
+  });
+}
+// ── END SCORE STRIP ───────────────────────────────────────────
 
 // ── TALLY + PAYOUT STRIP ─────────────────────────────────────
 var _potMode = 'collected';
