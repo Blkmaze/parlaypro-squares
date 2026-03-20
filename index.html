@@ -217,7 +217,14 @@
     color: var(--green-light);
   }
 
-  .cell-sold {
+  .cell-pending {
+  background: rgba(250,204,21,0.12) !important;
+  border: 1.5px dashed #facc15 !important;
+  color: #facc15 !important;
+  font-size: 8px !important;
+  cursor: default;
+}
+.cell-sold {
     background: var(--surface3);
     border-color: #2a2a2a;
     color: var(--text2);
@@ -1162,7 +1169,7 @@
         <!-- Pay Willie -->
         <div class="pay-label">Pay Willie</div>
         <div class="pay-grid" id="payCardsGrid">
-          <div class="pay-card pay-cashapp pay-locked" id="payCardCashapp">
+          <div class="pay-card pay-cashapp" id="payCardCashapp">
             <span class="pay-locked-badge">LOCKED</span>
             <div class="pay-icon pay-icon-cashapp">$</div>
             <div class="pay-info">
@@ -1170,7 +1177,7 @@
               <div class="pay-handle">$7707438091</div>
             </div>
           </div>
-          <div class="pay-card pay-paypal pay-locked" id="payCardPaypal">
+          <div class="pay-card pay-paypal" id="payCardPaypal">
             <span class="pay-locked-badge">LOCKED</span>
             <div class="pay-icon pay-icon-paypal">P</div>
             <div class="pay-info">
@@ -1179,10 +1186,10 @@
             </div>
           </div>
         </div>
-        <div class="pay-unlock-note visible" id="payUnlockNote">⚠ Payment not confirmed — contact Willie</div>
+        <div class="pay-unlock-note" id="payUnlockNote">⚠ Payment not confirmed — contact Willie</div>
 
         <!-- CTA -->
-        <button class="cta-btn pay-locked" id="ctaBuyBtn" onclick="openPayModal()">
+        <button class="cta-btn" id="ctaBuyBtn" onclick="openPayModal()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           BUY 5 SQUARES NOW
         </button>
@@ -1194,6 +1201,10 @@
     <div class="legend-card">
       <div class="legend-title">Legend</div>
       <div class="legend-items">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:rgba(250,204,21,0.12);border:1.5px dashed #facc15;"></div>
+          Pending
+        </div>
         <div class="legend-item">
           <div class="legend-dot" style="background:#16a34a;border:1px solid #22c55e;"></div>
           Yours
@@ -1233,10 +1244,16 @@
         <button class="admin-btn admin-btn-red" id="payLockBtn" onclick="adminTogglePayment(false)" style="display:none;">🔒 Lock Payment</button>
         <button class="admin-btn admin-btn-red" onclick="adminReset();">⨂ Reset Board</button>
       </div>
-      <!-- Pending Payments List -->
-      <div id="pendingPayList" style="margin-top:10px;display:none;">
+      <!-- Pending Payments List — auto-loads when admin unlocks -->
+      <div id="pendingPayList" style="margin-top:12px;">
         <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">⏳ Pending Payments</div>
-        <div class="admin-confirm-list" id="pendingPayListInner"></div>
+        <div id="pendingPayListInner" style="max-height:260px;overflow-y:auto;">
+          <div style="color:#555;font-size:11px;padding:8px 0;">Loading...</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="admin-btn admin-btn-green" style="flex:1;font-size:11px;" onclick="confirmAllPending()">✅ Confirm All</button>
+          <button class="admin-btn" style="flex:1;font-size:11px;background:rgba(255,255,255,0.04);color:var(--text2);" onclick="loadPendingList()">↻ Refresh</button>
+        </div>
       </div>
     </div>
 
@@ -1292,37 +1309,54 @@
 
 <!-- PAYMENT MODAL -->
 <div class="modal-overlay" id="payModal">
-  <div class="modal" style="position:relative;">
+  <div class="modal" style="position:relative;max-width:360px;">
     <button class="modal-close" onclick="document.getElementById('payModal').classList.remove('open')">✕</button>
     <div class="modal-header">
-      <div class="modal-icon">💵</div>
-      <div class="modal-title">Payment Method</div>
-      <div class="modal-sub">Select how you want to pay for your squares.</div>
+      <div class="modal-icon">🎯</div>
+      <div class="modal-title">Claim Your Squares</div>
+      <div class="modal-sub" id="modalSubText">Enter your initials, pick how you'll pay, then hit send.</div>
     </div>
     <div class="modal-body">
+      <!-- Selected squares preview -->
+      <div id="selectedSquaresPreview" style="display:none;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#86efac;font-family:'IBM Plex Mono',monospace;"></div>
+
+      <!-- Amount -->
       <div class="modal-total">
         <span class="modal-total-label" id="modalSquaresLabel">5 Squares × $10</span>
         <span class="modal-total-amount" id="modalTotal">$50.00</span>
       </div>
-      <div class="modal-input-label">Your Initials (3 letters)</div>
-      <input type="text" maxlength="3" placeholder="ABC" class="modal-input" id="initialsInput" oninput="checkInitials()" />
+
+      <!-- Initials -->
+      <div class="modal-input-label">Your Initials <span style="color:var(--text3);font-weight:400;">(2–4 letters shown on board)</span></div>
+      <input type="text" maxlength="4" placeholder="e.g. JD or DAB" class="modal-input" id="initialsInput" oninput="checkInitials()" style="text-transform:uppercase;" />
+
+      <!-- Payment method -->
+      <div class="modal-input-label" style="margin-top:12px;">How are you paying?</div>
       <div class="modal-pay-grid">
-        <div class="modal-pay-option" onclick="selectPay(this)">
+        <div class="modal-pay-option selected" id="payOpt-cashapp" onclick="selectPay(this,'cashapp')">
           <div class="modal-pay-icon" style="background:#00D632;">$</div>
           <div class="modal-pay-name">Cash App</div>
+          <div style="font-size:9px;color:#aaa;margin-top:2px;">$7707438091</div>
         </div>
-        <div class="modal-pay-option selected" onclick="selectPay(this)">
+        <div class="modal-pay-option" id="payOpt-paypal" onclick="selectPay(this,'paypal')">
           <div class="modal-pay-icon" style="background:#0070ba;font-style:italic;font-size:13px;">P</div>
           <div class="modal-pay-name">PayPal</div>
+          <div style="font-size:9px;color:#aaa;margin-top:2px;">willie.mayes</div>
         </div>
-        <div class="modal-pay-option" onclick="selectPay(this)">
+        <div class="modal-pay-option" id="payOpt-cash" onclick="selectPay(this,'cash')">
           <div class="modal-pay-icon" style="background:#555;">💵</div>
           <div class="modal-pay-name">Cash</div>
+          <div style="font-size:9px;color:#aaa;margin-top:2px;">In person</div>
         </div>
       </div>
+
+      <!-- Payment instructions -->
+      <div id="payInstructions" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12px;color:var(--text2);"></div>
+
       <button class="modal-cta" id="confirmBtn" disabled onclick="confirmPurchase()">
-        ✓ I've Sent the Payment
+        📲 Reserve My Squares
       </button>
+      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:8px;">Your squares are reserved once Willie confirms payment ✓</div>
     </div>
   </div>
 </div>
@@ -1549,9 +1583,14 @@ async function buildGrid(game) {
       const isMine = mine.has(idx);
       const isSold = sold.has(idx);
       // Server is source of truth for owners — local initials only for squares claimed this session
-      const owner = serverOwners[idx] || (isMine && !serverSold.has(idx) ? myInitials : null);
-      const cellClass = isMine ? 'cell-mine' : isSold ? 'cell-sold' : 'cell-open';
-      html += `<div class="cell ${cellClass}" data-idx="${idx}">${owner || ''}</div>`;
+      const pendingEntry = serverData.pending && serverData.pending[idx];
+      const isPending = !!pendingEntry;
+      const effectiveClass = isPending ? 'cell-pending' : (isMine ? 'cell-mine' : isSold ? 'cell-sold' : 'cell-open');
+      const owner = serverOwners[idx] || (isPending ? pendingEntry.initials : (isMine && !serverSold.has(idx) ? myInitials : null));
+      const cellClass = effectiveClass;
+      const clickHandler = (!isMine && !isSold && !isPending) ? `onclick="tapSquare(${idx})"` : '';
+      const pendingMark = isPending ? '⏳' : '';
+      html += `<div class="cell ${cellClass}" data-idx="${idx}" ${clickHandler}>${(owner||'') + pendingMark}</div>`;
     }
   }
 
@@ -1876,63 +1915,147 @@ function updatePriceDisplay(val) {
   document.getElementById('totalAmount').textContent = `$${(qty * p).toFixed(2)}`;
 }
 
+// ── SQUARE SELECTION ────────────────────────────────────────
+let _manuallySelected = new Set(); // squares tapped directly on grid
+let _selectedPayMethod = 'cashapp';
+
+function tapSquare(idx) {
+  if (!window.currentGame) { alert('Select a game first.'); return; }
+  if (_manuallySelected.has(idx)) {
+    _manuallySelected.delete(idx);
+  } else {
+    _manuallySelected.add(idx);
+  }
+  // Highlight selected squares
+  document.querySelectorAll('.cell[data-idx]').forEach(function(cell) {
+    const i = parseInt(cell.dataset.idx);
+    if (_manuallySelected.has(i)) {
+      cell.style.background = 'rgba(250,204,21,0.25)';
+      cell.style.borderColor = '#facc15';
+      cell.style.color = '#facc15';
+    } else if (cell.classList.contains('cell-open')) {
+      cell.style.background = '';
+      cell.style.borderColor = '';
+      cell.style.color = '';
+    }
+  });
+  updateCTA();
+}
+
 function openPayModal() {
+  if (!window.currentGame) { alert('Please select a game first.'); return; }
   const price = parseFloat(document.getElementById('squarePrice').value) || 10;
-  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} × $${price}`;
-  document.getElementById('modalTotal').textContent = `$${(currentQty * price).toFixed(2)}`;
+  const qty = _manuallySelected.size > 0 ? _manuallySelected.size : currentQty;
+  document.getElementById('modalSquaresLabel').textContent = `${qty} Square${qty !== 1 ? 's' : ''} × $${price}`;
+  document.getElementById('modalTotal').textContent = `$${(qty * price).toFixed(2)}`;
   document.getElementById('initialsInput').value = '';
   document.getElementById('confirmBtn').disabled = true;
+  // Show which squares are selected if manually picked
+  const preview = document.getElementById('selectedSquaresPreview');
+  if (_manuallySelected.size > 0) {
+    preview.style.display = 'block';
+    preview.textContent = 'Selected squares: ' + Array.from(_manuallySelected).sort((a,b)=>a-b).join(', ');
+  } else {
+    preview.style.display = 'none';
+  }
+  _selectedPayMethod = 'cashapp';
+  updatePayInstructions();
   document.getElementById('payModal').classList.add('open');
 }
 
-function selectPay(el) {
+function selectPay(el, method) {
   document.querySelectorAll('.modal-pay-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
+  _selectedPayMethod = method || 'cashapp';
+  updatePayInstructions();
+}
+
+function updatePayInstructions() {
+  const el = document.getElementById('payInstructions');
+  if (!el) return;
+  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
+  const qty = _manuallySelected.size > 0 ? _manuallySelected.size : currentQty;
+  const total = (qty * price).toFixed(2);
+  if (_selectedPayMethod === 'cashapp') {
+    el.innerHTML = '💚 Send <strong style="color:#22c55e;">$' + total + '</strong> to <strong style="color:#22c55e;">$7707438091</strong> on Cash App<br><span style="font-size:10px;color:var(--text3);">Include your initials in the note</span>';
+  } else if (_selectedPayMethod === 'paypal') {
+    el.innerHTML = '💙 Send <strong style="color:#60a5fa;">$' + total + '</strong> to <strong style="color:#60a5fa;">willie.mayes@gmail.com</strong> on PayPal<br><span style="font-size:10px;color:var(--text3);">Friends & Family — include your initials</span>';
+  } else {
+    el.innerHTML = '💵 Bring <strong style="color:#facc15;">$' + total + '</strong> cash in person<br><span style="font-size:10px;color:var(--text3);">Willie will lock in your squares when he receives it</span>';
+  }
 }
 
 function checkInitials() {
-  document.getElementById('confirmBtn').disabled = document.getElementById('initialsInput').value.trim().length < 3;
+  const val = document.getElementById('initialsInput').value.trim();
+  document.getElementById('confirmBtn').disabled = val.length < 2;
 }
 
 async function confirmPurchase() {
   const initials = document.getElementById('initialsInput').value.trim().toUpperCase();
+  if (initials.length < 2) { alert('Please enter at least 2 initials.'); return; }
   const btn = document.getElementById('confirmBtn');
   btn.disabled = true;
-  btn.textContent = 'Locking in...';
+  btn.textContent = '⏳ Reserving...';
 
-  const game = currentGame;
-  const serverData = _cache[game.id] || await fetchSquares(game.id);
-  const serverOwned = new Set(Object.keys(serverData.owners || {}).map(Number));
-  const sold = new Set([...(game.sold || []), ...serverOwned]);
-  const mine = getMySquares(game.id);
-  (game.mine || []).forEach(i => mine.add(i));
+  const game = window.currentGame;
+  if (!game) { btn.disabled = false; btn.textContent = '📲 Reserve My Squares'; alert('No game selected.'); return; }
 
-  const open = [];
-  for (let i = 0; i < 100; i++) {
-    if (!sold.has(i) && !mine.has(i)) open.push(i);
+  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
+
+  // Determine which squares to claim
+  let newIdxs;
+  if (_manuallySelected.size > 0) {
+    newIdxs = Array.from(_manuallySelected);
+  } else {
+    // Auto-assign random open squares
+    const serverData = _cache[game.id] || await fetchSquares(game.id);
+    const serverOwned = new Set(Object.keys(serverData.owners || {}).map(Number));
+    const pending = new Set(Object.keys(serverData.pending || {}).map(Number));
+    const open = [];
+    for (let i = 0; i < 100; i++) {
+      if (!serverOwned.has(i) && !pending.has(i)) open.push(i);
+    }
+    const shuffled = open.sort(() => Math.random() - 0.5);
+    newIdxs = shuffled.slice(0, Math.min(currentQty, shuffled.length));
   }
-  const shuffled = open.sort(() => Math.random() - 0.5);
-  const toAdd = Math.min(currentQty, shuffled.length);
-  const newIdxs = shuffled.slice(0, toAdd);
+
+  if (!newIdxs.length) {
+    btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
+    alert('No open squares available. Try refreshing.'); return;
+  }
+
+  const total = (newIdxs.length * price).toFixed(2);
 
   try {
-    await persistSquares(game.id, newIdxs, initials);
-  } catch (e) {
-    btn.disabled = false;
-    btn.textContent = 'CONFIRM & LOCK IN';
-    alert('Could not claim squares: ' + e.message + '\nTry refreshing and picking again.');
-    return;
-  }
+    // Submit as PENDING — not confirmed until Willie approves
+    const res = await fetch('/api/claim-square', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ gameId: game.id, indices: newIdxs, initials, pending: true, payMethod: _selectedPayMethod, amount: total })
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Failed to reserve');
 
-  document.getElementById('payModal').classList.remove('open');
-  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
-  document.getElementById('confirmMsg').innerHTML =
-    `${toAdd} square${toAdd > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${(toAdd * price).toFixed(2)}</strong>` +
-    `<br><span style="color:var(--green-light);font-size:13px;margin-top:4px;display:block;">Your squares are locked in as <strong>${initials}</strong> ✓ visible to all players!</span>`;
-  setTimeout(() => {
-    document.getElementById('confirmModal').classList.add('open');
-    buildGrid(game);
-  }, 150);
+    // Save locally
+    localStorage.setItem('my_' + game.id, JSON.stringify(newIdxs));
+    localStorage.setItem('initials_' + game.id, initials);
+    _cache[game.id] = null; // invalidate cache
+    _manuallySelected.clear();
+
+    document.getElementById('payModal').classList.remove('open');
+    document.getElementById('confirmMsg').innerHTML =
+      `${newIdxs.length} square${newIdxs.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
+      `<br><span style="color:#facc15;font-size:13px;margin-top:6px;display:block;">⏳ Reserved as <strong>${initials}</strong> — pending Willie's confirmation</span>` +
+      `<br><span style="color:var(--text3);font-size:11px;">Your squares will be locked in once payment is verified.</span>`;
+    setTimeout(() => {
+      document.getElementById('confirmModal').classList.add('open');
+      buildGrid(game);
+    }, 150);
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '📲 Reserve My Squares';
+    alert('Could not reserve squares: ' + e.message);
+  }
 }
 
 function closeConfirm() {
@@ -2044,6 +2167,74 @@ function loadPaymentLockState() {
   if (!game) return;
   var unlocked = localStorage.getItem('pay_unlocked_' + game.id) === '1';
   applyPaymentLockState(unlocked);
+  // Always load pending list in admin view
+  if (document.getElementById('pendingPayList')) loadPendingList();
+}
+
+async function loadPendingList() {
+  const game = window.currentGame;
+  const inner = document.getElementById('pendingPayListInner');
+  if (!inner) return;
+  if (!game) { inner.innerHTML = '<div style="color:#555;font-size:11px;">No game selected</div>'; return; }
+  try {
+    const res = await fetch('/api/squares?gameId=' + encodeURIComponent(game.id));
+    const data = await res.json();
+    const pending = data.pending || {};
+    const keys = Object.keys(pending);
+    if (!keys.length) {
+      inner.innerHTML = '<div style="color:#555;font-size:11px;padding:6px 0;">No pending payments</div>';
+      return;
+    }
+    // Group by initials
+    const byInitials = {};
+    keys.forEach(function(i) {
+      const p = pending[i];
+      if (!byInitials[p.initials]) byInitials[p.initials] = { indices: [], payMethod: p.payMethod, amount: p.amount };
+      byInitials[p.initials].indices.push(parseInt(i));
+    });
+    inner.innerHTML = Object.entries(byInitials).map(function([init, info]) {
+      const payIcon = info.payMethod === 'cashapp' ? '💚' : info.payMethod === 'paypal' ? '💙' : '💵';
+      return '<div class="confirm-row" style="flex-wrap:wrap;gap:4px;">' +
+        '<span class="initials">' + init + '</span>' +
+        '<span class="sq-count">' + info.indices.length + ' sq — $' + info.amount + ' via ' + payIcon + info.payMethod + '</span>' +
+        '<div style="display:flex;gap:4px;margin-left:auto;">' +
+        '<button class="btn-confirm-pay" onclick="confirmPending('' + game.id + '',[' + info.indices.join(',') + '])">✅ Confirm</button>' +
+        '<button class="btn-confirm-pay" style="background:#ef4444;color:white;" onclick="rejectPending('' + game.id + '',[' + info.indices.join(',') + '])">✗ Reject</button>' +
+        '</div></div>';
+    }).join('');
+  } catch(e) {
+    inner.innerHTML = '<div style="color:#ef4444;font-size:11px;">Error loading: ' + e.message + '</div>';
+  }
+}
+
+async function confirmPending(gameId, indices) {
+  var pin = prompt('Enter admin PIN to confirm payment:');
+  if (!pin) return;
+  var r = await fetch('/api/confirm-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId, indices, pin}) });
+  var d = await r.json();
+  if (d.ok) { loadPendingList(); _cache = {}; buildGrid(window.currentGame); alert('✅ Squares confirmed!'); }
+  else alert('Error: ' + (d.error || 'Failed'));
+}
+
+async function rejectPending(gameId, indices) {
+  if (!confirm('Reject these squares? They will be released back to open.')) return;
+  var pin = prompt('Enter admin PIN:');
+  if (!pin) return;
+  var r = await fetch('/api/reject-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId, indices, pin}) });
+  var d = await r.json();
+  if (d.ok) { loadPendingList(); _cache = {}; buildGrid(window.currentGame); }
+  else alert('Error: ' + d.error);
+}
+
+async function confirmAllPending() {
+  var pin = prompt('Enter admin PIN to confirm ALL pending:');
+  if (!pin) return;
+  var game = window.currentGame;
+  if (!game) return;
+  var r = await fetch('/api/confirm-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId: game.id, pin}) });
+  var d = await r.json();
+  if (d.ok) { loadPendingList(); _cache = {}; buildGrid(game); alert('✅ ' + (d.confirmed||[]).length + ' squares confirmed!'); }
+  else alert('Error: ' + d.error);
 }
 
 // ── INIT ─────────────────────────────────────────────────────

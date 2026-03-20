@@ -61,30 +61,61 @@ export default async (req, context) => {
   if (path === "/api/claim-square" && method === "POST") {
     if (!token) return json({ error: "Server not configured (missing NETLIFY_TOKEN)" }, 500);
 
-    const { gameId, indices, initials } = body;
+    const { gameId, indices, initials, pending: isPending, payMethod, amount } = body;
     if (!gameId || !Array.isArray(indices) || !initials) {
       return json({ error: "Missing gameId, indices, or initials" }, 400);
     }
-    if (initials.length < 2 || initials.length > 6) {
-      return json({ error: "Initials must be 2-6 characters" }, 400);
+    if (initials.length < 2 || initials.length > 8) {
+      return json({ error: "Initials must be 2-8 characters" }, 400);
     }
 
     try {
       const data = await blobGet(token, gameId) || emptyBoard;
       const owners = data.owners || {};
+      const pendingMap = data.pending || {};
 
-      // Check for conflicts
-      const conflicts = indices.filter(i => owners[i] !== undefined);
+      // Check for conflicts (owned OR already pending)
+      const conflicts = indices.filter(i => owners[i] !== undefined || pendingMap[i] !== undefined);
       if (conflicts.length > 0) {
-        return json({ error: `Squares already taken: ${conflicts.join(", ")}` }, 409);
+        return json({ error: `Squares already taken or pending: ${conflicts.join(", ")}` }, 409);
       }
 
-      // Claim squares
-      indices.forEach(i => { owners[i] = initials.toUpperCase(); });
-      data.owners = owners;
-      await blobSet(token, gameId, data);
+      const upperInitials = initials.toUpperCase();
 
-      return json({ ok: true, claimed: indices, initials: initials.toUpperCase() });
+      if (isPending) {
+        // Store as PENDING — shown on board with ⏳, not confirmed yet
+        indices.forEach(i => { pendingMap[i] = { initials: upperInitials, payMethod: payMethod || 'unknown', amount: amount || '?' }; });
+        data.pending = pendingMap;
+        await blobSet(token, gameId, data);
+
+        // Send Telegram notification to Willie
+        const tgToken = "8215107065:AAHyEhS7ezHFiU0NHoGxzSfUlpx5d-0Jg2E";
+        const tgChat = "7941431700"; // Willie's Telegram user ID — fallback to channel
+        const payIcon = payMethod === 'cashapp' ? '💚' : payMethod === 'paypal' ? '💙' : '💵';
+        const msg = `🎯 NEW SQUARE REQUEST
+
+Initials: ${upperInitials}
+Squares: ${indices.join(', ')} (${indices.length} total)
+Amount: $${amount}
+Payment: ${payIcon} ${payMethod || 'unknown'}
+Game: ${gameId}
+
+Go to admin panel to confirm ✅`;
+        await fetch(\`https://api.telegram.org/bot\${tgToken}/sendMessage\`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: tgChat, text: msg })
+        }).catch(() => {}); // Don't fail the claim if Telegram is down
+
+        return json({ ok: true, status: 'pending', claimed: indices, initials: upperInitials });
+      } else {
+        // Direct confirm (admin action or legacy)
+        indices.forEach(i => { owners[i] = upperInitials; delete pendingMap[i]; });
+        data.owners = owners;
+        data.pending = pendingMap;
+        await blobSet(token, gameId, data);
+        return json({ ok: true, status: 'confirmed', claimed: indices, initials: upperInitials });
+      }
     } catch (err) {
       return json({ error: err.message }, 500);
     }
@@ -113,6 +144,45 @@ export default async (req, context) => {
     } catch (err) {
       return json({ error: err.message }, 500);
     }
+  }
+
+  // ── POST /api/confirm-pending ─────────────────────────────
+  // Admin confirms a pending square claim (payment received)
+  if (path === "/api/confirm-pending" && method === "POST") {
+    if (!token) return json({ error: "Server not configured" }, 500);
+    const { gameId, indices, pin } = body;
+    if (!gameId || !pin) return json({ error: "Missing fields" }, 400);
+    if (!validPin(pin)) return json({ error: "Invalid PIN" }, 403);
+    try {
+      const data = await blobGet(token, gameId) || emptyBoard;
+      const owners = data.owners || {};
+      const pendingMap = data.pending || {};
+      const confirmed = [];
+      (indices || Object.keys(pendingMap).map(Number)).forEach(i => {
+        const p = pendingMap[i];
+        if (p) { owners[i] = p.initials; delete pendingMap[i]; confirmed.push(i); }
+      });
+      data.owners = owners;
+      data.pending = pendingMap;
+      await blobSet(token, gameId, data);
+      return json({ ok: true, confirmed });
+    } catch(err) { return json({ error: err.message }, 500); }
+  }
+
+  // ── POST /api/reject-pending ──────────────────────────────
+  if (path === "/api/reject-pending" && method === "POST") {
+    if (!token) return json({ error: "Server not configured" }, 500);
+    const { gameId, indices, pin } = body;
+    if (!gameId || !pin) return json({ error: "Missing fields" }, 400);
+    if (!validPin(pin)) return json({ error: "Invalid PIN" }, 403);
+    try {
+      const data = await blobGet(token, gameId) || emptyBoard;
+      const pendingMap = data.pending || {};
+      (indices || Object.keys(pendingMap).map(Number)).forEach(i => { delete pendingMap[i]; });
+      data.pending = pendingMap;
+      await blobSet(token, gameId, data);
+      return json({ ok: true });
+    } catch(err) { return json({ error: err.message }, 500); }
   }
 
   // ── POST /api/reset-squares ───────────────────────────────
@@ -247,7 +317,7 @@ export default async (req, context) => {
 };
 
 export const config = {
-  path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/props/confirm", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares", "/api/init-numbers"]
+  path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/props/confirm", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares", "/api/init-numbers", "/api/confirm-pending", "/api/reject-pending"]
 };
 
 
