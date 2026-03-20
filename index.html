@@ -1839,9 +1839,10 @@ async function loadGame(game) {
   if (window._pollTimer) clearInterval(window._pollTimer);
   window._pollTimer = setInterval(async function() {
     if (currentGame && currentGame.id === game.id) {
+      _cache[currentGame.id] = null; // always fetch fresh on poll
       try { await buildGrid(currentGame); } catch (e) { logStatus('Poll error: ' + e.message, true); }
     }
-  }, 15000);
+  }, 8000); // 8s refresh — fast enough for real-time sync
 
   buildOdds(game);
   updateBoardHeader(game);
@@ -2032,45 +2033,62 @@ async function confirmPurchase() {
   const price = parseFloat(document.getElementById('squarePrice').value) || 10;
 
   // Determine which squares to claim
+  const isCash = _selectedPayMethod === 'cash';
   let newIdxs;
+
   if (_manuallySelected.size > 0) {
+    // Player tapped specific squares — use client-side claim
     newIdxs = Array.from(_manuallySelected);
-  } else {
-    // Auto-assign random open squares
-    const serverData = _cache[game.id] || await fetchSquares(game.id);
-    const serverOwned = new Set(Object.keys(serverData.owners || {}).map(Number));
-    const pending = new Set(Object.keys(serverData.pending || {}).map(Number));
-    const open = [];
-    for (let i = 0; i < 100; i++) {
-      if (!serverOwned.has(i) && !pending.has(i)) open.push(i);
+    const total2 = (newIdxs.length * price).toFixed(2);
+    try {
+      const res2 = await fetch('/api/claim-square', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ gameId: game.id, indices: newIdxs, initials, pending: !isCash, payMethod: _selectedPayMethod, amount: total2 })
+      });
+      const d2 = await res2.json();
+      if (!res2.ok) throw new Error(d2.error || 'Failed to claim');
+      localStorage.setItem('my_' + game.id, JSON.stringify(newIdxs));
+      localStorage.setItem('initials_' + game.id, initials);
+      _cache[game.id] = null;
+      _manuallySelected.clear();
+    } catch(e) {
+      btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
+      alert('Could not claim squares: ' + e.message); return;
     }
-    const shuffled = open.sort(() => Math.random() - 0.5);
-    newIdxs = shuffled.slice(0, Math.min(currentQty, shuffled.length));
+  } else {
+    // Auto-assign: server picks squares atomically — no race conditions
+    const qty = currentQty;
+    const total2 = null; // server doesn't know price, calculated after
+    try {
+      const res = await fetch('/api/auto-assign', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ gameId: game.id, qty, initials, pending: !isCash, payMethod: _selectedPayMethod, amount: (qty * price).toFixed(2) })
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'No squares available');
+      newIdxs = d.indices;
+      localStorage.setItem('my_' + game.id, JSON.stringify(newIdxs));
+      localStorage.setItem('initials_' + game.id, initials);
+      _cache[game.id] = null;
+      _manuallySelected.clear();
+    } catch(e) {
+      btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
+      alert('Could not claim squares: ' + e.message); return;
+    }
   }
 
-  if (!newIdxs.length) {
+  if (!newIdxs || !newIdxs.length) {
     btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
-    alert('No open squares available. Try refreshing.'); return;
+    alert('No open squares available.'); return;
   }
 
   const total = (newIdxs.length * price).toFixed(2);
 
-  const isCash = _selectedPayMethod === 'cash';
-
   try {
-    const res = await fetch('/api/claim-square', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      // Cash = lock immediately (pending:false), CashApp/PayPal = pending until confirmed
-      body: JSON.stringify({ gameId: game.id, indices: newIdxs, initials, pending: !isCash, payMethod: _selectedPayMethod, amount: total })
-    });
-    const d = await res.json();
-    if (!res.ok) throw new Error(d.error || 'Failed to claim');
-
+    // (squares already claimed above — just update UI)
     localStorage.setItem('my_' + game.id, JSON.stringify(newIdxs));
-    localStorage.setItem('initials_' + game.id, initials);
-    _cache[game.id] = null;
-    _manuallySelected.clear();
 
     document.getElementById('payModal').classList.remove('open');
 

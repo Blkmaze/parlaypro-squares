@@ -316,7 +316,7 @@ Go to admin panel to confirm ✅`;
 };
 
 export const config = {
-  path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/props/confirm", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares", "/api/init-numbers", "/api/confirm-pending", "/api/reject-pending"]
+  path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/props/confirm", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares", "/api/auto-assign", "/api/init-numbers", "/api/confirm-pending", "/api/reject-pending"]
 };
 
 
