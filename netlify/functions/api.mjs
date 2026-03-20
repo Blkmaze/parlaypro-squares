@@ -33,7 +33,7 @@ async function blobSet(token, key, value) {
   if (!r.ok) throw new Error(`Blob write failed: ${r.status}`);
 }
 
-// ── ROUTE HANDLER ─────────────────────────────────────────────
+// -- ROUTE HANDLER ---------------------------------------------
 export default async (req, context) => {
   const url = new URL(req.url);
   const path = url.pathname;
@@ -44,7 +44,7 @@ export default async (req, context) => {
   const token = process.env.NETLIFY_TOKEN;
   const emptyBoard = { owners: {}, rowNums: null, colNums: null, numbersLocked: false };
 
-  // ── GET /api/squares ──────────────────────────────────────
+  // -- GET /api/squares --------------------------------------
   if (path === "/api/squares" && method === "GET") {
     const gameId = url.searchParams.get("gameId");
     if (!gameId) return json({ error: "Missing gameId" }, 400);
@@ -57,7 +57,7 @@ export default async (req, context) => {
     }
   }
 
-  // ── POST /api/claim-square ────────────────────────────────
+  // -- POST /api/claim-square --------------------------------
   if (path === "/api/claim-square" && method === "POST") {
     if (!token) return json({ error: "Server not configured (missing NETLIFY_TOKEN)" }, 500);
 
@@ -83,16 +83,16 @@ export default async (req, context) => {
       const upperInitials = initials.toUpperCase();
 
       if (isPending) {
-        // Store as PENDING — shown on board with ⏳, not confirmed yet
-        indices.forEach(i => { pendingMap[i] = { initials: upperInitials, payMethod: payMethod || 'unknown', amount: amount || '?' }; });
+        // Store as PENDING - shown on board with -, not confirmed yet
+        indices.forEach(i => { pendingMap[i] = { initials: upperInitials, payMethod: payMethod || 'unknown', amount: amount || '-' }; });
         data.pending = pendingMap;
         await blobSet(token, gameId, data);
 
         // Send Telegram notification to Willie
         const tgToken = "8215107065:AAHyEhS7ezHFiU0NHoGxzSfUlpx5d-0Jg2E";
-        const tgChat = "7941431700"; // Willie's Telegram user ID — fallback to channel
-        const payIcon = payMethod === 'cashapp' ? '💚' : payMethod === 'paypal' ? '💙' : '💵';
-        const msg = `🎯 NEW SQUARE REQUEST
+        const tgChat = "7941431700"; // Willie's Telegram user ID - fallback to channel
+        const payIcon = payMethod === 'cashapp' - '-' : payMethod === 'paypal' - '-' : '-';
+        const msg = `- NEW SQUARE REQUEST
 
 Initials: ${upperInitials}
 Squares: ${indices.join(', ')} (${indices.length} total)
@@ -100,7 +100,7 @@ Amount: $${amount}
 Payment: ${payIcon} ${payMethod || 'unknown'}
 Game: ${gameId}
 
-Go to admin panel to confirm ✅`;
+Go to admin panel to confirm -`;
         await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -121,7 +121,7 @@ Go to admin panel to confirm ✅`;
     }
   }
 
-  // ── POST /api/lock-numbers ────────────────────────────────
+  // -- POST /api/lock-numbers --------------------------------
   if (path === "/api/lock-numbers" && method === "POST") {
     if (!token) return json({ error: "Server not configured (missing NETLIFY_TOKEN)" }, 500);
 
@@ -146,8 +146,8 @@ Go to admin panel to confirm ✅`;
     }
   }
 
-  // ── POST /api/confirm-pending ─────────────────────────────
-  // Admin confirms a pending square claim — no PIN needed, just tap Confirm
+  // -- POST /api/confirm-pending -----------------------------
+  // Admin confirms a pending square claim - no PIN needed, just tap Confirm
   if (path === "/api/confirm-pending" && method === "POST") {
     if (!token) return json({ error: "Server not configured" }, 500);
     const { gameId, indices } = body;
@@ -168,7 +168,7 @@ Go to admin panel to confirm ✅`;
     } catch(err) { return json({ error: err.message }, 500); }
   }
 
-  // ── POST /api/reject-pending ──────────────────────────────
+  // -- POST /api/reject-pending ------------------------------
   if (path === "/api/reject-pending" && method === "POST") {
     if (!token) return json({ error: "Server not configured" }, 500);
     const { gameId, indices, pin } = body;
@@ -184,7 +184,7 @@ Go to admin panel to confirm ✅`;
     } catch(err) { return json({ error: err.message }, 500); }
   }
 
-  // ── POST /api/reset-squares ───────────────────────────────
+  // -- POST /api/reset-squares -------------------------------
   if (path === "/api/reset-squares" && method === "POST") {
     if (!token) return json({ error: "Server not configured (missing NETLIFY_TOKEN)" }, 500);
 
@@ -200,7 +200,7 @@ Go to admin panel to confirm ✅`;
     }
   }
 
-  // ── GET /api/scores ────────────────────────────────────────
+  // -- GET /api/scores ----------------------------------------
   if (method === "GET" && path === "/api/scores") {
     const SPORTS = {
       ncaam: "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard",
@@ -215,28 +215,28 @@ Go to admin panel to confirm ✅`;
     const sport = url.searchParams.get("sport") || "ncaam";
     const date = url.searchParams.get("date") || "";
     const baseUrl = SPORTS[sport] || SPORTS.ncaam;
-    const espnUrl = date ? `${baseUrl}?dates=${date}` : baseUrl;
+    const espnUrl = date - `${baseUrl}-dates=${date}` : baseUrl;
     try {
       const res = await fetch(espnUrl);
       const data = await res.json();
       const games = (data.events || []).map(e => {
-        const c = e.competitions?.[0];
-        const home = c?.competitors?.find(t => t.homeAway === "home");
-        const away = c?.competitors?.find(t => t.homeAway === "away");
-        const s = c?.status?.type;
+        const c = e.competitions-.[0];
+        const home = c-.competitors-.find(t => t.homeAway === "home");
+        const away = c-.competitors-.find(t => t.homeAway === "away");
+        const s = c-.status-.type;
         return {
           id: e.id, name: e.name,
-          home: home?.team?.abbreviation, homeFull: home?.team?.displayName, homeLogo: home?.team?.logo, homeScore: home?.score || "0",
-          away: away?.team?.abbreviation, awayFull: away?.team?.displayName, awayLogo: away?.team?.logo, awayScore: away?.score || "0",
-          status: s?.completed ? "FINAL" : s?.inProgress ? "LIVE" : "SCHEDULED",
-          clock: c?.status?.displayClock || "", period: c?.status?.period || 0,
-          time: e.date ? new Date(e.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET" : "",
-          date: e.date ? new Date(e.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" }) : "",
-          spread: c?.odds?.[0]?.spread ?? null,
-          total: c?.odds?.[0]?.overUnder ?? null,
-          awayML: c?.odds?.[0]?.awayTeamOdds?.moneyLine ?? null,
-          homeML: c?.odds?.[0]?.homeTeamOdds?.moneyLine ?? null,
-          spreadFav: c?.odds?.[0]?.homeTeamOdds?.favorite ? "home" : "away"
+          home: home-.team-.abbreviation, homeFull: home-.team-.displayName, homeLogo: home-.team-.logo, homeScore: home-.score || "0",
+          away: away-.team-.abbreviation, awayFull: away-.team-.displayName, awayLogo: away-.team-.logo, awayScore: away-.score || "0",
+          status: s-.completed - "FINAL" : s-.inProgress - "LIVE" : "SCHEDULED",
+          clock: c-.status-.displayClock || "", period: c-.status-.period || 0,
+          time: e.date - new Date(e.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET" : "",
+          date: e.date - new Date(e.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" }) : "",
+          spread: c-.odds-.[0]-.spread -- null,
+          total: c-.odds-.[0]-.overUnder -- null,
+          awayML: c-.odds-.[0]-.awayTeamOdds-.moneyLine -- null,
+          homeML: c-.odds-.[0]-.homeTeamOdds-.moneyLine -- null,
+          spreadFav: c-.odds-.[0]-.homeTeamOdds-.favorite - "home" : "away"
         };
       });
       return json({ sport, games, today: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) });
@@ -244,7 +244,7 @@ Go to admin panel to confirm ✅`;
       return json({ error: err.message }, 500);
     }
   }
-  // ── GET /api/props ─────────────────────────────────────────
+  // -- GET /api/props -----------------------------------------
   if (method === "GET" && path === "/api/props") {
     const gameId = url.searchParams.get("gameId");
     if (!gameId) return json({ error: "Missing gameId" }, 400);
@@ -255,7 +255,7 @@ Go to admin panel to confirm ✅`;
     } catch (err) { return json({ error: err.message }, 500); }
   }
 
-  // ── POST /api/props/setup ───────────────────────────────────
+  // -- POST /api/props/setup -----------------------------------
   if (method === "POST" && path === "/api/props/setup") {
     const { gameId, homePlayer, homeName, awayPlayer, awayName, price, pin } = body;
     if (!gameId || !pin) return json({ error: "Missing gameId or pin" }, 400);
@@ -269,7 +269,7 @@ Go to admin panel to confirm ✅`;
     } catch (err) { return json({ error: err.message }, 500); }
   }
 
-  // ── POST /api/props/claim ───────────────────────────────────
+  // -- POST /api/props/claim -----------------------------------
   if (method === "POST" && path === "/api/props/claim") {
     const { gameId, side, rangeIdx, owner } = body;
     if (!gameId || side === undefined || rangeIdx === undefined || !owner) return json({ error: "Missing fields" }, 400);
@@ -284,7 +284,7 @@ Go to admin panel to confirm ✅`;
     } catch (err) { return json({ error: err.message }, 500); }
   }
 
-  // ── POST /api/props/reset ───────────────────────────────────
+  // -- POST /api/props/reset -----------------------------------
   if (method === "POST" && path === "/api/props/reset") {
     const { gameId, side, pin } = body;
     if (!gameId || !pin) return json({ error: "Missing fields" }, 400);
@@ -311,7 +311,7 @@ Go to admin panel to confirm ✅`;
       return json({ ok: true });
     } catch (err) { return json({ error: err.message }, 500); }
   }
-  // ── 404 fallback ──────────────────────────────────────────
+  // -- 404 fallback ------------------------------------------
   return json({ error: `No handler for ${method} ${path}` }, 404);
 };
 
