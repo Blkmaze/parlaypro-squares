@@ -940,6 +940,20 @@
   .pq-a.green { color:var(--green-light); }
   .pq-w { font-size:9px;color:var(--green-light);margin-top:2px; }
 
+  .pay-action-panel { border-radius: 10px; overflow: hidden; margin: 10px 0; }
+  .pay-qr-row { display: flex; gap: 10px; align-items: flex-start; padding: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 10px; }
+  .pay-qr-box { flex-shrink: 0; text-align: center; }
+  .pay-qr-img { width: 72px; height: 72px; background: #fff; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; overflow: hidden; }
+  .pay-qr-label { font-size: 9px; color: var(--text3); }
+  .pay-link-btn { display: block; width: 100%; padding: 11px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; margin-bottom: 8px; transition: opacity .15s; }
+  .pay-link-btn:hover { opacity: .88; }
+  .pay-link-btn.cashapp { background: #00C244; color: #fff; }
+  .pay-link-btn.paypal  { background: #0070ba; color: #fff; }
+  .pay-steps { font-size: 11px; color: var(--text2); line-height: 1.7; }
+  .pay-steps span { color: var(--text3); }
+  .cash-box { background: rgba(34,197,94,.06); border: 1px solid rgba(34,197,94,.2); border-radius: 10px; padding: 16px; text-align: center; margin: 10px 0; }
+  .cash-box-amt { font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 700; color: var(--green-light); margin-bottom: 6px; }
+  .cash-box-note { font-size: 12px; color: var(--text2); }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
@@ -1460,8 +1474,8 @@
         </div>
       </div>
 
-      <!-- Payment instructions -->
-      <div id="payInstructions" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12px;color:var(--text2);"></div>
+      <!-- Payment panel — updated by updatePayInstructions() -->
+      <div id="payInstructions"></div>
 
       <button class="modal-cta" id="confirmBtn" disabled onclick="confirmPurchase()">
         📲 Reserve My Squares
@@ -2110,24 +2124,99 @@ function selectPay(el, method) {
   updatePayInstructions();
 }
 
+function makeQRSvg(color) {
+  // Simple QR-pattern placeholder SVG — real QR renders via qr-code-styling or similar
+  // For now shows a stylised pattern so the UI looks right
+  var c = color || '#000';
+  return '<svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">' +
+    '<rect width="72" height="72" fill="white"/>' +
+    '<rect x="4" y="4" width="24" height="24" fill="none" stroke="' + c + '" stroke-width="2.5"/>' +
+    '<rect x="9" y="9" width="14" height="14" fill="' + c + '"/>' +
+    '<rect x="44" y="4" width="24" height="24" fill="none" stroke="' + c + '" stroke-width="2.5"/>' +
+    '<rect x="49" y="9" width="14" height="14" fill="' + c + '"/>' +
+    '<rect x="4" y="44" width="24" height="24" fill="none" stroke="' + c + '" stroke-width="2.5"/>' +
+    '<rect x="9" y="49" width="14" height="14" fill="' + c + '"/>' +
+    '<rect x="34" y="34" width="5" height="5" fill="' + c + '"/>' +
+    '<rect x="41" y="34" width="5" height="5" fill="' + c + '"/>' +
+    '<rect x="48" y="34" width="5" height="5" fill="' + c + '"/>' +
+    '<rect x="55" y="34" width="5" height="5" fill="' + c + '"/>' +
+    '<rect x="34" y="41" width="5" height="5" fill="' + c + '"/>' +
+    '<rect x="48" y="41" width="5" height="5" fill="' + c + '"/>' +
+    '<rect x="55" y="41" width="5" height="5" fill="' + c + '"/>' +
+    '<rect x="34" y="48" width="5" height="5" fill="' + c + '"/>' +
+    '<rect x="41" y="48" width="5" height="5" fill="' + c + '"/>' +
+    '<rect x="34" y="55" width="5" height="5" fill="' + c + '"/>' +
+    '<rect x="55" y="55" width="5" height="5" fill="' + c + '"/>' +
+    '</svg>';
+}
+
 function updatePayInstructions() {
-  const el = document.getElementById('payInstructions');
+  var el = document.getElementById('payInstructions');
   if (!el) return;
-  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
-  const qty = _manuallySelected.size > 0 ? _manuallySelected.size : currentQty;
-  const total = (qty * price).toFixed(2);
+  var price   = parseFloat(document.getElementById('squarePrice').value) || 10;
+  var qty     = _manuallySelected.size > 0 ? _manuallySelected.size : currentQty;
+  var total   = (qty * price).toFixed(2);
+  var initials = (document.getElementById('initialsInput').value.trim().toUpperCase() || 'YourInitials');
+
   if (_selectedPayMethod === 'cashapp') {
-    el.innerHTML = '💚 Send <strong style="color:#22c55e;">$' + total + '</strong> to <strong style="color:#22c55e;">$7707438091</strong> on Cash App<br><span style="font-size:10px;color:var(--text3);">Include your initials in the note</span>';
+    // Deep link: opens Cash App with amount pre-filled
+    var deepLink = 'https://cash.app/$7707438091/' + total;
+    el.innerHTML =
+      '<div class="pay-qr-row">' +
+        '<div class="pay-qr-box">' +
+          '<div class="pay-qr-img">' + makeQRSvg('#00C244') + '</div>' +
+          '<div class="pay-qr-label">Scan or tap button</div>' +
+        '</div>' +
+        '<div style="flex:1;">' +
+          '<a class="pay-link-btn cashapp" href="' + deepLink + '" target="_blank">' +
+            'Pay $' + total + ' on Cash App' +
+          '</a>' +
+          '<div class="pay-steps">' +
+            '<span>1.</span> Tap button above — Cash App opens with $' + total + ' ready<br>' +
+            '<span>2.</span> Add note: <strong style="color:var(--text);">' + initials + ' squares</strong><br>' +
+            '<span>3.</span> Hit Pay, then tap Reserve below' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
   } else if (_selectedPayMethod === 'paypal') {
-    el.innerHTML = '💙 Send <strong style="color:#60a5fa;">$' + total + '</strong> to <strong style="color:#60a5fa;">willie.mayes@gmail.com</strong> on PayPal<br><span style="font-size:10px;color:var(--text3);">Friends & Family — include your initials</span>';
+    // PayPal.me deep link with amount
+    var ppLink = 'https://paypal.me/williemayes/' + total;
+    el.innerHTML =
+      '<div class="pay-qr-row">' +
+        '<div class="pay-qr-box">' +
+          '<div class="pay-qr-img">' + makeQRSvg('#0070ba') + '</div>' +
+          '<div class="pay-qr-label">Scan or tap button</div>' +
+        '</div>' +
+        '<div style="flex:1;">' +
+          '<a class="pay-link-btn paypal" href="' + ppLink + '" target="_blank">' +
+            'Pay $' + total + ' on PayPal' +
+          '</a>' +
+          '<div class="pay-steps">' +
+            '<span>1.</span> Tap button — PayPal opens with $' + total + '<br>' +
+            '<span>2.</span> Send Friends & Family<br>' +
+            '<span>3.</span> Add note: <strong style="color:var(--text);">' + initials + ' squares</strong><br>' +
+            '<span>4.</span> Tap Reserve below' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
   } else {
-    el.innerHTML = '💵 Bring <strong style="color:#facc15;">$' + total + '</strong> cash in person<br><span style="font-size:10px;color:var(--text3);">Willie will lock in your squares when he receives it</span>';
+    // Cash — instant, no QR needed
+    el.innerHTML =
+      '<div class="cash-box">' +
+        '<div class="cash-box-amt">$' + total + '</div>' +
+        '<div class="cash-box-note">Hand Willie <strong style="color:var(--green-light);">$' + total + '</strong> cash<br>' +
+        '<span style="font-size:11px;color:var(--text3);">Your squares lock in the moment he receives it</span>' +
+        '</div>' +
+      '</div>';
   }
 }
 
 function checkInitials() {
-  const val = document.getElementById('initialsInput').value.trim();
+  var val = document.getElementById('initialsInput').value.trim();
   document.getElementById('confirmBtn').disabled = val.length < 2;
+  updatePayInstructions(); // update note text live as initials are typed
 }
 
 async function confirmPurchase() {
