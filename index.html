@@ -917,8 +917,18 @@
 
   @media (max-width: 768px) {
     .layout { grid-template-columns: 1fr; }
-    .page-wrap { padding: 4px 0; } /* zero horizontal padding — board uses full width */
+    .page-wrap { padding: 4px 0; }
     .board-panel { border-radius: 0; border-left: none; border-right: none; }
+    /* On mobile: tally sits inside board-panel right under grid — already correct */
+    /* Sidebar cards get comfortable padding */
+    .main-card { border-radius: 0; border-left: none; border-right: none; }
+    .legend-card, .games-card, .admin-card { border-radius: 10px; margin: 0 8px; }
+    .sidebar { gap: 10px; padding-bottom: 24px; }
+    /* Tally strip — make payout boxes 2-col on very small screens */
+  }
+  @media (max-width: 400px) {
+    .payout-row { grid-template-columns: repeat(2, 1fr); gap: 4px; }
+    .tally-metrics { grid-template-columns: repeat(3, minmax(0,1fr)); }
   }
 
   @media (max-width: 600px) {
@@ -1042,6 +1052,27 @@
         <!-- populated by JS -->
       </div>
     </div>
+
+    <!-- TALLY + PAYOUT STRIP -->
+    <div class="tally-strip" id="tallyStrip">
+      <div class="tally-strip-hdr">
+        <span class="tally-strip-label">Board tally</span>
+        <div style="display:flex;gap:5px;align-items:center;font-size:10px;color:var(--text3);">
+          <span>Payout:</span>
+          <button class="pot-toggle-btn active" id="potBtnCollected" onclick="setPotMode('collected')">Collected</button>
+          <button class="pot-toggle-btn" id="potBtnFull" onclick="setPotMode('full')">Full pot</button>
+        </div>
+      </div>
+      <div class="tally-metrics">
+        <div class="tm"><div class="tm-l">Squares sold</div><div class="tm-v" id="tallySlod">0 / 100</div></div>
+        <div class="tm"><div class="tm-l">Collected</div><div class="tm-v green" id="tallyCollected">$0</div></div>
+        <div class="tm"><div class="tm-l">Full pot</div><div class="tm-v" id="tallyPot">$0</div></div>
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" id="tallyProg" style="width:0%"></div></div>
+      <div class="prog-txt"><span id="tallyProgL">0 sold</span><span id="tallyProgR">100 remaining</span></div>
+      <div class="payout-row" id="tallyPayouts"></div>
+    </div>
+
   </div>
 
   <!-- SIDEBAR -->
@@ -1234,26 +1265,6 @@
         </button>
         <div class="cta-sub">Squares assigned randomly after payment verified</div>
       </div>
-    </div>
-
-    <!-- TALLY + PAYOUT STRIP -->
-    <div class="tally-strip" id="tallyStrip">
-      <div class="tally-strip-hdr">
-        <span class="tally-strip-label">Board tally</span>
-        <div style="display:flex;gap:5px;align-items:center;font-size:10px;color:var(--text3);">
-          <span>Payout:</span>
-          <button class="pot-toggle-btn active" id="potBtnCollected" onclick="setPotMode('collected')">Collected</button>
-          <button class="pot-toggle-btn" id="potBtnFull" onclick="setPotMode('full')">Full pot</button>
-        </div>
-      </div>
-      <div class="tally-metrics">
-        <div class="tm"><div class="tm-l">Squares sold</div><div class="tm-v" id="tallySlod">0 / 100</div></div>
-        <div class="tm"><div class="tm-l">Collected</div><div class="tm-v green" id="tallyCollected">$0</div></div>
-        <div class="tm"><div class="tm-l">Full pot</div><div class="tm-v" id="tallyPot">$0</div></div>
-      </div>
-      <div class="prog-wrap"><div class="prog-fill" id="tallyProg" style="width:0%"></div></div>
-      <div class="prog-txt"><span id="tallyProgL">0 sold</span><span id="tallyProgR">100 remaining</span></div>
-      <div class="payout-row" id="tallyPayouts"></div>
     </div>
 
     <!-- LEGEND -->
