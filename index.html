@@ -1993,7 +1993,11 @@ function openPayModal() {
     preview.style.display = 'none';
   }
   _selectedPayMethod = 'cashapp';
+  _manuallySelected.clear(); // always start fresh when modal opens
   updatePayInstructions();
+  // Reset debug box
+  const dbg = document.getElementById('modalDebug');
+  if (dbg) { dbg.style.display='none'; dbg.textContent=''; }
   document.getElementById('payModal').classList.add('open');
 }
 
@@ -2026,142 +2030,107 @@ function checkInitials() {
 
 async function confirmPurchase() {
   const initials = document.getElementById('initialsInput').value.trim().toUpperCase();
-  if (initials.length < 2) { alert('Please enter at least 2 initials.'); return; }
+  if (initials.length < 2) { alert('Enter at least 2 initials.'); return; }
+
   const btn = document.getElementById('confirmBtn');
   btn.disabled = true;
   btn.textContent = '⏳ Reserving...';
 
   const game = window.currentGame;
-  if (!game) { btn.disabled = false; btn.textContent = '📲 Reserve My Squares'; alert('No game selected.'); return; }
-
-  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
-
-  // Determine which squares to claim
-  const isCash = _selectedPayMethod === 'cash';
-  let newIdxs;
-
-  if (_manuallySelected.size > 0) {
-    // Player tapped specific squares — use client-side claim
-    newIdxs = Array.from(_manuallySelected);
-    const total2 = (newIdxs.length * price).toFixed(2);
-    try {
-      const res2 = await fetch('/api/claim-square', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ gameId: game.id, indices: newIdxs, initials, pending: !isCash, payMethod: _selectedPayMethod, amount: total2 })
-      });
-      const t2 = await res2.text();
-      let d2 = {};
-      try { d2 = JSON.parse(t2); } catch(_) {}
-      if (!res2.ok) throw new Error(d2.error || 'Failed to claim — server error');
-      localStorage.setItem('my_' + game.id, JSON.stringify(newIdxs));
-      localStorage.setItem('initials_' + game.id, initials);
-      _cache[game.id] = null;
-      _manuallySelected.clear();
-    } catch(e) {
-      btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
-      alert('Could not claim squares: ' + e.message); return;
-    }
-  } else {
-    // Auto-assign: try server-side first, fall back to client-side if endpoint missing
-    const qty = currentQty;
-    try {
-      const res = await fetch('/api/auto-assign', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ gameId: game.id, qty, initials, pending: !isCash, payMethod: _selectedPayMethod, amount: (qty * price).toFixed(2) })
-      });
-
-      // Safe JSON parse — endpoint may return HTML/empty on 404
-      let d = {};
-      const text = await res.text();
-      try { d = JSON.parse(text); } catch(_) {
-        // auto-assign endpoint not available — fall back to client-side assign
-        d = null;
-      }
-
-      if (d && d.ok && d.indices && d.indices.length) {
-        // Server assigned successfully
-        newIdxs = d.indices;
-      } else if (d && d.error) {
-        throw new Error('Server: ' + d.error);
-      } else {
-        // Log what we got for debugging
-        console.warn('auto-assign unexpected response:', text.substring(0, 200));
-        // Fallback: client picks squares then calls /api/claim-square
-        const fresh = await fetchSquares(game.id);
-        const taken = new Set([
-          ...Object.keys(fresh.owners || {}).map(Number),
-          ...Object.keys(fresh.pending || {}).map(Number)
-        ]);
-        const open = [];
-        for (let i = 0; i < 100; i++) { if (!taken.has(i)) open.push(i); }
-        // shuffle
-        for (let i = open.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [open[i], open[j]] = [open[j], open[i]];
-        }
-        const picked = open.slice(0, Math.min(qty, open.length));
-        if (!picked.length) throw new Error('No open squares available');
-        const claimRes = await fetch('/api/claim-square', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ gameId: game.id, indices: picked, initials, pending: !isCash, payMethod: _selectedPayMethod, amount: (picked.length * price).toFixed(2) })
-        });
-        const claimText = await claimRes.text();
-        let claimD = {};
-        try { claimD = JSON.parse(claimText); } catch(_) {}
-        if (!claimRes.ok) throw new Error(claimD.error || ('HTTP ' + claimRes.status + ': ' + claimText.substring(0, 100)));
-        newIdxs = picked;
-      }
-
-      localStorage.setItem('my_' + game.id, JSON.stringify(newIdxs));
-      localStorage.setItem('initials_' + game.id, initials);
-      _cache[game.id] = null;
-      _manuallySelected.clear();
-    } catch(e) {
-      btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
-      const dbg = document.getElementById('modalDebug');
-      if (dbg) { dbg.style.display='block'; dbg.textContent = 'ERR: ' + e.message; }
-      alert('Error: ' + e.message); return;
-    }
-  }
-
-  if (!newIdxs || !newIdxs.length) {
+  if (!game || !game.id) {
     btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
-    alert('No open squares available.'); return;
+    alert('No game loaded. Select a sport and game first.'); return;
   }
 
-  const total = (newIdxs.length * price).toFixed(2);
+  const price    = parseFloat(document.getElementById('squarePrice').value) || 10;
+  const qty      = currentQty || 5;
+  const isCash   = (_selectedPayMethod === 'cash');
+  const isPending = !isCash;
+  const amount   = (qty * price).toFixed(2);
 
-  try {
-    // (squares already claimed above — just update UI)
-    localStorage.setItem('my_' + game.id, JSON.stringify(newIdxs));
-
-    document.getElementById('payModal').classList.remove('open');
-
-    if (isCash) {
-      document.getElementById('confirmMsg').innerHTML =
-        `${newIdxs.length} square${newIdxs.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
-        `<br><span style="color:#22c55e;font-size:13px;margin-top:6px;display:block;">✅ Locked in as <strong>${initials}</strong>!</span>` +
-        `<br><span style="color:var(--text3);font-size:11px;">Hand Willie the cash and you're set 💵</span>`;
-    } else {
-      const method = _selectedPayMethod === 'cashapp' ? 'Cash App' : 'PayPal';
-      document.getElementById('confirmMsg').innerHTML =
-        `${newIdxs.length} square${newIdxs.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
-        `<br><span style="color:#facc15;font-size:13px;margin-top:6px;display:block;">⏳ Reserved as <strong>${initials}</strong> — send your ${method} payment</span>` +
-        `<br><span style="color:var(--text3);font-size:11px;">Squares lock in once Willie verifies your ${method} payment.</span>`;
+  // ── helper: safe fetch → parsed JSON ──────────────────────
+  async function safePost(url, body) {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const text = await r.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch(_) {
+      data = { _raw: text, _status: r.status };
     }
-
-    setTimeout(() => {
-      document.getElementById('confirmModal').classList.add('open');
-      buildGrid(game);
-    }, 150);
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = '📲 Reserve My Squares';
-    alert('Could not claim squares: ' + e.message);
+    return { ok: r.ok, status: r.status, data };
   }
+
+  // ── claim squares via server-side auto-assign ──────────────
+  let indices = [];
+  try {
+    const { ok, status, data } = await safePost('/api/auto-assign', {
+      gameId: game.id, qty, initials, pending: isPending,
+      payMethod: _selectedPayMethod, amount
+    });
+
+    if (ok && data.ok && Array.isArray(data.indices) && data.indices.length) {
+      indices = data.indices;
+
+    } else {
+      // auto-assign failed or not deployed — use claim-square with client-picked squares
+      const fresh = await fetchSquares(game.id);
+      const taken = new Set([
+        ...Object.keys(fresh.owners  || {}).map(Number),
+        ...Object.keys(fresh.pending || {}).map(Number)
+      ]);
+      const open = [];
+      for (let i = 0; i < 100; i++) { if (!taken.has(i)) open.push(i); }
+      for (let i = open.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [open[i], open[j]] = [open[j], open[i]];
+      }
+      const picked = open.slice(0, Math.min(qty, open.length));
+      if (!picked.length) throw new Error('No open squares left!');
+
+      const r2 = await safePost('/api/claim-square', {
+        gameId: game.id, indices: picked, initials,
+        pending: isPending, payMethod: _selectedPayMethod,
+        amount: (picked.length * price).toFixed(2)
+      });
+      if (!r2.ok) throw new Error(r2.data.error || 'Claim failed (HTTP ' + r2.status + ')');
+      indices = picked;
+    }
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
+    const dbg = document.getElementById('modalDebug');
+    if (dbg) { dbg.style.display = 'block'; dbg.textContent = e.message; }
+    alert(e.message); return;
+  }
+
+  // ── success ────────────────────────────────────────────────
+  localStorage.setItem('my_'       + game.id, JSON.stringify(indices));
+  localStorage.setItem('initials_' + game.id, initials);
+  _cache[game.id] = null;
+  _manuallySelected.clear();
+
+  const total = (indices.length * price).toFixed(2);
+  document.getElementById('payModal').classList.remove('open');
+
+  if (isCash) {
+    document.getElementById('confirmMsg').innerHTML =
+      `${indices.length} square${indices.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
+      `<br><span style="color:#22c55e;font-size:13px;margin-top:6px;display:block;">✅ Locked in as <strong>${initials}</strong>!</span>` +
+      `<br><span style="color:var(--text3);font-size:11px;">Hand Willie the cash and you're set 💵</span>`;
+  } else {
+    const method = _selectedPayMethod === 'cashapp' ? 'Cash App' : 'PayPal';
+    document.getElementById('confirmMsg').innerHTML =
+      `${indices.length} square${indices.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
+      `<br><span style="color:#facc15;font-size:13px;margin-top:6px;display:block;">⏳ Reserved as <strong>${initials}</strong> — send your ${method} payment</span>` +
+      `<br><span style="color:var(--text3);font-size:11px;">Squares lock in once Willie verifies your ${method} payment.</span>`;
+  }
+
+  setTimeout(() => {
+    document.getElementById('confirmModal').classList.add('open');
+    buildGrid(game);
+  }, 150);
 }
 
 function closeConfirm() {
