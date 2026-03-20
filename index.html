@@ -147,21 +147,24 @@
   .sport-select:focus, .game-select:focus { border-color: var(--green); }
 
   .grid-wrap {
-    padding: 20px;
-    overflow-x: auto;
+    padding: 12px;
+    overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .grid-container {
     display: grid;
-    grid-template-columns: 44px repeat(10, 1fr);
-    gap: 3px;
-    min-width: 560px;
+    grid-template-columns: 36px repeat(10, 1fr);
+    gap: 2px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .axis-header {
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -537,7 +540,7 @@
   .pay-card.pay-locked { opacity: 0.45; pointer-events: none; position: relative; }
   .pay-locked-badge { display: none; }
   .pay-card.pay-locked .pay-locked-badge { display: block; position: absolute; top: 4px; right: 4px; background: #ef4444; color: white; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 4px; letter-spacing: .04em; }
-  .cta-btn.pay-locked { opacity: 0.45; pointer-events: none; }
+  /* cta-btn is never locked — buy is always available */
   .pay-unlock-note { display: none; font-size: 10px; color: #ef4444; text-align: center; margin-top: 4px; }
   .pay-unlock-note.visible { display: block; }
   .admin-confirm-list { max-height: 200px; overflow-y: auto; }
@@ -931,6 +934,18 @@
     .board-tab {
       font-size: 11px !important;
       padding: 6px 10px !important;
+    }
+    .grid-container {
+      gap: 1px !important;
+    }
+    .cell {
+      font-size: 8px !important;
+      min-height: clamp(18px, 4.5vw, 28px) !important;
+    }
+    .axis-header {
+      font-size: 8px !important;
+      min-height: clamp(18px, 4.5vw, 28px) !important;
+      padding: 1px !important;
     }
     .ticker-wrap {
       font-size: 11px !important;
@@ -2147,9 +2162,10 @@ function showAdminMsg(msg, isErr) {
 
 // ── Payment Lock / Unlock (admin only) ──────────────────────
 function applyPaymentLockState(unlocked) {
+  // Payment lock only affects the CashApp/PayPal info display cards
+  // The BUY button is ALWAYS active — players can always enter initials & pay
   var cashCard = document.getElementById('payCardCashapp');
   var paypalCard = document.getElementById('payCardPaypal');
-  var ctaBtn = document.getElementById('ctaBuyBtn');
   var unlockNote = document.getElementById('payUnlockNote');
   var unlockBtn = document.getElementById('payUnlockBtn');
   var lockBtn = document.getElementById('payLockBtn');
@@ -2157,14 +2173,12 @@ function applyPaymentLockState(unlocked) {
   if (unlocked) {
     cashCard.classList.remove('pay-locked');
     paypalCard.classList.remove('pay-locked');
-    if (ctaBtn) { ctaBtn.classList.remove('pay-locked'); ctaBtn.style.pointerEvents = ''; ctaBtn.style.opacity = ''; }
     if (unlockNote) unlockNote.classList.remove('visible');
     if (unlockBtn) unlockBtn.style.display = 'none';
     if (lockBtn) lockBtn.style.display = '';
   } else {
     cashCard.classList.add('pay-locked');
     paypalCard.classList.add('pay-locked');
-    if (ctaBtn) { ctaBtn.classList.add('pay-locked'); }
     if (unlockNote) unlockNote.classList.add('visible');
     if (unlockBtn) unlockBtn.style.display = '';
     if (lockBtn) lockBtn.style.display = 'none';
