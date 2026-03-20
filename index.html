@@ -2049,8 +2049,10 @@ async function confirmPurchase() {
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ gameId: game.id, indices: newIdxs, initials, pending: !isCash, payMethod: _selectedPayMethod, amount: total2 })
       });
-      const d2 = await res2.json();
-      if (!res2.ok) throw new Error(d2.error || 'Failed to claim');
+      const t2 = await res2.text();
+      let d2 = {};
+      try { d2 = JSON.parse(t2); } catch(_) {}
+      if (!res2.ok) throw new Error(d2.error || 'Failed to claim — server error');
       localStorage.setItem('my_' + game.id, JSON.stringify(newIdxs));
       localStorage.setItem('initials_' + game.id, initials);
       _cache[game.id] = null;
@@ -2060,18 +2062,56 @@ async function confirmPurchase() {
       alert('Could not claim squares: ' + e.message); return;
     }
   } else {
-    // Auto-assign: server picks squares atomically — no race conditions
+    // Auto-assign: try server-side first, fall back to client-side if endpoint missing
     const qty = currentQty;
-    const total2 = null; // server doesn't know price, calculated after
     try {
       const res = await fetch('/api/auto-assign', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ gameId: game.id, qty, initials, pending: !isCash, payMethod: _selectedPayMethod, amount: (qty * price).toFixed(2) })
       });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || 'No squares available');
-      newIdxs = d.indices;
+
+      // Safe JSON parse — endpoint may return HTML/empty on 404
+      let d = {};
+      const text = await res.text();
+      try { d = JSON.parse(text); } catch(_) {
+        // auto-assign endpoint not available — fall back to client-side assign
+        d = null;
+      }
+
+      if (d && d.ok && d.indices && d.indices.length) {
+        // Server assigned successfully
+        newIdxs = d.indices;
+      } else if (d && d.error) {
+        throw new Error(d.error);
+      } else {
+        // Fallback: client picks squares then calls /api/claim-square
+        const fresh = await fetchSquares(game.id);
+        const taken = new Set([
+          ...Object.keys(fresh.owners || {}).map(Number),
+          ...Object.keys(fresh.pending || {}).map(Number)
+        ]);
+        const open = [];
+        for (let i = 0; i < 100; i++) { if (!taken.has(i)) open.push(i); }
+        // shuffle
+        for (let i = open.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [open[i], open[j]] = [open[j], open[i]];
+        }
+        const picked = open.slice(0, Math.min(qty, open.length));
+        if (!picked.length) throw new Error('No open squares available');
+        const claimRes = await fetch('/api/claim-square', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ gameId: game.id, indices: picked, initials, pending: !isCash, payMethod: _selectedPayMethod, amount: (picked.length * price).toFixed(2) })
+        });
+        const claimText = await claimRes.text();
+        let claimD = {};
+        try { claimD = JSON.parse(claimText); } catch(_) {}
+        if (!claimRes.ok) throw new Error(claimD.error || 'Failed to claim');
+        newIdxs = picked;
+      }
+
       localStorage.setItem('my_' + game.id, JSON.stringify(newIdxs));
       localStorage.setItem('initials_' + game.id, initials);
       _cache[game.id] = null;
