@@ -101,7 +101,7 @@ Payment: ${payIcon} ${payMethod || 'unknown'}
 Game: ${gameId}
 
 Go to admin panel to confirm ✅`;
-        await fetch(\`https://api.telegram.org/bot\${tgToken}/sendMessage\`, {
+        await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: tgChat, text: msg })
