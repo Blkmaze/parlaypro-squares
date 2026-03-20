@@ -162,7 +162,12 @@ export default async (req, context) => {
           status: s?.completed ? "FINAL" : s?.inProgress ? "LIVE" : "SCHEDULED",
           clock: c?.status?.displayClock || "", period: c?.status?.period || 0,
           time: e.date ? new Date(e.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET" : "",
-          date: e.date ? new Date(e.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" }) : ""
+          date: e.date ? new Date(e.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" }) : "",
+          spread: c?.odds?.[0]?.spread ?? null,
+          total: c?.odds?.[0]?.overUnder ?? null,
+          awayML: c?.odds?.[0]?.awayTeamOdds?.moneyLine ?? null,
+          homeML: c?.odds?.[0]?.homeTeamOdds?.moneyLine ?? null,
+          spreadFav: c?.odds?.[0]?.homeTeamOdds?.favorite ? "home" : "away"
         };
       });
       return json({ sport, games, today: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) });

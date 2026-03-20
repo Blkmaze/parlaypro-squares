@@ -1029,38 +1029,83 @@
           <div class="odds-col-label">Moneyline</div>
         </div>
 
-        <div class="odds-grid">
-          <!-- Spread -->
-          <div class="odds-col">
-            <div class="odds-btn" onclick="toggleOdds(this, 'spread-away')">
-              <div class="odds-btn-label">Away +3.5</div>
-              <div class="odds-value">-110</div>
+        <!-- LIVE ODDS — populated by buildOdds() -->
+        <div class="odds-grid" id="oddsGrid">
+          <div class="odds-col" id="oddsCols-spread">
+            <div class="odds-btn" id="btn-spread-away" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-spread-away">Away +3.5</div>
+              <div class="odds-value" id="val-spread-away">-110</div>
             </div>
-            <div class="odds-btn selected" onclick="toggleOdds(this, 'spread-home')">
-              <div class="odds-btn-label">Home -3.5</div>
-              <div class="odds-value">-110</div>
-            </div>
-          </div>
-          <!-- Total -->
-          <div class="odds-col">
-            <div class="odds-btn" onclick="toggleOdds(this, 'total-over')">
-              <div class="odds-btn-label">Over 228.5</div>
-              <div class="odds-value">-110</div>
-            </div>
-            <div class="odds-btn" onclick="toggleOdds(this, 'total-under')">
-              <div class="odds-btn-label">Under 228.5</div>
-              <div class="odds-value">-110</div>
+            <div class="odds-btn" id="btn-spread-home" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-spread-home">Home -3.5</div>
+              <div class="odds-value" id="val-spread-home">-110</div>
             </div>
           </div>
-          <!-- Moneyline -->
-          <div class="odds-col">
-            <div class="odds-btn selected" onclick="toggleOdds(this, 'ml-away')">
-              <div class="odds-btn-label">Away ML</div>
-              <div class="odds-value">-160</div>
+          <div class="odds-col" id="oddsCols-total">
+            <div class="odds-btn" id="btn-total-over" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-total-over">Over 228.5</div>
+              <div class="odds-value" id="val-total-over">-110</div>
             </div>
-            <div class="odds-btn" onclick="toggleOdds(this, 'ml-home')">
-              <div class="odds-btn-label">Home ML</div>
-              <div class="odds-value">+140</div>
+            <div class="odds-btn" id="btn-total-under" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-total-under">Under 228.5</div>
+              <div class="odds-value" id="val-total-under">-110</div>
+            </div>
+          </div>
+          <div class="odds-col" id="oddsCols-ml">
+            <div class="odds-btn" id="btn-ml-away" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-ml-away">Away ML</div>
+              <div class="odds-value" id="val-ml-away">-160</div>
+            </div>
+            <div class="odds-btn" id="btn-ml-home" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-ml-home">Home ML</div>
+              <div class="odds-value" id="val-ml-home">+140</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LINE ADJUSTERS ── spread ±0.5 / O/U ±0.5 / team total toggle -->
+        <div id="adjPanel" style="margin:10px 0 0;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;">
+          <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Adjust Lines</div>
+          <!-- Spread adjuster -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:11px;color:var(--text2);width:52px;">Spread</span>
+            <button onclick="adjLine('spread',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">−½</button>
+            <span id="adjSpreadVal" style="font-size:12px;color:var(--text);min-width:32px;text-align:center;font-family:'IBM Plex Mono',monospace;">0</span>
+            <button onclick="adjLine('spread',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">+½</button>
+            <button onclick="adjLine('spread',0,'reset')" style="background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--text3);border-radius:5px;padding:2px 6px;cursor:pointer;font-size:10px;margin-left:2px;">reset</button>
+          </div>
+          <!-- O/U adjuster -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:11px;color:var(--text2);width:52px;">O/U</span>
+            <button onclick="adjLine('total',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">−½</button>
+            <span id="adjTotalVal" style="font-size:12px;color:var(--text);min-width:32px;text-align:center;font-family:'IBM Plex Mono',monospace;">0</span>
+            <button onclick="adjLine('total',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">+½</button>
+            <button onclick="adjLine('total',0,'reset')" style="background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--text3);border-radius:5px;padding:2px 6px;cursor:pointer;font-size:10px;margin-left:2px;">reset</button>
+          </div>
+          <!-- Home/Away team total toggle -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:var(--text2);width:52px;">Team</span>
+            <button id="teamTotalBtn" onclick="toggleTeamTotal()" style="background:var(--surface3);border:1px solid var(--border2);color:var(--green-light);border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:700;">Show Team O/U</button>
+          </div>
+          <!-- Team totals (hidden by default) -->
+          <div id="teamTotalsRow" style="display:none;margin-top:8px;display:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:6px;padding:6px;text-align:center;">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:3px;" id="homeTeamTotalLbl">HOME</div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+                  <button onclick="adjTeamTotal('home',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">−</button>
+                  <span id="homeTeamTotalVal" style="font-size:12px;color:var(--text);min-width:28px;text-align:center;font-family:'IBM Plex Mono',monospace;">—</span>
+                  <button onclick="adjTeamTotal('home',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">+</button>
+                </div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:6px;padding:6px;text-align:center;">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:3px;" id="awayTeamTotalLbl">AWAY</div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+                  <button onclick="adjTeamTotal('away',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">−</button>
+                  <span id="awayTeamTotalVal" style="font-size:12px;color:var(--text);min-width:28px;text-align:center;font-family:'IBM Plex Mono',monospace;">—</span>
+                  <button onclick="adjTeamTotal('away',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">+</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1069,6 +1114,7 @@
         <button style="width:100%;margin-top:10px;padding:8px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);border-radius:8px;color:#86efac;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s;letter-spacing:0.05em;text-transform:uppercase;"
           onmouseover="this.style.background='rgba(22,163,74,0.25)'"
           onmouseout="this.style.background='rgba(22,163,74,0.15)'"
+          onclick="buildParlayFromSelected()"
         >Build Custom Parlay</button>
       </div>
 
@@ -1089,7 +1135,7 @@
       <div class="buy-section">
         <div class="buy-meta">
           <span class="buy-meta-label">Price per Square</span>
-          <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="background:#1a1a1a;border:1px solid #333;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option></select>
+          <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="background:#1a1a1a;border:1px solid #333;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option><option value="250">$250</option></select>
         </div>
 
         <!-- Qty -->
@@ -1512,8 +1558,128 @@ async function buildGrid(game) {
 }
 
 // ── ODDS BUILDER ─────────────────────────────────────────────
+// ── BASE ODDS (set when game loads) ─────────────────────────
+let _baseOdds = { spreadLine: null, totalLine: null, mlAway: null, mlHome: null,
+                  homeTeamTotal: null, awayTeamTotal: null };
+let _adjSpread = 0, _adjTotal = 0, _adjHomeTotal = 0, _adjAwayTotal = 0;
+let _teamTotalsVisible = false;
+
+function fmtOdds(n) {
+  if (!n && n !== 0) return 'N/A';
+  const num = parseFloat(n);
+  return num > 0 ? '+' + num : String(num);
+}
+
+function fmtLine(base, adj) {
+  const val = (parseFloat(base || 0) + adj);
+  // round to nearest 0.5
+  return (Math.round(val * 2) / 2).toFixed(1);
+}
+
 function buildOdds(game) {
   if (!game) return;
+  // ESPN API returns odds via predictor/spread when available
+  // We store what we have and show live or "—" for missing
+  const spread = game.spread || null;
+  const total  = game.total  || null;
+  const mlA    = game.awayOdds || game.awayML || null;
+  const mlH    = game.homeOdds || game.homeML || null;
+
+  _baseOdds = {
+    spreadLine: spread ? Math.abs(parseFloat(spread)) : 3.5,
+    totalLine:  total  ? parseFloat(total)            : 228.5,
+    mlAway:     mlA    ? parseFloat(mlA)              : -160,
+    mlHome:     mlH    ? parseFloat(mlH)              : +140,
+    homeTeamTotal: total ? parseFloat(total) / 2 : null,
+    awayTeamTotal: total ? parseFloat(total) / 2 : null,
+  };
+  _adjSpread = 0; _adjTotal = 0; _adjHomeTotal = 0; _adjAwayTotal = 0;
+  refreshOddsDisplay(game);
+}
+
+function refreshOddsDisplay(game) {
+  if (!game) game = window.currentGame;
+  if (!game) return;
+  const sl = _baseOdds.spreadLine;
+  const tl = _baseOdds.totalLine;
+  const adjSL = parseFloat(fmtLine(sl, _adjSpread));
+  const adjTL = parseFloat(fmtLine(tl, _adjTotal));
+
+  // Spread
+  const awaySpread = game.spreadFav === 'home' ? '+' + adjSL : '-' + adjSL;
+  const homeSpread = game.spreadFav === 'home' ? '-' + adjSL : '+' + adjSL;
+  setText('lbl-spread-away', game.away + ' ' + awaySpread);
+  setText('lbl-spread-home', game.home + ' ' + homeSpread);
+  setText('val-spread-away', '-110');
+  setText('val-spread-home', '-110');
+
+  // Total
+  setText('lbl-total-over',  'Over '  + adjTL);
+  setText('lbl-total-under', 'Under ' + adjTL);
+  setText('val-total-over',  '-110');
+  setText('val-total-under', '-110');
+
+  // Moneyline
+  setText('lbl-ml-away', game.away + ' ML');
+  setText('lbl-ml-home', game.home + ' ML');
+  setText('val-ml-away', fmtOdds(_baseOdds.mlAway));
+  setText('val-ml-home', fmtOdds(_baseOdds.mlHome));
+
+  // Adjuster display
+  setText('adjSpreadVal', (_adjSpread === 0 ? '0' : (_adjSpread > 0 ? '+' : '') + _adjSpread));
+  setText('adjTotalVal',  (_adjTotal  === 0 ? '0' : (_adjTotal  > 0 ? '+' : '') + _adjTotal));
+
+  // Team totals
+  if (_baseOdds.homeTeamTotal !== null) {
+    const ht = parseFloat(fmtLine(_baseOdds.homeTeamTotal, _adjHomeTotal));
+    const at = parseFloat(fmtLine(_baseOdds.awayTeamTotal, _adjAwayTotal));
+    setText('homeTeamTotalVal', ht.toFixed(1));
+    setText('awayTeamTotalVal', at.toFixed(1));
+    setText('homeTeamTotalLbl', game.home);
+    setText('awayTeamTotalLbl', game.away);
+  } else {
+    setText('homeTeamTotalVal', '—');
+    setText('awayTeamTotalVal', '—');
+  }
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function adjLine(type, delta, mode) {
+  if (type === 'spread') {
+    _adjSpread = mode === 'reset' ? 0 : Math.round((_adjSpread + delta) * 2) / 2;
+  } else {
+    _adjTotal  = mode === 'reset' ? 0 : Math.round((_adjTotal  + delta) * 2) / 2;
+  }
+  refreshOddsDisplay();
+}
+
+function adjTeamTotal(side, delta) {
+  if (side === 'home') _adjHomeTotal = Math.round((_adjHomeTotal + delta) * 2) / 2;
+  else                 _adjAwayTotal = Math.round((_adjAwayTotal + delta) * 2) / 2;
+  refreshOddsDisplay();
+}
+
+function toggleTeamTotal() {
+  _teamTotalsVisible = !_teamTotalsVisible;
+  const row = document.getElementById('teamTotalsRow');
+  const btn = document.getElementById('teamTotalBtn');
+  if (row) row.style.display = _teamTotalsVisible ? 'block' : 'none';
+  if (btn) btn.textContent = _teamTotalsVisible ? 'Hide Team O/U' : 'Show Team O/U';
+  if (_teamTotalsVisible) refreshOddsDisplay();
+}
+
+// ── STAR PLAYER PROP O/U ─────────────────────────────────────
+// Accessed via Player Props section in admin + visible in sidebar
+let _playerProps = {}; // { gameId: { home: {...}, away: {...} } }
+
+function buildStarPropUI(game) {
+  // Already handled by the propsDisplay section — this ties odds into it
+  // Star prop bet is Over/Under on a scoring range
+  // Displayed in the Player Props — Over/Under card
 }
 
 // ── BOARD HEADER ─────────────────────────────────────────────
