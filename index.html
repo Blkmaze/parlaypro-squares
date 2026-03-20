@@ -527,6 +527,18 @@
   }
 
   .pay-card:hover { filter: brightness(1.1); }
+  .pay-card.pay-locked { opacity: 0.45; pointer-events: none; position: relative; }
+  .pay-locked-badge { display: none; }
+  .pay-card.pay-locked .pay-locked-badge { display: block; position: absolute; top: 4px; right: 4px; background: #ef4444; color: white; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 4px; letter-spacing: .04em; }
+  .cta-btn.pay-locked { opacity: 0.45; pointer-events: none; }
+  .pay-unlock-note { display: none; font-size: 10px; color: #ef4444; text-align: center; margin-top: 4px; }
+  .pay-unlock-note.visible { display: block; }
+  .admin-confirm-list { max-height: 200px; overflow-y: auto; }
+  .confirm-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: var(--surface3); border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+  .confirm-row .initials { font-weight: 700; color: var(--green); font-family: 'IBM Plex Mono', monospace; }
+  .confirm-row .sq-count { color: var(--text2); }
+  .btn-confirm-pay { background: var(--green); color: #000; font-weight: 700; font-size: 10px; padding: 4px 10px; border: none; border-radius: 5px; cursor: pointer; }
+  .btn-confirm-pay.confirmed { background: #555; color: #aaa; cursor: default; }
 
   .pay-cashapp {
     background: rgba(0,214,50,0.08);
@@ -1103,15 +1115,17 @@
 
         <!-- Pay Willie -->
         <div class="pay-label">Pay Willie</div>
-        <div class="pay-grid">
-          <div class="pay-card pay-cashapp">
+        <div class="pay-grid" id="payCardsGrid">
+          <div class="pay-card pay-cashapp pay-locked" id="payCardCashapp">
+            <span class="pay-locked-badge">LOCKED</span>
             <div class="pay-icon pay-icon-cashapp">$</div>
             <div class="pay-info">
               <div class="pay-name">Cash App</div>
               <div class="pay-handle">$7707438091</div>
             </div>
           </div>
-          <div class="pay-card pay-paypal">
+          <div class="pay-card pay-paypal pay-locked" id="payCardPaypal">
+            <span class="pay-locked-badge">LOCKED</span>
             <div class="pay-icon pay-icon-paypal">P</div>
             <div class="pay-info">
               <div class="pay-name">PayPal</div>
@@ -1119,9 +1133,10 @@
             </div>
           </div>
         </div>
+        <div class="pay-unlock-note visible" id="payUnlockNote">⚠ Payment not confirmed — contact Willie</div>
 
         <!-- CTA -->
-        <button class="cta-btn" onclick="openPayModal()">
+        <button class="cta-btn pay-locked" id="ctaBuyBtn" onclick="openPayModal()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           BUY 5 SQUARES NOW
         </button>
@@ -1168,8 +1183,14 @@
       <div class="admin-btns">
         <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
         <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
-        <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
+        <button class="admin-btn admin-btn-green" id="payUnlockBtn" onclick="adminTogglePayment(true)">✅ Unlock Payment (Confirm Paid)</button>
+        <button class="admin-btn admin-btn-red" id="payLockBtn" onclick="adminTogglePayment(false)" style="display:none;">🔒 Lock Payment</button>
         <button class="admin-btn admin-btn-red" onclick="adminReset();">⨂ Reset Board</button>
+      </div>
+      <!-- Pending Payments List -->
+      <div id="pendingPayList" style="margin-top:10px;display:none;">
+        <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">⏳ Pending Payments</div>
+        <div class="admin-confirm-list" id="pendingPayListInner"></div>
       </div>
     </div>
 
@@ -1745,42 +1766,90 @@ async function lockNumbers(game) {
 }
 
 async function adminReset() {
-  // Try to get game from currentGame or from the dropdown
   var game = window.currentGame;
-  if (!game) {
-    var sel = document.getElementById('gameSelect');
-    if (sel && sel.value) {
-      for (var sp of Object.keys(espnGames)) {
-        var found = (espnGames[sp] || []).find(function(g) { return g.id === sel.value; });
-        if (found) { game = found; window.currentGame = found; break; }
-      }
-    }
-  }
-  if (!game) {
-    await updateSport(currentSport || 'NBA');
-    game = window.currentGame;
-  }
-  if (!game) { alert('No game loaded. Pick a sport and game first.'); return; }
-
+  if (!game) { alert('No game loaded — pick a sport and game first.'); return; }
   var pin = prompt('Enter admin PIN to reset board for ' + game.away + ' @ ' + game.home + ':');
-  if (!pin) return;
-  fetch('/api/reset-squares', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({gameId: game.id, pin: pin})
-  }).then(function(r) {
-    return r.json();
-  }).then(function(d) {
+  if (pin === null || pin === '') return;
+  try {
+    var r = await fetch('/api/reset-squares', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({gameId: game.id, pin: pin})
+    });
+    var d = await r.json();
     if (d.ok) {
-      alert('Board cleared for ' + game.away + ' @ ' + game.home + '!');
+      alert('✅ Board cleared for ' + game.away + ' @ ' + game.home + '!');
       _cache = {};
+      localStorage.removeItem('pay_unlocked_' + game.id);
+      applyPaymentLockState(false);
       buildGrid(game);
     } else {
-      alert('Error: ' + (d.error || 'failed'));
+      alert('❌ ' + (d.error || 'Reset failed — check your PIN'));
     }
-  }).catch(function(e) {
+  } catch(e) {
     alert('Network error: ' + e.message);
+  }
+}
+
+// ── Payment Lock / Unlock (admin only) ──────────────────────
+function applyPaymentLockState(unlocked) {
+  var cashCard = document.getElementById('payCardCashapp');
+  var paypalCard = document.getElementById('payCardPaypal');
+  var ctaBtn = document.getElementById('ctaBuyBtn');
+  var unlockNote = document.getElementById('payUnlockNote');
+  var unlockBtn = document.getElementById('payUnlockBtn');
+  var lockBtn = document.getElementById('payLockBtn');
+  if (!cashCard) return;
+  if (unlocked) {
+    cashCard.classList.remove('pay-locked');
+    paypalCard.classList.remove('pay-locked');
+    if (ctaBtn) ctaBtn.classList.remove('pay-locked');
+    if (unlockNote) unlockNote.classList.remove('visible');
+    if (unlockBtn) unlockBtn.style.display = 'none';
+    if (lockBtn) lockBtn.style.display = '';
+  } else {
+    cashCard.classList.add('pay-locked');
+    paypalCard.classList.add('pay-locked');
+    if (ctaBtn) ctaBtn.classList.add('pay-locked');
+    if (unlockNote) unlockNote.classList.add('visible');
+    if (unlockBtn) unlockBtn.style.display = '';
+    if (lockBtn) lockBtn.style.display = 'none';
+  }
+}
+
+async function adminTogglePayment(unlock) {
+  var game = window.currentGame;
+  if (!game) { alert('No game loaded.'); return; }
+  var pin = prompt(unlock ? 'Enter admin PIN to unlock payments:' : 'Enter admin PIN to lock payments:');
+  if (pin === null || pin === '') return;
+  // Verify PIN via a harmless API call
+  var r = await fetch('/api/reset-squares', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({gameId: '__pincheck__', pin: pin})
   });
+  // If PIN wrong, server returns error with "Invalid PIN"
+  // If PIN right, it clears a dummy key (harmless) and returns ok:true
+  var d = await r.json();
+  if (!d.ok && d.error && d.error.includes('PIN')) {
+    alert('❌ Wrong PIN');
+    return;
+  }
+  // Store unlock state per game in localStorage (admin device only)
+  if (unlock) {
+    localStorage.setItem('pay_unlocked_' + game.id, '1');
+  } else {
+    localStorage.removeItem('pay_unlocked_' + game.id);
+  }
+  applyPaymentLockState(unlock);
+  alert(unlock ? '✅ Payments unlocked for ' + game.away + ' @ ' + game.home : '🔒 Payments locked');
+}
+
+function loadPaymentLockState() {
+  var game = window.currentGame;
+  if (!game) return;
+  var unlocked = localStorage.getItem('pay_unlocked_' + game.id) === '1';
+  applyPaymentLockState(unlocked);
 }
 
 // ── INIT ─────────────────────────────────────────────────────
@@ -1791,6 +1860,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load game FIRST (don't wait for ticker)
     await updateSport('NBA');
     logStatus('Page ready ✓ | Game: ' + (currentGame ? currentGame.away + ' @ ' + currentGame.home : 'NONE'), !currentGame);
+    loadPaymentLockState();
     // Load ticker in background (don't block)
     buildTicker().catch(e => logStatus('Ticker error: ' + e.message, true));
   } catch (e) {
