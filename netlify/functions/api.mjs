@@ -64,7 +64,7 @@ export default async function handler(req, context) {
     var isPending = body.pending, payMethod = body.payMethod, amount = body.amount;
     if (!gameId || !qty || !initials) return json({ error: "Missing fields" }, 400);
     var upper = initials.toUpperCase().slice(0, 4);
-    if (upper.length < 2) return json({ error: "Need 2+ initials" }, 400);
+    if (upper.length < 3) return json({ error: "Need 3+ initials" }, 400);
     try {
       var data    = await blobGet(token, gameId) || empty;
       var owners  = data.owners  || {};

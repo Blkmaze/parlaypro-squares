@@ -1445,8 +1445,8 @@
       </div>
 
       <!-- Initials -->
-      <div class="modal-input-label">Your Initials <span style="color:var(--text3);font-weight:400;">(2–4 letters shown on board)</span></div>
-      <input type="text" maxlength="4" placeholder="e.g. JD or DAB" class="modal-input" id="initialsInput" oninput="checkInitials()" style="text-transform:uppercase;" />
+      <div class="modal-input-label">Your Initials <span style="color:var(--text3);font-weight:400;">(3–4 letters shown on board)</span></div>
+      <input type="text" maxlength="4" placeholder="e.g. DAB" class="modal-input" id="initialsInput" oninput="checkInitials()" style="text-transform:uppercase;" />
 
       <!-- Payment method -->
       <div class="modal-input-label" style="margin-top:12px;">How are you paying?</div>
@@ -2134,12 +2134,12 @@ function updatePayInstructions() {
 
 function checkInitials() {
   const val = document.getElementById('initialsInput').value.trim();
-  document.getElementById('confirmBtn').disabled = val.length < 2;
+  document.getElementById('confirmBtn').disabled = val.length < 3;
 }
 
 async function confirmPurchase() {
   const initials = document.getElementById('initialsInput').value.trim().toUpperCase();
-  if (initials.length < 2) { alert('Enter at least 2 initials.'); return; }
+  if (initials.length < 3) { alert('Enter at least 3 initials (e.g. DAB).'); return; }
 
   const btn = document.getElementById('confirmBtn');
   btn.disabled = true;
@@ -2154,7 +2154,7 @@ async function confirmPurchase() {
   const price    = parseFloat(document.getElementById('squarePrice').value) || 10;
   const qty      = currentQty || 5;
   const isCash   = (_selectedPayMethod === 'cash');
-  const isPending = !isCash;
+  const isPending = true; // all methods pending — cash confirmed by admin tap, digital by n8n
   const amount   = (qty * price).toFixed(2);
 
   // ── helper: safe fetch → parsed JSON ──────────────────────
@@ -2223,18 +2223,19 @@ async function confirmPurchase() {
   const total = (indices.length * price).toFixed(2);
   document.getElementById('payModal').classList.remove('open');
 
+  var msgColor, msgIcon, msgLine2;
   if (isCash) {
-    document.getElementById('confirmMsg').innerHTML =
-      `${indices.length} square${indices.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
-      `<br><span style="color:#22c55e;font-size:13px;margin-top:6px;display:block;">✅ Locked in as <strong>${initials}</strong>!</span>` +
-      `<br><span style="color:var(--text3);font-size:11px;">Hand Willie the cash and you're set 💵</span>`;
+    msgColor = '#facc15'; msgIcon = '💵';
+    msgLine2 = 'Hand Willie the cash — he will tap Confirm to lock your squares.';
   } else {
-    const method = _selectedPayMethod === 'cashapp' ? 'Cash App' : 'PayPal';
-    document.getElementById('confirmMsg').innerHTML =
-      `${indices.length} square${indices.length > 1 ? 's' : ''} × $${price} = <strong style="color:white;">$${total}</strong>` +
-      `<br><span style="color:#facc15;font-size:13px;margin-top:6px;display:block;">⏳ Reserved as <strong>${initials}</strong> — send your ${method} payment</span>` +
-      `<br><span style="color:var(--text3);font-size:11px;">Squares lock in once Willie verifies your ${method} payment.</span>`;
+    var method = _selectedPayMethod === 'cashapp' ? 'Cash App' : 'PayPal';
+    msgColor = '#facc15'; msgIcon = '⏳';
+    msgLine2 = 'Squares lock automatically once your ' + method + ' payment is verified.';
   }
+  document.getElementById('confirmMsg').innerHTML =
+    indices.length + ' square' + (indices.length > 1 ? 's' : '') + ' x $' + price + ' = <strong style="color:white;">$' + total + '</strong>' +
+    '<br><span style="color:' + msgColor + ';font-size:13px;margin-top:6px;display:block;">' + msgIcon + ' Reserved as <strong>' + initials + '</strong></span>' +
+    '<br><span style="color:var(--text3);font-size:11px;">' + msgLine2 + '</span>';
 
   setTimeout(() => {
     document.getElementById('confirmModal').classList.add('open');
@@ -2477,6 +2478,7 @@ function updateScoreStrip(game) {
 
   if (period > 0 || isFinal) {
     qtrWrap.style.display = 'block';
+    // FINAL — keep scores visible permanently for reference
     var awayScores = (game.periodScores && game.periodScores.away) || [];
     var homeScores = (game.periodScores && game.periodScores.home) || [];
 
