@@ -1,7 +1,12 @@
 // Zero imports - uses Netlify Blobs REST API with the token injected at runtime
 const SITE_ID = "658f40e1-9d0f-4072-80a5-d6d0eb35d77e";
 const STORE = "sq3";
-const ADMIN_PIN = process.env.ADMIN_PIN || "1234";
+const ADMIN_PIN = process.env.ADMIN_PIN || "2826";   // default / player-facing PIN
+const MASTER_PIN = process.env.MASTER_PIN || "0614";  // Willie's master PIN
+
+function validPin(pin) {
+  return pin === ADMIN_PIN || pin === MASTER_PIN;
+}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -93,7 +98,7 @@ export default async (req, context) => {
     if (!gameId || !pin || !rowNums || !colNums) {
       return json({ error: "Missing required fields" }, 400);
     }
-    if (pin !== ADMIN_PIN) return json({ error: "Invalid PIN" }, 403);
+    if (!validPin(pin)) return json({ error: "Invalid PIN" }, 403);
     if (!Array.isArray(rowNums) || rowNums.length !== 10 || !Array.isArray(colNums) || colNums.length !== 10) {
       return json({ error: "rowNums and colNums must each be arrays of 10" }, 400);
     }
@@ -116,7 +121,7 @@ export default async (req, context) => {
 
     const { gameId, pin } = body;
     if (!gameId || !pin) return json({ error: "Missing gameId or pin" }, 400);
-    if (pin !== ADMIN_PIN) return json({ error: "Invalid PIN" }, 403);
+    if (!validPin(pin)) return json({ error: "Invalid PIN" }, 403);
 
     try {
       await blobSet(token, gameId, emptyBoard);
@@ -180,7 +185,7 @@ export default async (req, context) => {
   if (method === "POST" && path === "/api/props/setup") {
     const { gameId, homePlayer, homeName, awayPlayer, awayName, price, pin } = body;
     if (!gameId || !pin) return json({ error: "Missing gameId or pin" }, 400);
-    if (pin !== ADMIN_PIN) return json({ error: "Invalid PIN" }, 403);
+    if (!validPin(pin)) return json({ error: "Invalid PIN" }, 403);
     const ranges = ["0-9","10-19","20-29","30-39","40+"];
     const mkBoard = (id, name, team) => ({ id, name, team, price: price || 5, squares: ranges.map(r => ({ range: r, owner: null })) });
     try {
@@ -209,7 +214,7 @@ export default async (req, context) => {
   if (method === "POST" && path === "/api/props/reset") {
     const { gameId, side, pin } = body;
     if (!gameId || !pin) return json({ error: "Missing fields" }, 400);
-    if (pin !== ADMIN_PIN) return json({ error: "Invalid PIN" }, 403);
+    if (!validPin(pin)) return json({ error: "Invalid PIN" }, 403);
     try {
       const data = await blobGet(token, `props:${gameId}:${side}`);
       if (!data) return json({ error: "Not found" }, 404);
@@ -222,7 +227,7 @@ export default async (req, context) => {
   if (method === "POST" && path === "/api/props/confirm") {
     const { gameId, side, rangeIdx, pin } = body;
     if (!gameId || !pin) return json({ error: "Missing fields" }, 400);
-    if (pin !== ADMIN_PIN) return json({ error: "Invalid PIN" }, 403);
+    if (!validPin(pin)) return json({ error: "Invalid PIN" }, 403);
     try {
       const data = await blobGet(token, `props:${gameId}:${side}`);
       if (!data) return json({ error: "Board not found" }, 404);
@@ -237,7 +242,7 @@ export default async (req, context) => {
 };
 
 export const config = {
-  path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/props/confirm", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares"]
+  path: ["/api/scores", "/api/props", "/api/props/setup", "/api/props/claim", "/api/props/reset", "/api/props/confirm", "/api/squares", "/api/claim-square", "/api/lock-numbers", "/api/reset-squares", "/api/init-numbers"]
 };
 
 

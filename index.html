@@ -1447,9 +1447,33 @@ async function buildGrid(game) {
   const serverOwners = serverData.owners || {};
   const serverSold = new Set(Object.keys(serverOwners).map(Number));
 
-  const _locked = serverData && serverData.numbersLocked && serverData.rowNums && serverData.rowNums.length===10;
-  const topNums = _locked ? serverData.rowNums : shuffle([0,1,2,3,4,5,6,7,8,9]);
-  const leftNums = _locked ? serverData.colNums : shuffle([0,1,2,3,4,5,6,7,8,9]);
+  // ── NUMBER SYNC: get/init grid numbers server-side so ALL devices match ──
+  let topNums, leftNums;
+  if (serverData.rowNums && serverData.rowNums.length === 10) {
+    // Server already has numbers — use them (locked or not)
+    topNums = serverData.rowNums;
+    leftNums = serverData.colNums;
+  } else {
+    // First device to load this game generates the numbers and stores them
+    const generatedRow = shuffle([0,1,2,3,4,5,6,7,8,9]);
+    const generatedCol = shuffle([0,1,2,3,4,5,6,7,8,9]);
+    try {
+      const initRes = await fetch('/api/init-numbers', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ gameId: game.id, rowNums: generatedRow, colNums: generatedCol })
+      });
+      const initData = await initRes.json();
+      // Use whatever the server returned (may be another device's already-stored numbers)
+      topNums = initData.rowNums || generatedRow;
+      leftNums = initData.colNums || generatedCol;
+      // Update local cache with server numbers
+      _cache[game.id] = { ...serverData, rowNums: topNums, colNums: leftNums };
+    } catch(e) {
+      topNums = generatedRow;
+      leftNums = generatedCol;
+    }
+  }
   const sold = new Set([...game.sold || [], ...serverSold]);
   const mine = getMySquares(game.id);
   (game.mine || []).forEach(i => mine.add(i));
@@ -1477,7 +1501,8 @@ async function buildGrid(game) {
       const idx = i * 10 + j;
       const isMine = mine.has(idx);
       const isSold = sold.has(idx);
-      const owner = serverOwners[idx] || (isMine ? myInitials : null);
+      // Server is source of truth for owners — local initials only for squares claimed this session
+      const owner = serverOwners[idx] || (isMine && !serverSold.has(idx) ? myInitials : null);
       const cellClass = isMine ? 'cell-mine' : isSold ? 'cell-sold' : 'cell-open';
       html += `<div class="cell ${cellClass}" data-idx="${idx}">${owner || ''}</div>`;
     }
