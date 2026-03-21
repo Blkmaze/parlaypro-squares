@@ -1,481 +1,2693 @@
-// ParlayPro Squares API - pure ASCII - secured + Stripe
-const SITE_ID    = "658f40e1-9d0f-4072-80a5-d6d0eb35d77e";
-const STORE      = "sq3";
-const ADMIN_PIN  = process.env.ADMIN_PIN  || "2826";
-const MASTER_PIN = process.env.MASTER_PIN || "0614";
-const ORIGIN     = "https://parlaypro-squares.netlify.app";
-const STRIPE_SK  = process.env.STRIPE_SECRET_KEY;
-const STRIPE_WH  = process.env.STRIPE_WEBHOOK_SECRET;
+ <!DOCTYPE html>
+<!-- v20260316_cleaned -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ParlayPro — Super Squares</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-// --- Rate limiter ---
-var rateLimitMap = {};
-function isRateLimited(ip, route) {
-  var key = ip + "|" + route;
-  var now = Date.now();
-  var win = 60000;
-  var max = route === "/api/auto-assign" || route === "/api/claim-square" ? 10 : 30;
-  if (!rateLimitMap[key]) rateLimitMap[key] = [];
-  rateLimitMap[key] = rateLimitMap[key].filter(function(t) { return now - t < win; });
-  if (rateLimitMap[key].length >= max) return true;
-  rateLimitMap[key].push(now);
-  return false;
-}
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --surface3: #222222;
+    --border: #2a2a2a;
+    --border2: #333333;
+    --green: #16a34a;
+    --green-light: #22c55e;
+    --green-dim: rgba(22,163,74,0.15);
+    --green-glow: rgba(34,197,94,0.08);
+    --yellow: #eab308;
+    --red: #dc2626;
+    --blue: #3b82f6;
+    --text: #f5f5f5;
+    --text2: #a3a3a3;
+    --text3: #525252;
+    --cashapp: #00D632;
+    --paypal: #0070ba;
+  }
 
-// --- Input sanitizers ---
-function sanitizeInitials(raw) {
-  if (typeof raw !== "string") return null;
-  var cleaned = raw.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 4);
-  if (cleaned.length < 2) return null;
-  return cleaned;
-}
-function sanitizeGameId(raw) {
-  if (typeof raw !== "string") return null;
-  var cleaned = raw.replace(/[^A-Za-z0-9_\-]/g, "").slice(0, 64);
-  if (cleaned.length < 3) return null;
-  return cleaned;
-}
-function sanitizeSport(raw) {
-  var allowed = ["ncaam","ncaaw","nba","wnba","nhl","mlb","nfl","mls"];
-  return allowed.indexOf(raw) !== -1 ? raw : "ncaam";
-}
-function sanitizeDate(raw) {
-  if (typeof raw !== "string") return "";
-  return raw.replace(/[^0-9]/g, "").slice(0, 8);
-}
-function validPin(p) { return p === ADMIN_PIN || p === MASTER_PIN; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 0;
+    margin: 0;
+  }
 
-// --- CORS headers ---
-function corsHeaders(req) {
-  var origin = req.headers.get("origin") || "";
-  var allowed = origin === ORIGIN || origin === "http://localhost:8888";
-  return {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": allowed ? origin : ORIGIN,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, stripe-signature",
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY"
-  };
-}
+  .page-wrap {
+    padding: 24px 16px;
+    margin-top: 38px;
+  }
 
-function json(req, data, status) {
-  status = status || 200;
-  return new Response(JSON.stringify(data), { status: status, headers: corsHeaders(req) });
-}
+  /* SCORE TICKER */
+  .ticker-wrap {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #000;
+    border-bottom: 1px solid var(--border2);
+    overflow: hidden;
+    height: 38px;
+    z-index: 100;
+  }
+  .ticker-inner {
+    display: inline-flex;
+    align-items: center;
+    height: 38px;
+    white-space: nowrap;
+    animation: scroll 80s linear infinite;
+  }
+  .ticker-inner:hover { animation-play-state: paused; }
+  .ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 40px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .ticker-item:hover { background: #1a1a1a; }
+  .ticker-score { color: var(--yellow); font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
+  .ticker-badge { font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge-live { background: var(--red); color: white; animation: pulse 1.5s ease-in-out infinite; }
+  .badge-final { background: #3f3f3f; color: #aaa; }
+  .badge-upcoming { background: #713f12; color: #fde68a; }
 
-// --- Blob helpers ---
-async function blobGet(token, key) {
-  var r = await fetch(
-    "https://api.netlify.com/api/v1/blobs/" + SITE_ID + "/" + STORE + "/" + encodeURIComponent(key),
-    { headers: { Authorization: "Bearer " + token } }
-  );
-  if (r.status === 404) return null;
-  if (!r.ok) return null;
-  var txt = await r.text();
-  try { return JSON.parse(txt); } catch(e) { return null; }
-}
-async function blobSet(token, key, value) {
-  var r = await fetch(
-    "https://api.netlify.com/api/v1/blobs/" + SITE_ID + "/" + STORE + "/" + encodeURIComponent(key),
-    {
-      method: "PUT",
-      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
-      body: JSON.stringify(value)
-    }
-  );
-  if (!r.ok) throw new Error("Blob write failed: " + r.status);
-}
-var empty = function() {
-  return { owners: {}, pending: {}, rowNums: null, colNums: null, numbersLocked: false };
-};
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
 
-// --- Stripe HMAC webhook verifier (no SDK needed) ---
-async function verifyStripeSignature(payload, sigHeader, secret) {
-  try {
-    var parts = {};
-    sigHeader.split(",").forEach(function(p) {
-      var kv = p.split("="); parts[kv[0]] = kv[1];
-    });
-    var ts = parts["t"];
-    var sig = parts["v1"];
-    if (!ts || !sig) return false;
-    var signed = ts + "." + payload;
-    var enc = new TextEncoder();
-    var key = await crypto.subtle.importKey(
-      "raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+  /* LAYOUT */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* GRID BOARD */
+  .board-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: visible; /* never clip the grid */
+    min-width: 0;      /* allow shrinking inside grid */
+  }
+
+  .board-header {
+    background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .board-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+
+  .board-subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+
+  .sport-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .sport-select, .game-select {
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .sport-select:focus, .game-select:focus { border-color: var(--green); }
+
+  .grid-wrap {
+    padding: 8px;
+    overflow: visible;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .grid-container {
+    display: grid;
+    /* axis col is min 28px, cells share remaining space equally */
+    grid-template-columns: minmax(28px, 36px) repeat(10, minmax(0, 1fr));
+    gap: 2px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .axis-header {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    aspect-ratio: 1;
+  }
+
+  .axis-top { color: var(--green-light); }
+  .axis-left { color: #60a5fa; }
+  .axis-corner { background: transparent; border: none; }
+
+  .team-banner {
+    grid-column: 2 / 12;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+
+  .cell {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.12s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cell-open {
+    background: var(--surface2);
+    color: var(--text3);
+  }
+  .cell-open:hover {
+    background: var(--surface3);
+    border-color: var(--green);
+    color: var(--green-light);
+  }
+
+  .cell-pending {
+  background: rgba(250,204,21,0.12) !important;
+  border: 1.5px dashed #facc15 !important;
+  color: #facc15 !important;
+  font-size: 8px !important;
+  cursor: default;
+}
+.cell-sold {
+    background: var(--surface3);
+    border-color: #2a2a2a;
+    color: var(--text2);
+    cursor: default;
+  }
+
+  .cell-mine {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    border-color: var(--green-light);
+    color: white;
+    box-shadow: 0 0 8px rgba(34,197,94,0.25);
+  }
+
+  /* Board selector tabs */
+  .board-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 0 20px 12px;
+  }
+
+  .board-tab {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--border2);
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    color: var(--text2);
+  }
+
+  .board-tab.active {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+  }
+
+  /* ===================== SIDEBAR ===================== */
+  .sidebar { display: flex; flex-direction: column; gap: 12px; }
+
+  /* MAIN CARD */
+  .main-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    background: linear-gradient(135deg, #15803d 0%, #16a34a 50%, #14532d 100%);
+    padding: 16px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+  }
+
+  .card-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(255,255,255,0.02) 10px,
+      rgba(255,255,255,0.02) 11px
     );
-    var mac = await crypto.subtle.sign("HMAC", key, enc.encode(signed));
-    var hex = Array.from(new Uint8Array(mac)).map(function(b) {
-      return b.toString(16).padStart(2, "0");
-    }).join("");
-    return hex === sig;
-  } catch(e) { return false; }
+  }
+
+  .card-header-text { position: relative; }
+  .card-header-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: white;
+    line-height: 1;
+  }
+  .card-header-sub { font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 3px; }
+
+  .available-badge {
+    position: relative;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    padding: 8px 14px;
+    text-align: center;
+  }
+  .available-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    color: white;
+    line-height: 1;
+  }
+  .available-label { font-size: 9px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* PARLAY BOARD SECTION */
+  .parlay-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .status-dot {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .status-live { background: rgba(220,38,38,0.2); color: #f87171; border: 1px solid rgba(220,38,38,0.3); }
+  .status-live::before { content: '●'; margin-right: 3px; animation: pulse 1s infinite; }
+  .status-scheduled { background: rgba(234,179,8,0.15); color: #fbbf24; border: 1px solid rgba(234,179,8,0.25); }
+
+  /* Odds grid */
+  .odds-header-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .odds-col-label {
+    text-align: center;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .odds-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+
+  .odds-col { display: flex; flex-direction: column; gap: 4px; }
+
+  .odds-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    gap: 2px;
+  }
+
+  .odds-btn:hover {
+    background: var(--surface3);
+    border-color: #404040;
+  }
+
+  .odds-btn.selected {
+    background: rgba(22,163,74,0.2);
+    border-color: var(--green);
+    box-shadow: 0 0 0 1px rgba(34,197,94,0.15);
+  }
+
+  .odds-btn-label {
+    font-size: 9px;
+    color: var(--text3);
+    font-weight: 600;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.2;
+    letter-spacing: 0.03em;
+  }
+
+  .odds-btn.selected .odds-btn-label { color: rgba(134,239,172,0.7); }
+
+  .odds-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green-light);
+  }
+
+  .odds-btn.selected .odds-value { color: #86efac; }
+
+  /* Selected Legs */
+  .legs-section {
+    padding: 10px 16px;
+    background: rgba(22,163,74,0.06);
+    border-bottom: 1px solid rgba(22,163,74,0.15);
+  }
+
+  .legs-title {
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--green-light);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 6px;
+  }
+
+  .leg-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(22,163,74,0.1);
+    font-size: 11px;
+  }
+  .leg-row:last-child { border-bottom: none; }
+  .leg-label { color: var(--text2); }
+  .leg-odds { font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--green-light); font-size: 12px; }
+
+  /* Buy section */
+  .buy-section { padding: 14px 16px; }
+
+  .buy-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .buy-meta-label { font-size: 12px; color: var(--text2); }
+  .buy-meta-value { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text); }
+
+  /* Quantity buttons */
+  .qty-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+
+  .qty-btn {
+    padding: 8px 0;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .qty-btn:hover { border-color: #404040; color: var(--text); background: var(--surface3); }
+
+  .qty-btn.active {
+    background: var(--green);
+    border-color: var(--green-light);
+    color: white;
+    box-shadow: 0 2px 10px rgba(22,163,74,0.3);
+  }
+
+  /* Total row */
+  .total-row {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .total-left {}
+  .total-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+  .total-amount { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--text); letter-spacing: 1px; line-height: 1; }
+  .total-right { text-align: right; }
+  .total-squares { font-size: 11px; color: var(--text2); }
+  .total-legs { font-size: 11px; color: var(--green-light); margin-top: 2px; }
+
+  /* Payment methods */
+  .pay-label {
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    text-align: center;
+    margin-bottom: 7px;
+  }
+
+  .pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
+
+  .pay-card {
+    border-radius: 10px;
+    padding: 9px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+
+  .pay-card:hover { filter: brightness(1.1); }
+  .pay-card.pay-locked { opacity: 0.45; pointer-events: none; position: relative; }
+  .pay-locked-badge { display: none; }
+  .pay-card.pay-locked .pay-locked-badge { display: block; position: absolute; top: 4px; right: 4px; background: #ef4444; color: white; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 4px; letter-spacing: .04em; }
+  /* cta-btn is never locked — buy is always available */
+  .pay-unlock-note { display: none; font-size: 10px; color: #ef4444; text-align: center; margin-top: 4px; }
+  .pay-unlock-note.visible { display: block; }
+  .admin-confirm-list { max-height: 200px; overflow-y: auto; }
+  .confirm-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: var(--surface3); border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+  .confirm-row .initials { font-weight: 700; color: var(--green); font-family: 'IBM Plex Mono', monospace; }
+  .confirm-row .sq-count { color: var(--text2); }
+  .btn-confirm-pay { background: var(--green); color: #000; font-weight: 700; font-size: 10px; padding: 4px 10px; border: none; border-radius: 5px; cursor: pointer; }
+  .btn-confirm-pay.confirmed { background: #555; color: #aaa; cursor: default; }
+
+  .pay-cashapp {
+    background: rgba(0,214,50,0.08);
+    border-color: rgba(0,214,50,0.25);
+  }
+
+  .pay-paypal {
+    background: rgba(0,112,186,0.08);
+    border-color: rgba(0,112,186,0.25);
+  }
+
+  .pay-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .pay-icon-cashapp { background: var(--cashapp); color: white; }
+  .pay-icon-paypal { background: var(--paypal); color: white; font-style: italic; font-size: 13px; }
+
+  .pay-info {}
+  .pay-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+  .pay-cashapp .pay-name { color: var(--cashapp); }
+  .pay-paypal .pay-name { color: #60a5fa; }
+  .pay-handle { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text); }
+
+  /* CTA */
+  .cta-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    border: 1px solid var(--green-light);
+    border-radius: 12px;
+    color: white;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    padding: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.15s;
+    box-shadow: 0 4px 20px rgba(22,163,74,0.25);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    transition: left 0.5s;
+  }
+
+  .cta-btn:hover::before { left: 150%; }
+  .cta-btn:hover { background: linear-gradient(135deg, #15803d, #166534); box-shadow: 0 4px 24px rgba(22,163,74,0.4); transform: translateY(-1px); }
+  .cta-btn:active { transform: translateY(0) scale(0.98); }
+
+  .cta-sub { font-size: 10px; color: var(--text3); text-align: center; margin-top: 6px; }
+
+  /* LEGEND CARD */
+  .legend-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+
+  .legend-title { font-size: 9px; font-weight: 800; color: var(--text3); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
+  .legend-items { display: flex; gap: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+  /* TODAY'S GAMES CARD */
+  .games-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .games-card-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .games-card-header svg { color: #60a5fa; }
+
+  .games-list { padding: 8px; max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+
+  .game-row {
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.12s;
+    background: rgba(255,255,255,0.01);
+  }
+
+  .game-row:hover { background: var(--surface2); border-color: var(--border2); }
+  .game-row.active { background: var(--surface3); border-color: var(--green); }
+
+  .game-row-top { display: flex; justify-content: space-between; align-items: center; }
+  .game-teams { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .game-row.active .game-teams { color: var(--text); }
+
+  .game-score { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; color: var(--yellow); }
+
+  /* ADMIN CARD */
+  .admin-card {
+    background: rgba(220,38,38,0.05);
+    border: 1px solid rgba(220,38,38,0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+
+  .admin-title { font-size: 9px; font-weight: 800; color: #f87171; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+
+  .admin-btns { display: flex; flex-direction: column; gap: 5px; }
+
+  .admin-btn {
+    width: 100%;
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    border: 1px solid transparent;
+  }
+
+  .admin-btn-blue { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25); color: #93c5fd; }
+  .admin-btn-blue:hover { background: rgba(59,130,246,0.2); }
+  .admin-btn-green { background: rgba(22,163,74,0.1); border-color: rgba(22,163,74,0.25); color: #86efac; }
+  .admin-btn-green:hover { background: rgba(22,163,74,0.2); }
+  .admin-btn-red { background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.25); color: #fca5a5; }
+  .admin-btn-red:hover { background: rgba(220,38,38,0.2); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal-overlay.open { display: flex; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    max-width: 400px;
+    width: 100%;
+    overflow: hidden;
+    animation: slideUp 0.25s ease;
+  }
+
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .modal-header {
+    padding: 24px 24px 16px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-icon {
+    width: 56px; height: 56px;
+    background: var(--green-dim);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+    font-size: 24px;
+  }
+
+  .modal-title { font-size: 20px; font-weight: 800; color: var(--text); }
+  .modal-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+  .modal-body { padding: 16px 24px 24px; }
+
+  .modal-total {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .modal-total-label { font-size: 12px; color: var(--text2); }
+  .modal-total-amount { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--green-light); letter-spacing: 1px; }
+
+  .modal-input-label { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 5px; }
+  .modal-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 18px;
+    font-family: 'IBM Plex Mono', monospace;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 14px;
+  }
+  .modal-input:focus { border-color: var(--green); }
+
+  .modal-pay-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+
+  .modal-pay-option {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .modal-pay-option:hover { border-color: #404040; background: var(--surface3); }
+  .modal-pay-option.selected { border-color: var(--green); background: var(--green-dim); }
+
+  .modal-pay-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900;
+    font-size: 16px;
+    color: white;
+  }
+
+  .modal-pay-name { font-size: 10px; font-weight: 700; color: var(--text); }
+
+  .modal-cta {
+    width: 100%;
+    background: var(--green);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 15px;
+    font-weight: 800;
+    padding: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .modal-cta:hover { background: #15803d; }
+  .modal-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { background: var(--border2); color: var(--text); }
+
+  /* CONFIRM MODAL */
+  .confirm-modal {
+    text-align: center;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .confirm-icon {
+    width: 72px; height: 72px;
+    background: var(--green-dim);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    border: 2px solid rgba(34,197,94,0.3);
+  }
+
+  .confirm-title { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 2px; color: var(--text); }
+  .confirm-msg { font-size: 16px; color: var(--text2); }
+  .confirm-badge { background: var(--green-dim); border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 10px 20px; }
+  .confirm-badge-text { font-size: 13px; font-weight: 700; color: var(--green-light); }
+  .confirm-badge-sub { font-size: 10px; color: rgba(134,239,172,0.6); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 3px; }
+
+  .confirm-btn {
+    width: 100%;
+    background: var(--green);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .confirm-btn:hover { background: #15803d; }
+
+  /* scrollbar */
+  .tally-strip { padding: 12px 16px; border-top: 0.5px solid var(--border); }
+  .tally-strip-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .tally-strip-label { font-size: 9px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; }
+  .pot-toggle-btn { font-size: 9px; padding: 2px 8px; border-radius: 100px; border: 0.5px solid var(--border2); background: var(--surface3); color: var(--text2); cursor: pointer; transition: all .15s; }
+  .pot-toggle-btn.active { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.4); color: var(--green-light); }
+  .tally-metrics { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 6px; margin-bottom: 8px; }
+  .tm { background: var(--surface3); border-radius: 7px; padding: 7px 9px; }
+  .tm-l { font-size: 9px; color: var(--text3); margin-bottom: 3px; }
+  .tm-v { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text); line-height: 1; }
+  .tm-v.green { color: var(--green-light); }
+  .prog-wrap { background: var(--surface3); border-radius: 100px; height: 5px; overflow: hidden; margin-bottom: 3px; }
+  .prog-fill { height: 100%; border-radius: 100px; background: var(--green); transition: width .4s; }
+  .prog-txt { display: flex; justify-content: space-between; font-size: 9px; color: var(--text3); margin-bottom: 8px; }
+  .payout-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; }
+  .pq { background: var(--surface3); border-radius: 6px; padding: 6px 4px; text-align: center; border: 0.5px solid transparent; }
+  .pq.pq-active { background: rgba(250,204,21,.1); border-color: var(--yellow); }
+  .pq.pq-paid { background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.3); }
+  .pq-n { font-size: 9px; color: var(--text3); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .04em; }
+  .pq-a { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text); }
+  .pq-a.yellow { color: var(--yellow); }
+  .pq-a.green { color: var(--green-light); }
+  .score-live-bar { display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--surface2);border-bottom:0.5px solid var(--border);gap:8px; }
+  .slb-team { display:flex;align-items:center;gap:6px;flex:1; }
+  .slb-abbr { font-size:12px;color:var(--text2);font-weight:500; }
+  .slb-score { font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:var(--text);line-height:1; }
+  .slb-center { text-align:center;flex-shrink:0; }
+  .slb-badge { font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;letter-spacing:.04em; }
+  .slb-badge.live { background:rgba(239,68,68,.15);color:#f87171; }
+  .slb-badge.final { background:rgba(34,197,94,.15);color:var(--green-light); }
+  .slb-badge.pre { background:var(--surface3);color:var(--text3); }
+  .slb-clock { font-size:10px;color:var(--yellow);margin-top:2px; }
+  .qtr-table-wrap { padding:8px 14px 10px;border-bottom:0.5px solid var(--border); }
+  .qtr-table-label { font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px; }
+  .qtr-row-grid { display:grid;grid-template-columns:36px repeat(4,1fr) 42px;gap:2px;margin-bottom:2px; }
+  .qc { border-radius:4px;padding:4px 3px;text-align:center;font-size:10px; }
+  .qc.hdr { background:transparent;color:var(--text3); }
+  .qc.tname { background:transparent;font-size:11px;font-weight:500;color:var(--text2);text-align:left;display:flex;align-items:center; }
+  .qc.val { background:var(--surface3);border:0.5px solid var(--border);font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--text); }
+  .qc.cur { background:rgba(250,204,21,.12);border-color:var(--yellow);color:var(--yellow); }
+  .qc.tot { background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.25);color:var(--green-light); }
+  .qc.empty { color:var(--text3); }
+  .win-digits-row { display:flex;align-items:center;gap:6px;padding:6px 14px 8px;font-size:10px;color:var(--text2);flex-wrap:wrap;border-bottom:0.5px solid var(--border); }
+  .win-digit-badge { background:rgba(250,204,21,.12);border:1px solid var(--yellow);border-radius:4px;padding:1px 6px;font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--yellow);font-size:11px; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .page-wrap { padding: 4px 0; }
+    .board-panel { border-radius: 0; border-left: none; border-right: none; }
+    /* On mobile: tally sits inside board-panel right under grid — already correct */
+    /* Sidebar cards get comfortable padding */
+    .main-card { border-radius: 0; border-left: none; border-right: none; }
+    .legend-card, .games-card, .admin-card { border-radius: 10px; margin: 0 8px; }
+    .sidebar { gap: 10px; padding-bottom: 24px; }
+    /* Tally strip — make payout boxes 2-col on very small screens */
+  }
+  @media (max-width: 400px) {
+    .payout-row { grid-template-columns: repeat(2, 1fr); gap: 4px; }
+    .tally-metrics { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  }
+
+  @media (max-width: 600px) {
+    .board-header {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      padding: 12px 14px !important;
+      gap: 10px !important;
+    }
+    .board-title {
+      font-size: 17px !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .board-subtitle {
+      font-size: 11px !important;
+    }
+    .sport-controls {
+      width: 100% !important;
+      flex-wrap: nowrap !important;
+      gap: 6px !important;
+    }
+    .sport-select,
+    .game-select {
+      flex: 1 1 0 !important;
+      min-width: 0 !important;
+      font-size: 12px !important;
+      padding: 6px 6px !important;
+      max-width: 50% !important;
+    }
+    .board-tabs {
+      width: 100% !important;
+      gap: 6px !important;
+    }
+    .board-tab {
+      font-size: 11px !important;
+      padding: 6px 10px !important;
+    }
+    .grid-container {
+      gap: 1px !important;
+    }
+    .cell {
+      font-size: 8px !important;
+      min-height: clamp(18px, 4.5vw, 28px) !important;
+    }
+    .axis-header {
+      font-size: 8px !important;
+      min-height: clamp(18px, 4.5vw, 28px) !important;
+      padding: 1px !important;
+    }
+    .ticker-wrap {
+      font-size: 11px !important;
+    }
+    .layout{flex-direction:column!important;}
+    .sidebar{width:100%!important;max-width:100%!important;}
+    .board-panel{width:100%!important;}
+  }
+</style>
+</head>
+<body>
+
+<!-- STATUS BAR (debug) -->
+<div id="statusBar" style="position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#22c55e;z-index:9999;">Loading...</div>
+
+<!-- SCORE TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-inner" id="ticker">
+    <!-- populated by JS -->
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="page-wrap">
+<div class="layout">
+
+  <!-- BOARD PANEL -->
+  <div class="board-panel">
+    <div class="board-header">
+      <div>
+        <div class="board-title">Super Squares</div>
+        <div class="board-subtitle">
+          <span style="display:flex;align-items:center;gap:4px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span id="live-date">Loading...</span>
+          </span>
+        </div>
+      </div>
+      <div class="sport-controls">
+        <select class="sport-select" onchange="updateSport(this.value)">
+          <option value="NBA">🏀 NBA</option>
+          <option value="NHL">🏒 NHL</option>
+          <option value="MLB">⚾ MLB</option>
+          <option value="NFL">🏈 NFL</option>
+          <option value="MLS">⚽ MLS</option>
+          <option value="WNBA">🏀 WNBA</option>
+          <option value="MM_MEN">🏀 March Madness (Men)</option>
+          <option value="MM_WOMEN">🏀 March Madness (Women)</option>
+        </select>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <button onclick="changeDate(-1)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1;">◀</button>
+          <input type="date" id="gameDate" class="game-select" onchange="updateDateFromPicker(this.value)" style="min-width:130px;color-scheme:dark;" />
+          <button onclick="changeDate(1)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1;">▶</button>
+        </div>
+        <select class="game-select" id="gameSelect" onchange="selectGame(this.value)">
+          <!-- populated by JS -->
+        </select>
+      </div>
+    </div>
+
+    <!-- Board Tabs -->
+    <div class="board-tabs" style="padding-top:16px;">
+      <button class="board-tab active">Board #1</button>
+      <button class="board-tab">Board #2 (FULL)</button>
+    </div>
+
+    <!-- Grid -->
+    <div class="grid-wrap">
+      <div class="grid-container" id="squaresGrid">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- LIVE SCORE BAR + QUARTER TABLE -->
+    <div id="scoreStrip" style="display:none;">
+      <div class="score-live-bar">
+        <div class="slb-team">
+          <span class="slb-abbr" id="slbAwayAbbr">AWAY</span>
+          <span class="slb-score" id="slbAwayScore">0</span>
+        </div>
+        <div class="slb-center">
+          <div id="slbBadge" class="slb-badge pre">—</div>
+          <div class="slb-clock" id="slbClock"></div>
+        </div>
+        <div class="slb-team" style="justify-content:flex-end;">
+          <span class="slb-score" id="slbHomeScore">0</span>
+          <span class="slb-abbr" id="slbHomeAbbr">HOME</span>
+        </div>
+      </div>
+      <div class="qtr-table-wrap" id="qtrTableWrap" style="display:none;"></div>
+      <div class="win-digits-row" id="winDigitsRow" style="display:none;"></div>
+    </div>
+
+    <!-- TALLY + PAYOUT STRIP -->
+    <div class="tally-strip" id="tallyStrip">
+      <div class="tally-strip-hdr">
+        <span class="tally-strip-label">Board tally</span>
+        <div style="display:flex;gap:5px;align-items:center;font-size:10px;color:var(--text3);">
+          <span>Payout:</span>
+          <button class="pot-toggle-btn active" id="potBtnCollected" onclick="setPotMode('collected')">Collected</button>
+          <button class="pot-toggle-btn" id="potBtnFull" onclick="setPotMode('full')">Full pot</button>
+        </div>
+      </div>
+      <div class="tally-metrics">
+        <div class="tm"><div class="tm-l">Squares sold</div><div class="tm-v" id="tallySlod">0 / 100</div></div>
+        <div class="tm"><div class="tm-l">Collected</div><div class="tm-v green" id="tallyCollected">$0</div></div>
+        <div class="tm"><div class="tm-l">Full pot</div><div class="tm-v" id="tallyPot">$0</div></div>
+      </div>
+      <div class="prog-wrap"><div class="prog-fill" id="tallyProg" style="width:0%"></div></div>
+      <div class="prog-txt"><span id="tallyProgL">0 sold</span><span id="tallyProgR">100 remaining</span></div>
+      <div class="payout-row" id="tallyPayouts"></div>
+    </div>
+
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- MAIN COMBINED CARD -->
+    <div class="main-card">
+
+      <!-- Header -->
+      <div class="card-header">
+        <div class="card-header-text">
+          <div class="card-header-title">PARLAY + SQUARES</div>
+          <div class="card-header-sub">Buy squares &amp; build your parlay</div>
+        </div>
+        <div class="available-badge">
+          <div class="available-num" id="availableCount">67</div>
+          <div class="available-label">Available</div>
+        </div>
+      </div>
+
+      <!-- Parlay Board -->
+      <div class="parlay-section">
+        <div class="section-label">
+          Parlay Board
+          <span class="status-dot status-live">Live · Q3 4:22</span>
+        </div>
+
+        <div class="odds-header-row">
+          <div class="odds-col-label">Spread</div>
+          <div class="odds-col-label">Total</div>
+          <div class="odds-col-label">Moneyline</div>
+        </div>
+
+        <!-- LIVE ODDS — populated by buildOdds() -->
+        <div class="odds-grid" id="oddsGrid">
+          <div class="odds-col" id="oddsCols-spread">
+            <div class="odds-btn" id="btn-spread-away" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-spread-away">Away +3.5</div>
+              <div class="odds-value" id="val-spread-away">-110</div>
+            </div>
+            <div class="odds-btn" id="btn-spread-home" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-spread-home">Home -3.5</div>
+              <div class="odds-value" id="val-spread-home">-110</div>
+            </div>
+          </div>
+          <div class="odds-col" id="oddsCols-total">
+            <div class="odds-btn" id="btn-total-over" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-total-over">Over 228.5</div>
+              <div class="odds-value" id="val-total-over">-110</div>
+            </div>
+            <div class="odds-btn" id="btn-total-under" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-total-under">Under 228.5</div>
+              <div class="odds-value" id="val-total-under">-110</div>
+            </div>
+          </div>
+          <div class="odds-col" id="oddsCols-ml">
+            <div class="odds-btn" id="btn-ml-away" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-ml-away">Away ML</div>
+              <div class="odds-value" id="val-ml-away">-160</div>
+            </div>
+            <div class="odds-btn" id="btn-ml-home" onclick="toggleOdds(this)">
+              <div class="odds-btn-label" id="lbl-ml-home">Home ML</div>
+              <div class="odds-value" id="val-ml-home">+140</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LINE ADJUSTERS ── spread ±0.5 / O/U ±0.5 / team total toggle -->
+        <div id="adjPanel" style="margin:10px 0 0;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;">
+          <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Adjust Lines</div>
+          <!-- Spread adjuster -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:11px;color:var(--text2);width:52px;">Spread</span>
+            <button onclick="adjLine('spread',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">−½</button>
+            <span id="adjSpreadVal" style="font-size:12px;color:var(--text);min-width:32px;text-align:center;font-family:'IBM Plex Mono',monospace;">0</span>
+            <button onclick="adjLine('spread',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">+½</button>
+            <button onclick="adjLine('spread',0,'reset')" style="background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--text3);border-radius:5px;padding:2px 6px;cursor:pointer;font-size:10px;margin-left:2px;">reset</button>
+          </div>
+          <!-- O/U adjuster -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+            <span style="font-size:11px;color:var(--text2);width:52px;">O/U</span>
+            <button onclick="adjLine('total',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">−½</button>
+            <span id="adjTotalVal" style="font-size:12px;color:var(--text);min-width:32px;text-align:center;font-family:'IBM Plex Mono',monospace;">0</span>
+            <button onclick="adjLine('total',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">+½</button>
+            <button onclick="adjLine('total',0,'reset')" style="background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--text3);border-radius:5px;padding:2px 6px;cursor:pointer;font-size:10px;margin-left:2px;">reset</button>
+          </div>
+          <!-- Home/Away team total toggle -->
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:var(--text2);width:52px;">Team</span>
+            <button id="teamTotalBtn" onclick="toggleTeamTotal()" style="background:var(--surface3);border:1px solid var(--border2);color:var(--green-light);border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:700;">Show Team O/U</button>
+          </div>
+          <!-- Team totals (hidden by default) -->
+          <div id="teamTotalsRow" style="display:none;margin-top:8px;display:none;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
+              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:6px;padding:6px;text-align:center;">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:3px;" id="homeTeamTotalLbl">HOME</div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+                  <button onclick="adjTeamTotal('home',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">−</button>
+                  <span id="homeTeamTotalVal" style="font-size:12px;color:var(--text);min-width:28px;text-align:center;font-family:'IBM Plex Mono',monospace;">—</span>
+                  <button onclick="adjTeamTotal('home',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">+</button>
+                </div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:6px;padding:6px;text-align:center;">
+                <div style="font-size:9px;color:var(--text3);margin-bottom:3px;" id="awayTeamTotalLbl">AWAY</div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+                  <button onclick="adjTeamTotal('away',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">−</button>
+                  <span id="awayTeamTotalVal" style="font-size:12px;color:var(--text);min-width:28px;text-align:center;font-family:'IBM Plex Mono',monospace;">—</span>
+                  <button onclick="adjTeamTotal('away',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Build Parlay Button -->
+        <button style="width:100%;margin-top:10px;padding:8px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);border-radius:8px;color:#86efac;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s;letter-spacing:0.05em;text-transform:uppercase;"
+          onmouseover="this.style.background='rgba(22,163,74,0.25)'"
+          onmouseout="this.style.background='rgba(22,163,74,0.15)'"
+          onclick="buildParlayFromSelected()"
+        >Build Custom Parlay</button>
+      </div>
+
+      <!-- Selected Legs -->
+      <div class="legs-section">
+        <div class="legs-title">Selected Legs (2)</div>
+        <div class="leg-row">
+          <span class="leg-label">Spread · Home -3.5</span>
+          <span class="leg-odds">-110</span>
+        </div>
+        <div class="leg-row">
+          <span class="leg-label">Moneyline · Away ML</span>
+          <span class="leg-odds">-160</span>
+        </div>
+      </div>
+
+      <!-- Buy Squares -->
+      <div class="buy-section">
+        <div class="buy-meta">
+          <span class="buy-meta-label">Price per Square</span>
+          <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="background:#1a1a1a;border:1px solid #333;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option><option value="250">$250</option></select>
+        </div>
+
+        <!-- Qty -->
+        <div class="qty-grid">
+          <button class="qty-btn" onclick="setQty(1, this)">1</button>
+          <button class="qty-btn" onclick="setQty(2, this)">2</button>
+          <button class="qty-btn active" onclick="setQty(5, this)">5</button>
+          <button class="qty-btn" onclick="setQty(10, this)">10</button>
+          <button class="qty-btn" onclick="setQty(20, this)">20</button>
+        </div>
+
+        <!-- Total -->
+        <div class="total-row">
+          <div class="total-left">
+            <div class="total-label">Total Due</div>
+            <div class="total-amount" id="totalAmount">$50.00</div>
+          </div>
+          <div class="total-right">
+            <div class="total-squares" id="totalSquares">5 Squares</div>
+            <div class="total-legs">+ 2 Parlay Legs</div>
+          </div>
+        </div>
+
+        <!-- Pay Willie -->
+        <div class="pay-label">Pay Willie</div>
+        <div class="pay-grid" id="payCardsGrid">
+          <div class="pay-card pay-cashapp" id="payCardCashapp">
+            <span class="pay-locked-badge">LOCKED</span>
+            <div class="pay-icon pay-icon-cashapp">$</div>
+            <div class="pay-info">
+              <div class="pay-name">Cash App</div>
+              <div class="pay-handle">$7707438091</div>
+            </div>
+          </div>
+          <div class="pay-card pay-paypal" id="payCardPaypal">
+            <span class="pay-locked-badge">LOCKED</span>
+            <div class="pay-icon pay-icon-paypal">P</div>
+            <div class="pay-info">
+              <div class="pay-name">PayPal</div>
+              <div class="pay-handle" style="font-size:9px;">willie.mayes<br>@gmail.com</div>
+            </div>
+          </div>
+        </div>
+        <div class="pay-unlock-note" id="payUnlockNote">⚠ Payment not confirmed — contact Willie</div>
+
+        <!-- CTA -->
+        <button class="cta-btn" id="ctaBuyBtn" onclick="openPayModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          BUY 5 SQUARES NOW
+        </button>
+        <div class="cta-sub">Squares assigned randomly after payment verified</div>
+      </div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="legend-card">
+      <div class="legend-title">Legend</div>
+      <div class="legend-items">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:rgba(250,204,21,0.12);border:1.5px dashed #facc15;"></div>
+          Pending
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#16a34a;border:1px solid #22c55e;"></div>
+          Yours
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#222;border:1px solid #333;"></div>
+          Sold
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:#111;border:1px solid #2a2a2a;"></div>
+          Open
+        </div>
+      </div>
+    </div>
+
+    <!-- TODAY'S GAMES -->
+    <div class="games-card">
+      <div class="games-card-header">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Today's Games
+      </div>
+      <div class="games-list" id="gamesList">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- ADMIN ZONE -->
+    <div class="admin-card">
+      <div class="admin-title">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Admin Zone
+      </div>
+      <div class="admin-btns">
+        <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
+        <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
+        <button class="admin-btn admin-btn-green" id="payUnlockBtn" onclick="adminTogglePayment(true)">✅ Unlock Payment (Confirm Paid)</button>
+        <button class="admin-btn admin-btn-red" id="payLockBtn" onclick="adminTogglePayment(false)" style="display:none;">🔒 Lock Payment</button>
+        <!-- Reset with inline PIN — no prompt() needed -->
+        <div style="display:flex;gap:6px;align-items:center;margin-top:2px;">
+          <input id="resetPinInput" type="password" maxlength="4" placeholder="PIN" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;width:70px;outline:none;font-family:'IBM Plex Mono',monospace;" />
+          <button class="admin-btn admin-btn-red" style="flex:1;margin:0;" onclick="adminReset();">⨂ Reset Board</button>
+        </div>
+      </div>
+      <div id="adminMsg" style="display:none;font-size:11px;padding:4px 0;margin-top:4px;"></div>
+      <!-- Pending Payments List — auto-loads when admin unlocks -->
+      <div id="pendingPayList" style="margin-top:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">⏳ Pending Payments</div>
+        <div id="pendingPayListInner" style="max-height:260px;overflow-y:auto;">
+          <div style="color:#555;font-size:11px;padding:8px 0;">Loading...</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <button class="admin-btn admin-btn-green" style="flex:1;font-size:11px;" onclick="confirmAllPending()">✅ Confirm All</button>
+          <button class="admin-btn" style="flex:1;font-size:11px;background:rgba(255,255,255,0.04);color:var(--text2);" onclick="loadPendingList()">↻ Refresh</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAYER PROPS -->
+    <div class="admin-card" style="margin-top:12px;">
+      <div class="admin-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Player Props — Over/Under
+        </span>
+        <div style="display:flex;gap:4px;">
+          <button class="admin-btn admin-btn-green" style="margin:0;padding:4px 10px;font-size:10px;" onclick="togglePropsSetup()">+ Add Player</button>
+          <button class="admin-btn admin-btn-red" style="margin:0;padding:4px 10px;font-size:10px;" onclick="resetProps()">Reset Props</button>
+        </div>
+      </div>
+
+      <!-- Props Setup Form (hidden by default) -->
+      <div id="propsSetupForm" style="display:none;padding:12px;background:var(--surface2);border-radius:8px;margin:10px 12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">Add Player Props Board</div>
+        <input id="propsPlayerName" type="text" placeholder="Player Name (e.g. LeBron James)" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;margin-bottom:6px;outline:none;" />
+        <select id="propsPlayerSide" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;margin-bottom:6px;outline:none;cursor:pointer;">
+          <option value="home">Home Team Player</option>
+          <option value="away">Away Team Player</option>
+          <option value="player3">Player 3</option>
+          <option value="player4">Player 4</option>
+          <option value="player5">Player 5</option>
+          <option value="player6">Player 6</option>
+        </select>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
+          <select id="propsPrice" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;outline:none;cursor:pointer;">
+            <option value="5">$5 per square</option>
+            <option value="10">$10 per square</option>
+            <option value="15">$15 per square</option>
+            <option value="20">$20 per square</option>
+            <option value="25">$25 per square</option>
+            <option value="50">$50 per square</option>
+            <option value="100">$100 per square</option>
+          </select>
+          <input id="propsPin" type="password" placeholder="Admin PIN" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;outline:none;" />
+        </div>
+        <button onclick="addPlayerProp()" style="width:100%;background:var(--green);border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:10px;cursor:pointer;">Create Props Board for This Player</button>
+      </div>
+
+      <!-- Props Boards Container -->
+      <div id="propsBoardsContainer" style="padding:8px 12px;">
+        <div style="text-align:center;color:#444;font-size:12px;padding:20px 0">No props set up yet.<br>Click + Add Player to create a board.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal" style="position:relative;max-width:360px;">
+    <button class="modal-close" onclick="document.getElementById('payModal').classList.remove('open')">✕</button>
+    <div class="modal-header">
+      <div class="modal-icon">🎯</div>
+      <div class="modal-title">Claim Your Squares</div>
+      <div class="modal-sub" id="modalSubText">Enter your initials, pick how you'll pay, then hit send.</div>
+      <div id="modalDebug" style="display:none;background:#1a0000;border:1px solid #ef4444;border-radius:6px;padding:8px;margin-top:8px;font-size:10px;color:#fca5a5;font-family:monospace;word-break:break-all;"></div>
+    </div>
+    <div class="modal-body">
+      <!-- Selected squares preview -->
+      <div id="selectedSquaresPreview" style="display:none;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#86efac;font-family:'IBM Plex Mono',monospace;"></div>
+
+      <!-- Amount -->
+      <div class="modal-total">
+        <span class="modal-total-label" id="modalSquaresLabel">5 Squares × $10</span>
+        <span class="modal-total-amount" id="modalTotal">$50.00</span>
+      </div>
+
+      <!-- Initials -->
+      <div class="modal-input-label">Your Initials <span style="color:var(--text3);font-weight:400;">(3–4 letters shown on board)</span></div>
+      <input type="text" maxlength="4" placeholder="e.g. DAB" class="modal-input" id="initialsInput" oninput="checkInitials()" style="text-transform:uppercase;" />
+
+      <!-- Payment method -->
+      <div class="modal-input-label" style="margin-top:12px;">How are you paying?</div>
+      <div class="modal-pay-grid">
+        <div class="modal-pay-option selected" id="payOpt-cashapp" onclick="selectPay(this,'cashapp')">
+          <div class="modal-pay-icon" style="background:#00D632;">$</div>
+          <div class="modal-pay-name">Cash App</div>
+          <div style="font-size:9px;color:#aaa;margin-top:2px;">$7707438091</div>
+        </div>
+        <div class="modal-pay-option" id="payOpt-paypal" onclick="selectPay(this,'paypal')">
+          <div class="modal-pay-icon" style="background:#0070ba;font-style:italic;font-size:13px;">P</div>
+          <div class="modal-pay-name">PayPal</div>
+          <div style="font-size:9px;color:#aaa;margin-top:2px;">willie.mayes</div>
+        </div>
+        <div class="modal-pay-option" id="payOpt-cash" onclick="selectPay(this,'cash')">
+          <div class="modal-pay-icon" style="background:#555;">💵</div>
+          <div class="modal-pay-name">Cash</div>
+          <div style="font-size:9px;color:#aaa;margin-top:2px;">In person</div>
+        </div>
+        <div class="modal-pay-option" id="payOpt-card" onclick="selectPay(this,'card')">
+          <div class="modal-pay-icon" style="background:#6366f1;">💳</div>
+          <div class="modal-pay-name">Card</div>
+          <div style="font-size:9px;color:#aaa;margin-top:2px;">Stripe checkout</div>
+        </div>
+      </div>
+
+      <!-- Payment instructions -->
+      <div id="payInstructions" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12px;color:var(--text2);"></div>
+
+      <button class="modal-cta" id="confirmBtn" disabled onclick="confirmPurchase()">
+        📲 Reserve My Squares
+      </button>
+      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:8px;">Your squares are reserved once Willie confirms payment ✓</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="confirm-modal">
+      <div class="confirm-icon">✓</div>
+      <div class="confirm-title">SQUARES SECURED!</div>
+      <div class="confirm-msg" id="confirmMsg">1 square × $10 = <strong style="color:white;">$10.00</strong></div>
+      <div class="confirm-badge">
+        <div class="confirm-badge-text">Your squares are locked in!</div>
+        <div class="confirm-badge-sub">Please pay Willie in cash or via app</div>
+      </div>
+      <button class="confirm-btn" onclick="closeConfirm()">Got it!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── ERROR HANDLING ──────────────────────────────────────────────
+function logStatus(msg, isError) {
+  const el = document.getElementById('statusBar');
+  if (el) {
+    el.textContent = (new Date()).toLocaleTimeString() + ' | ' + msg;
+    el.style.color = isError ? '#ef4444' : '#22c55e';
+  }
+  if (isError) console.error('[ParlayPro]', msg);
+  else console.log('[ParlayPro]', msg);
 }
 
-export default async function handler(req, context) {
-  var url    = new URL(req.url);
-  var path   = url.pathname;
-  var method = req.method.toUpperCase();
-
-  if (method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders(req) });
-  }
-
-  var ip = (req.headers.get("x-forwarded-for") || "unknown").split(",")[0].trim();
-
-  if (isRateLimited(ip, path)) {
-    return json(req, { error: "Too many requests. Please slow down." }, 429);
-  }
-
-  var body = {};
-  var rawBody = "";
-  if (method === "POST") {
-    try {
-      rawBody = await req.text();
-      if (rawBody.length > 10240) return json(req, { error: "Request too large" }, 413);
-      body = JSON.parse(rawBody);
-    } catch(e) { body = {}; }
-  }
-
-  var token = process.env.NETLIFY_TOKEN;
-
-  // ── GET /api/squares ─────────────────────────────────────
-  if (path === "/api/squares" && method === "GET") {
-    var gameId = sanitizeGameId(url.searchParams.get("gameId"));
-    if (!gameId) return json(req, { error: "Invalid gameId" }, 400);
-    if (!token)  return json(req, empty());
-    try {
-      var data = await blobGet(token, gameId) || empty();
-      return json(req, data);
-    } catch(e) { return json(req, empty()); }
-  }
-
-  // ── POST /api/create-checkout (Stripe) ───────────────────
-  if (path === "/api/create-checkout" && method === "POST") {
-    if (!STRIPE_SK) return json(req, { error: "Stripe not configured" }, 500);
-    var gameId   = sanitizeGameId(body.gameId);
-    var initials = sanitizeInitials(body.initials);
-    var qty      = parseInt(body.qty, 10);
-    var priceEa  = parseInt(body.priceEach, 10) || 1000; // cents, default $10
-    if (!gameId)                   return json(req, { error: "Invalid gameId" }, 400);
-    if (!initials)                 return json(req, { error: "Invalid initials" }, 400);
-    if (!qty || qty < 1 || qty > 10) return json(req, { error: "Qty must be 1-10" }, 400);
-
-    var successUrl = ORIGIN + "?payment=success&gameId=" + gameId + "&initials=" + initials + "&qty=" + qty;
-    var cancelUrl  = ORIGIN + "?payment=cancelled";
-
-    try {
-      var stripeRes = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + STRIPE_SK,
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: [
-          "mode=payment",
-          "line_items[0][price_data][currency]=usd",
-          "line_items[0][price_data][product_data][name]=" + encodeURIComponent("ParlayPro Square x" + qty),
-          "line_items[0][price_data][product_data][description]=" + encodeURIComponent("Square reserved for " + initials),
-          "line_items[0][price_data][unit_amount]=" + priceEa,
-          "line_items[0][quantity]=" + qty,
-          "success_url=" + encodeURIComponent(successUrl),
-          "cancel_url="  + encodeURIComponent(cancelUrl),
-          "metadata[gameId]="   + encodeURIComponent(gameId),
-          "metadata[initials]=" + encodeURIComponent(initials),
-          "metadata[qty]="      + qty
-        ].join("&")
-      });
-      var session = await stripeRes.json();
-      if (!stripeRes.ok) return json(req, { error: session.error && session.error.message || "Stripe error" }, 500);
-      return json(req, { url: session.url });
-    } catch(e) { return json(req, { error: "Server error" }, 500); }
-  }
-
-  // ── POST /api/stripe-webhook ──────────────────────────────
-  if (path === "/api/stripe-webhook" && method === "POST") {
-    var sig = req.headers.get("stripe-signature") || "";
-    if (!STRIPE_WH) return json(req, { error: "Webhook secret not set" }, 500);
-    var valid = await verifyStripeSignature(rawBody, sig, STRIPE_WH);
-    if (!valid) return json(req, { error: "Invalid signature" }, 400);
-    try {
-      var event = JSON.parse(rawBody);
-      if (event.type === "checkout.session.completed") {
-        var meta     = event.data.object.metadata || {};
-        var gameId   = sanitizeGameId(meta.gameId);
-        var initials = sanitizeInitials(meta.initials);
-        var qty      = parseInt(meta.qty, 10) || 1;
-        if (gameId && initials && token) {
-          var data    = await blobGet(token, gameId) || empty();
-          var owners  = data.owners  || {};
-          var pending = data.pending || {};
-          // First try to confirm any existing pending squares for this user
-          var confirmed = [];
-          Object.keys(pending).forEach(function(idx) {
-            var p = pending[idx];
-            if (p && p.initials === initials && confirmed.length < qty) {
-              owners[parseInt(idx)] = initials;
-              delete pending[parseInt(idx)];
-              confirmed.push(parseInt(idx));
-            }
-          });
-          // If not enough pending, auto-assign remaining from open squares
-          if (confirmed.length < qty) {
-            var open = [];
-            for (var i = 0; i < 100; i++) {
-              if (owners[i] === undefined && pending[i] === undefined) open.push(i);
-            }
-            for (var i = open.length - 1; i > 0; i--) {
-              var j = Math.floor(Math.random() * (i + 1));
-              var tmp = open[i]; open[i] = open[j]; open[j] = tmp;
-            }
-            var needed = qty - confirmed.length;
-            open.slice(0, needed).forEach(function(idx) {
-              owners[idx] = initials;
-              confirmed.push(idx);
-            });
-          }
-          data.owners  = owners;
-          data.pending = pending;
-          await blobSet(token, gameId, data);
-        }
-      }
-      return json(req, { received: true });
-    } catch(e) { return json(req, { error: "Webhook error" }, 500); }
-  }
-
-  // ── POST /api/auto-assign ─────────────────────────────────
-  if (path === "/api/auto-assign" && method === "POST") {
-    if (!token) return json(req, { error: "Server error" }, 500);
-    var gameId    = sanitizeGameId(body.gameId);
-    var initials  = sanitizeInitials(body.initials);
-    var qty       = parseInt(body.qty, 10);
-    var isPending = !!body.pending;
-    var payMethod = ["cash","cashapp","paypal"].indexOf(body.payMethod) !== -1 ? body.payMethod : "unknown";
-    var amount    = typeof body.amount === "string" ? body.amount.replace(/[^0-9.]/g,"").slice(0,8) : "?";
-    if (!gameId)           return json(req, { error: "Invalid gameId" }, 400);
-    if (!initials)         return json(req, { error: "Need 2+ valid initials (letters/numbers only)" }, 400);
-    if (!qty || qty < 1 || qty > 10) return json(req, { error: "Qty must be 1-10" }, 400);
-    try {
-      var data    = await blobGet(token, gameId) || empty();
-      var owners  = data.owners  || {};
-      var pending = data.pending || {};
-      var open = [];
-      for (var i = 0; i < 100; i++) {
-        if (owners[i] === undefined && pending[i] === undefined) open.push(i);
-      }
-      if (!open.length) return json(req, { error: "No open squares" }, 409);
-      for (var i = open.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var tmp = open[i]; open[i] = open[j]; open[j] = tmp;
-      }
-      var assigned = open.slice(0, Math.min(qty, open.length));
-      if (isPending) {
-        assigned.forEach(function(idx) {
-          pending[idx] = { initials: initials, payMethod: payMethod, amount: amount };
-        });
-        data.pending = pending;
-      } else {
-        assigned.forEach(function(idx) { owners[idx] = initials; });
-        data.owners = owners;
-      }
-      await blobSet(token, gameId, data);
-      return json(req, { ok: true, indices: assigned, initials: initials });
-    } catch(e) { return json(req, { error: "Server error" }, 500); }
-  }
-
-  // ── POST /api/claim-square ────────────────────────────────
-  if (path === "/api/claim-square" && method === "POST") {
-    if (!token) return json(req, { error: "Server error" }, 500);
-    var gameId    = sanitizeGameId(body.gameId);
-    var initials  = sanitizeInitials(body.initials);
-    var indices   = Array.isArray(body.indices) ? body.indices.filter(function(i) { return Number.isInteger(i) && i >= 0 && i < 100; }) : [];
-    var isPending = !!body.pending;
-    var payMethod = ["cash","cashapp","paypal"].indexOf(body.payMethod) !== -1 ? body.payMethod : "unknown";
-    var amount    = typeof body.amount === "string" ? body.amount.replace(/[^0-9.]/g,"").slice(0,8) : "?";
-    if (!gameId)         return json(req, { error: "Invalid gameId" }, 400);
-    if (!initials)       return json(req, { error: "Invalid initials" }, 400);
-    if (!indices.length) return json(req, { error: "No valid indices" }, 400);
-    if (indices.length > 10) return json(req, { error: "Max 10 squares at once" }, 400);
-    try {
-      var data     = await blobGet(token, gameId) || empty();
-      var owners   = data.owners  || {};
-      var pending  = data.pending || {};
-      var conflicts = indices.filter(function(i) { return owners[i] !== undefined || pending[i] !== undefined; });
-      if (conflicts.length) return json(req, { error: "Already taken: " + conflicts.join(", ") }, 409);
-      if (isPending) {
-        indices.forEach(function(i) {
-          pending[i] = { initials: initials, payMethod: payMethod, amount: amount };
-        });
-        data.pending = pending;
-      } else {
-        indices.forEach(function(i) { owners[i] = initials; });
-        data.owners = owners;
-      }
-      await blobSet(token, gameId, data);
-      return json(req, { ok: true, claimed: indices, initials: initials });
-    } catch(e) { return json(req, { error: "Server error" }, 500); }
-  }
-
-  // ── POST /api/init-numbers ────────────────────────────────
-  if (path === "/api/init-numbers" && method === "POST") {
-    if (!token) return json(req, { error: "Server error" }, 500);
-    var gameId  = sanitizeGameId(body.gameId);
-    var rowNums = Array.isArray(body.rowNums) && body.rowNums.length === 10 ? body.rowNums : null;
-    var colNums = Array.isArray(body.colNums) && body.colNums.length === 10 ? body.colNums : null;
-    if (!gameId || !rowNums || !colNums) return json(req, { error: "Missing or invalid fields" }, 400);
-    var validNums = function(arr) {
-      var sorted = arr.slice().sort(function(a,b){return a-b;});
-      for (var i=0;i<10;i++) { if (sorted[i] !== i) return false; }
-      return true;
-    };
-    if (!validNums(rowNums) || !validNums(colNums)) return json(req, { error: "Invalid number arrays" }, 400);
-    try {
-      var data = await blobGet(token, gameId) || empty();
-      if (!data.rowNums) {
-        data.rowNums = rowNums; data.colNums = colNums;
-        await blobSet(token, gameId, data);
-        return json(req, { ok: true, stored: true, rowNums: rowNums, colNums: colNums });
-      }
-      return json(req, { ok: true, stored: false, rowNums: data.rowNums, colNums: data.colNums });
-    } catch(e) { return json(req, { error: "Server error" }, 500); }
-  }
-
-  // ── POST /api/lock-numbers (admin) ────────────────────────
-  if (path === "/api/lock-numbers" && method === "POST") {
-    if (!token) return json(req, { error: "Server error" }, 500);
-    var gameId  = sanitizeGameId(body.gameId);
-    var pin     = typeof body.pin === "string" ? body.pin.slice(0, 8) : "";
-    var rowNums = Array.isArray(body.rowNums) && body.rowNums.length === 10 ? body.rowNums : null;
-    var colNums = Array.isArray(body.colNums) && body.colNums.length === 10 ? body.colNums : null;
-    if (!gameId || !pin) return json(req, { error: "Missing fields" }, 400);
-    if (!validPin(pin))  return json(req, { error: "Invalid PIN" }, 403);
-    try {
-      var data = await blobGet(token, gameId) || empty();
-      if (rowNums) data.rowNums = rowNums;
-      if (colNums) data.colNums = colNums;
-      data.numbersLocked = true;
-      await blobSet(token, gameId, data);
-      return json(req, { ok: true });
-    } catch(e) { return json(req, { error: "Server error" }, 500); }
-  }
-
-  // ── POST /api/reset-squares (admin) ───────────────────────
-  if (path === "/api/reset-squares" && method === "POST") {
-    if (!token) return json(req, { error: "Server error" }, 500);
-    var gameId = sanitizeGameId(body.gameId);
-    var pin    = typeof body.pin === "string" ? body.pin.slice(0, 8) : "";
-    if (!gameId || !pin) return json(req, { error: "Missing fields" }, 400);
-    if (!validPin(pin))  return json(req, { error: "Invalid PIN" }, 403);
-    try {
-      var resetBoard = { owners: {}, pending: {}, rowNums: null, colNums: null, numbersLocked: false, resetAt: Date.now() };
-      await blobSet(token, gameId, resetBoard);
-      return json(req, { ok: true });
-    } catch(e) { return json(req, { error: "Server error" }, 500); }
-  }
-
-  // ── POST /api/confirm-pending (admin) ─────────────────────
-  if (path === "/api/confirm-pending" && method === "POST") {
-    if (!token) return json(req, { error: "Server error" }, 500);
-    var gameId  = sanitizeGameId(body.gameId);
-    var pin     = typeof body.pin === "string" ? body.pin.slice(0, 8) : "";
-    var indices = Array.isArray(body.indices) ? body.indices.filter(function(i) { return Number.isInteger(i) && i >= 0 && i < 100; }) : null;
-    if (!gameId) return json(req, { error: "Missing gameId" }, 400);
-    if (!validPin(pin)) return json(req, { error: "Invalid PIN" }, 403);
-    try {
-      var data      = await blobGet(token, gameId) || empty();
-      var owners    = data.owners  || {};
-      var pending   = data.pending || {};
-      var confirmed = [];
-      var toConfirm = indices || Object.keys(pending).map(Number);
-      toConfirm.forEach(function(i) {
-        var p = pending[i];
-        if (p) { owners[i] = p.initials; delete pending[i]; confirmed.push(i); }
-      });
-      data.owners = owners; data.pending = pending;
-      await blobSet(token, gameId, data);
-      return json(req, { ok: true, confirmed: confirmed });
-    } catch(e) { return json(req, { error: "Server error" }, 500); }
-  }
-
-  // ── POST /api/reject-pending (admin) ──────────────────────
-  if (path === "/api/reject-pending" && method === "POST") {
-    if (!token) return json(req, { error: "Server error" }, 500);
-    var gameId  = sanitizeGameId(body.gameId);
-    var pin     = typeof body.pin === "string" ? body.pin.slice(0, 8) : "";
-    var indices = Array.isArray(body.indices) ? body.indices.filter(function(i) { return Number.isInteger(i) && i >= 0 && i < 100; }) : null;
-    if (!gameId || !pin) return json(req, { error: "Missing fields" }, 400);
-    if (!validPin(pin))  return json(req, { error: "Invalid PIN" }, 403);
-    try {
-      var data    = await blobGet(token, gameId) || empty();
-      var pending = data.pending || {};
-      var toReject = indices || Object.keys(pending).map(Number);
-      toReject.forEach(function(i) { delete pending[i]; });
-      data.pending = pending;
-      await blobSet(token, gameId, data);
-      return json(req, { ok: true });
-    } catch(e) { return json(req, { error: "Server error" }, 500); }
-  }
-
-  // ── GET /api/scores ───────────────────────────────────────
-  if (path === "/api/scores" && method === "GET") {
-    var SPORTS = {
-      ncaam: "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard",
-      ncaaw: "https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard",
-      nba:   "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
-      wnba:  "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard",
-      nhl:   "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard",
-      mlb:   "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard",
-      nfl:   "https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",
-      mls:   "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard"
-    };
-    var sport   = sanitizeSport(url.searchParams.get("sport"));
-    var date    = sanitizeDate(url.searchParams.get("date"));
-    var base    = SPORTS[sport];
-    var espnUrl = date ? base + "?dates=" + date : base;
-    try {
-      var res   = await fetch(espnUrl);
-      var edata = await res.json();
-      var games = (edata.events || []).map(function(e) {
-        var c    = e.competitions && e.competitions[0];
-        var home = c && c.competitors && c.competitors.find(function(t) { return t.homeAway === "home"; });
-        var away = c && c.competitors && c.competitors.find(function(t) { return t.homeAway === "away"; });
-        var s    = c && c.status && c.status.type;
-        var odds = c && c.odds && c.odds[0];
-        return {
-          id:        e.id,
-          name:      e.name,
-          home:      home && home.team && home.team.abbreviation || "",
-          homeFull:  home && home.team && home.team.displayName  || "",
-          homeLogo:  home && home.team && home.team.logo         || "",
-          homeScore: home && home.score || "0",
-          away:      away && away.team && away.team.abbreviation || "",
-          awayFull:  away && away.team && away.team.displayName  || "",
-          awayLogo:  away && away.team && away.team.logo         || "",
-          awayScore: away && away.score || "0",
-          status:    s && s.completed ? "FINAL" : s && s.inProgress ? "LIVE" : "SCHEDULED",
-          clock:     c && c.status && c.status.displayClock || "",
-          period:    c && c.status && c.status.period || 0,
-          time:      e.date ? new Date(e.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET" : "",
-          date:      e.date ? new Date(e.date).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" }) : "",
-          spread:    odds && odds.spread    || null,
-          total:     odds && odds.overUnder || null,
-          awayML:    odds && odds.awayTeamOdds && odds.awayTeamOdds.moneyLine || null,
-          homeML:    odds && odds.homeTeamOdds && odds.homeTeamOdds.moneyLine || null,
-          spreadFav: odds && odds.homeTeamOdds && odds.homeTeamOdds.favorite ? "home" : "away"
-        };
-      });
-      return json(req, { sport: sport, games: games });
-    } catch(e) { return json(req, { error: "Server error" }, 500); }
-  }
-
-  return json(req, { error: "Not found" }, 404);
-}
-
-export const config = {
-  path: [
-    "/api/scores", "/api/squares", "/api/claim-square", "/api/auto-assign",
-    "/api/init-numbers", "/api/lock-numbers", "/api/reset-squares",
-    "/api/confirm-pending", "/api/reject-pending",
-    "/api/create-checkout", "/api/stripe-webhook"
-  ]
+window.onerror = function(msg, src, line, col, err) {
+  logStatus('JS Error: ' + msg + ' (line ' + line + ')', true);
+  return false;
 };
+
+window.addEventListener('unhandledrejection', function(e) {
+  logStatus('Async Error: ' + (e.reason?.message || e.reason || 'Unknown'), true);
+});
+
+// ── STATE ────────────────────────────────────────────────────────
+const SPORT_MAP = {
+  'NBA': 'nba', 'NHL': 'nhl', 'MLB': 'mlb', 'NFL': 'nfl',
+  'MLS': 'mls', 'WNBA': 'wnba',
+  'MM_MEN': 'ncaam', 'MM_WOMEN': 'ncaaw'
+};
+
+let currentSport = 'NBA';
+window.currentGame = null; // global so adminReset & all functions see it
+var currentGame = window.currentGame;
+let currentDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+let currentQty = 5;
+let currentBoardVersion = null;
+let espnGames = {}; // { sport: [games...] }
+let _cache = {};
+let _lastResetAt = {}; // track server resetAt per game to detect resets on other devices
+
+const INITIALS = ['WM','KJ','DT','AA','RB','LM','CP','JS','MB','TW','GH','PD','NT','BK','SC','FO','YI','QV','ZX','ER'];
+
+// ── DATE HELPERS ──────────────────────────────────────────────
+function initDatePicker() {
+  const picker = document.getElementById('gameDate');
+  if (!picker) return;
+  const today = new Date();
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 14); // 2 weeks out
+  picker.value = currentDate;
+  picker.min = today.toISOString().slice(0, 10);
+  picker.max = maxDate.toISOString().slice(0, 10);
+}
+
+function changeDate(offset) {
+  const d = new Date(currentDate + 'T12:00:00');
+  d.setDate(d.getDate() + offset);
+  const today = new Date();
+  const maxDate = new Date(today);
+  maxDate.setDate(maxDate.getDate() + 14);
+  today.setHours(0,0,0,0);
+  maxDate.setHours(23,59,59,999);
+  if (d < today || d > maxDate) return;
+  currentDate = d.toISOString().slice(0, 10);
+  document.getElementById('gameDate').value = currentDate;
+  updateSport(currentSport);
+}
+
+function updateDateFromPicker(val) {
+  currentDate = val;
+  updateSport(currentSport);
+}
+
+function getEspnDateParam() {
+  return currentDate.replace(/-/g, ''); // YYYYMMDD format for ESPN
+}
+
+// ── ESPN API: Fetch real live data ────────────────────────────
+async function fetchEspnScores(sport) {
+  try {
+    const dateStr = getEspnDateParam();
+    logStatus('Fetching ' + sport + ' for ' + currentDate + '...', false);
+    const apiSport = SPORT_MAP[sport] || sport.toLowerCase();
+    const res = await fetch(`/api/scores?sport=${encodeURIComponent(apiSport)}&date=${dateStr}`);
+    if (!res.ok) {
+      logStatus('ESPN API error: HTTP ' + res.status + ' for ' + sport, true);
+      return null;
+    }
+    const data = await res.json();
+    if (data && data.games) {
+      logStatus(sport + ': ' + data.games.length + ' games loaded', false);
+      espnGames[sport] = data.games;
+      return data;
+    }
+    logStatus('No games data in response for ' + sport, true);
+    return null;
+  } catch (e) {
+    logStatus('ESPN fetch failed for ' + sport + ': ' + e.message, true);
+    return null;
+  }
+}
+
+// ── TICKER ───────────────────────────────────────────────────────
+async function buildTicker() {
+  const allSports = ['NBA', 'NHL', 'MLB', 'NFL', 'MLS'];
+  let allGames = [];
+  for (const sport of allSports) {
+    const data = await fetchEspnScores(sport);
+    if (data && data.games) allGames = allGames.concat(data.games);
+  }
+
+  if (!allGames.length) {
+    const wrap = document.querySelector('.ticker-inner');
+    if (wrap) wrap.innerHTML = '<div class="ticker-item">Loading live scores...</div>';
+    return;
+  }
+
+  const wrap = document.querySelector('.ticker-inner');
+  if (!wrap) return;
+
+  wrap.innerHTML = allGames.map(g => {
+    const isLive = g.status === 'LIVE';
+    const scorePart = isLive ? `${g.awayScore} – ${g.homeScore}` : g.time;
+    const badge = isLive ? '<span class="ticker-badge badge-live">LIVE</span>' :
+                  g.status === 'FINAL' ? '<span class="ticker-badge badge-final">FINAL</span>' :
+                  '<span class="ticker-badge badge-upcoming">TODAY</span>';
+    return `<div class="ticker-item">
+      ${badge}
+      <span style="color:var(--text2);">${g.away}</span>
+      <span class="ticker-score">${scorePart}</span>
+      <span style="color:var(--text2);">${g.home}</span>
+      ${isLive ? '<span class="status-dot status-live" style="font-size:8px;margin-left:4px;">●</span>' : ''}
+    </div>`;
+  }).join('');
+  wrap.innerHTML += wrap.innerHTML;
+}
+
+// ── GRID ─────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+async function buildGrid(game) {
+  if (!game) return;
+
+  const serverData = await fetchSquares(game.id);
+  const serverOwners = serverData.owners || {};
+  const serverSold = new Set(Object.keys(serverOwners).map(Number));
+
+  // ── NUMBER SYNC: get/init grid numbers server-side so ALL devices match ──
+  let topNums, leftNums;
+  if (serverData.rowNums && serverData.rowNums.length === 10) {
+    // Server already has numbers — use them (locked or not)
+    topNums = serverData.rowNums;
+    leftNums = serverData.colNums;
+  } else {
+    // First device to load this game generates the numbers and stores them
+    const generatedRow = shuffle([0,1,2,3,4,5,6,7,8,9]);
+    const generatedCol = shuffle([0,1,2,3,4,5,6,7,8,9]);
+    try {
+      const initRes = await fetch('/api/init-numbers', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ gameId: game.id, rowNums: generatedRow, colNums: generatedCol })
+      });
+      const initText = await initRes.text();
+      let initData = {};
+      try { initData = JSON.parse(initText); } catch(_) {}
+      // Use whatever the server returned (may be another device's already-stored numbers)
+      topNums = (initData.rowNums && initData.rowNums.length===10) ? initData.rowNums : generatedRow;
+      leftNums = (initData.colNums && initData.colNums.length===10) ? initData.colNums : generatedCol;
+      // Update local cache with server numbers
+      _cache[game.id] = { ...serverData, rowNums: topNums, colNums: leftNums };
+    } catch(e) {
+      topNums = generatedRow;
+      leftNums = generatedCol;
+    }
+  }
+  const sold = new Set([...game.sold || [], ...serverSold]);
+  const mine = getMySquares(game.id);
+  (game.mine || []).forEach(i => mine.add(i));
+  const myInitials = getInitialsForGame(game.id) || 'YOU';
+  const available = Math.max(0, 100 - sold.size);
+
+  document.getElementById('availableCount').textContent = available;
+
+  let html = '';
+  html += `<div class="axis-header axis-corner" style="font-size:9px;color:var(--text3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;">
+    <span style="font-weight:700;color:var(--text2);">${game.away}</span>
+    ${game.status==='LIVE'?`<span style="color:var(--yellow);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;">${game.awayScore||0}</span>`:''}
+  </div>`;
+
+  html += `<div class="team-banner">${game.home}${game.status==='LIVE'?` &nbsp; <span style="color:var(--yellow)">${game.homeScore||0}</span>`:''}</div>`;
+
+  html += `<div class="axis-header axis-corner" style="font-size:9px;color:var(--text3);"></div>`;
+  topNums.forEach(num => {
+    html += `<div class="axis-header axis-top">${num}</div>`;
+  });
+
+  for (let i = 0; i < 10; i++) {
+    html += `<div class="axis-header axis-left">${leftNums[i]}</div>`;
+    for (let j = 0; j < 10; j++) {
+      const idx = i * 10 + j;
+      const isMine = mine.has(idx);
+      const isSold = sold.has(idx);
+      // Server is source of truth for owners — local initials only for squares claimed this session
+      const pendingEntry = serverData.pending && serverData.pending[idx];
+      const isPending = !!pendingEntry;
+      const effectiveClass = isPending ? 'cell-pending' : (isMine ? 'cell-mine' : isSold ? 'cell-sold' : 'cell-open');
+      const owner = serverOwners[idx] || (isPending ? pendingEntry.initials : (isMine && !serverSold.has(idx) ? myInitials : null));
+      const cellClass = effectiveClass;
+      const clickHandler = (!isMine && !isSold && !isPending) ? `onclick="tapSquare(${idx})"` : '';
+      const pendingMark = isPending ? '⏳' : '';
+      html += `<div class="cell ${cellClass}" data-idx="${idx}" ${clickHandler}>${(owner||'') + pendingMark}</div>`;
+    }
+  }
+
+  document.getElementById('squaresGrid').innerHTML = html;
+  if (window.currentGame) { updateScoreStrip(window.currentGame); }
+}
+
+// ── ODDS BUILDER ─────────────────────────────────────────────
+// ── BASE ODDS (set when game loads) ─────────────────────────
+let _baseOdds = { spreadLine: null, totalLine: null, mlAway: null, mlHome: null,
+                  homeTeamTotal: null, awayTeamTotal: null };
+let _adjSpread = 0, _adjTotal = 0, _adjHomeTotal = 0, _adjAwayTotal = 0;
+let _teamTotalsVisible = false;
+
+function fmtOdds(n) {
+  if (!n && n !== 0) return 'N/A';
+  const num = parseFloat(n);
+  return num > 0 ? '+' + num : String(num);
+}
+
+function fmtLine(base, adj) {
+  const val = (parseFloat(base || 0) + adj);
+  // round to nearest 0.5
+  return (Math.round(val * 2) / 2).toFixed(1);
+}
+
+function buildOdds(game) {
+  if (!game) return;
+  // ESPN API returns odds via predictor/spread when available
+  // We store what we have and show live or "—" for missing
+  const spread = game.spread || null;
+  const total  = game.total  || null;
+  const mlA    = game.awayOdds || game.awayML || null;
+  const mlH    = game.homeOdds || game.homeML || null;
+
+  _baseOdds = {
+    spreadLine: spread ? Math.abs(parseFloat(spread)) : 3.5,
+    totalLine:  total  ? parseFloat(total)            : 228.5,
+    mlAway:     mlA    ? parseFloat(mlA)              : -160,
+    mlHome:     mlH    ? parseFloat(mlH)              : +140,
+    homeTeamTotal: total ? parseFloat(total) / 2 : null,
+    awayTeamTotal: total ? parseFloat(total) / 2 : null,
+  };
+  _adjSpread = 0; _adjTotal = 0; _adjHomeTotal = 0; _adjAwayTotal = 0;
+  refreshOddsDisplay(game);
+}
+
+function refreshOddsDisplay(game) {
+  if (!game) game = window.currentGame;
+  if (!game) return;
+  const sl = _baseOdds.spreadLine;
+  const tl = _baseOdds.totalLine;
+  const adjSL = parseFloat(fmtLine(sl, _adjSpread));
+  const adjTL = parseFloat(fmtLine(tl, _adjTotal));
+
+  // Spread
+  const awaySpread = game.spreadFav === 'home' ? '+' + adjSL : '-' + adjSL;
+  const homeSpread = game.spreadFav === 'home' ? '-' + adjSL : '+' + adjSL;
+  setText('lbl-spread-away', game.away + ' ' + awaySpread);
+  setText('lbl-spread-home', game.home + ' ' + homeSpread);
+  setText('val-spread-away', '-110');
+  setText('val-spread-home', '-110');
+
+  // Total
+  setText('lbl-total-over',  'Over '  + adjTL);
+  setText('lbl-total-under', 'Under ' + adjTL);
+  setText('val-total-over',  '-110');
+  setText('val-total-under', '-110');
+
+  // Moneyline
+  setText('lbl-ml-away', game.away + ' ML');
+  setText('lbl-ml-home', game.home + ' ML');
+  setText('val-ml-away', fmtOdds(_baseOdds.mlAway));
+  setText('val-ml-home', fmtOdds(_baseOdds.mlHome));
+
+  // Adjuster display
+  setText('adjSpreadVal', (_adjSpread === 0 ? '0' : (_adjSpread > 0 ? '+' : '') + _adjSpread));
+  setText('adjTotalVal',  (_adjTotal  === 0 ? '0' : (_adjTotal  > 0 ? '+' : '') + _adjTotal));
+
+  // Team totals
+  if (_baseOdds.homeTeamTotal !== null) {
+    const ht = parseFloat(fmtLine(_baseOdds.homeTeamTotal, _adjHomeTotal));
+    const at = parseFloat(fmtLine(_baseOdds.awayTeamTotal, _adjAwayTotal));
+    setText('homeTeamTotalVal', ht.toFixed(1));
+    setText('awayTeamTotalVal', at.toFixed(1));
+    setText('homeTeamTotalLbl', game.home);
+    setText('awayTeamTotalLbl', game.away);
+  } else {
+    setText('homeTeamTotalVal', '—');
+    setText('awayTeamTotalVal', '—');
+  }
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function adjLine(type, delta, mode) {
+  if (type === 'spread') {
+    _adjSpread = mode === 'reset' ? 0 : Math.round((_adjSpread + delta) * 2) / 2;
+  } else {
+    _adjTotal  = mode === 'reset' ? 0 : Math.round((_adjTotal  + delta) * 2) / 2;
+  }
+  refreshOddsDisplay();
+}
+
+function adjTeamTotal(side, delta) {
+  if (side === 'home') _adjHomeTotal = Math.round((_adjHomeTotal + delta) * 2) / 2;
+  else                 _adjAwayTotal = Math.round((_adjAwayTotal + delta) * 2) / 2;
+  refreshOddsDisplay();
+}
+
+function toggleTeamTotal() {
+  _teamTotalsVisible = !_teamTotalsVisible;
+  const row = document.getElementById('teamTotalsRow');
+  const btn = document.getElementById('teamTotalBtn');
+  if (row) row.style.display = _teamTotalsVisible ? 'block' : 'none';
+  if (btn) btn.textContent = _teamTotalsVisible ? 'Hide Team O/U' : 'Show Team O/U';
+  if (_teamTotalsVisible) refreshOddsDisplay();
+}
+
+// ── STAR PLAYER PROP O/U ─────────────────────────────────────
+// Accessed via Player Props section in admin + visible in sidebar
+let _playerProps = {}; // { gameId: { home: {...}, away: {...} } }
+
+function buildStarPropUI(game) {
+  // Already handled by the propsDisplay section — this ties odds into it
+  // Star prop bet is Over/Under on a scoring range
+  // Displayed in the Player Props — Over/Under card
+}
+
+// ── BOARD HEADER ─────────────────────────────────────────────
+function updateBoardHeader(game) {
+  if (!game) return;
+  const d = new Date(currentDate + 'T12:00:00');
+  document.getElementById('live-date').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// ── SERVER SYNC ──────────────────────────────────────────────
+async function fetchSquares(gameId) {
+  try {
+    const res = await fetch('/api/squares?gameId=' + encodeURIComponent(gameId));
+    if (!res.ok) return _cache[gameId] || { owners: {}, pending: {} };
+    const text = await res.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch(_) {}
+    data = data || { owners: {}, pending: {} };
+
+    // Detect reset: if server resetAt is newer than what we knew, wipe local state
+    const prevReset = _lastResetAt[gameId] || 0;
+    const serverReset = data.resetAt || 0;
+    if (serverReset > prevReset && prevReset > 0) {
+      // Server was reset after we loaded — clear local squares
+      localStorage.removeItem('my_' + gameId);
+      localStorage.removeItem('initials_' + gameId);
+      logStatus('Board was reset — cleared local squares', false);
+    }
+    _lastResetAt[gameId] = serverReset;
+    _cache[gameId] = data;
+    const ownCount = Object.keys(data.owners || {}).length;
+    logStatus('Game ' + gameId + ': ' + ownCount + ' squares claimed', false);
+    return _cache[gameId];
+  } catch (e) {
+    logStatus('Fetch squares failed: ' + e.message, true);
+    return _cache[gameId] || { owners: {}, pending: {} };
+  }
+}
+
+function getMySquares(gameId) {
+  const key = `my_${gameId}`;
+  const stored = localStorage.getItem(key);
+  return new Set(stored ? JSON.parse(stored) : []);
+}
+
+function getInitialsForGame(gameId) {
+  return localStorage.getItem(`initials_${gameId}`);
+}
+
+async function persistSquares(gameId, indices, initials) {
+  logStatus('Claiming ' + indices.length + ' squares as ' + initials + '...', false);
+  const res = await fetch('/api/claim-square', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ gameId, indices, initials })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    logStatus('Claim failed: ' + (err.error || 'HTTP ' + res.status), true);
+    throw new Error(err.error || 'Failed to persist squares');
+  }
+  logStatus('Claimed ' + indices.length + ' squares as ' + initials + ' ✓', false);
+  localStorage.setItem(`my_${gameId}`, JSON.stringify(indices));
+  localStorage.setItem(`initials_${gameId}`, initials);
+  _cache[gameId] = null;
+}
+
+// ── SIDEBAR GAMES LIST ───────────────────────────────────────
+function buildGamesList(sport) {
+  const games = espnGames[sport] || [];
+  const list = document.querySelector('.games-list');
+  if (!list) return;
+
+  list.innerHTML = games.map(g => `
+    <div class="game-row${g.id === (currentGame?.id) ? ' active' : ''}" data-id="${g.id}" onclick="selectGameById('${g.id}')">
+      <div class="game-row-top">
+        <span class="game-teams">${g.away} @ ${g.home}</span>
+        ${g.status==='LIVE'
+          ? `<span class="status-dot status-live" style="font-size:8px;">Live</span>`
+          : `<span class="status-dot status-scheduled" style="font-size:8px;">${g.time || g.period || ''}</span>`}
+      </div>
+      ${g.status==='LIVE' ? `<div class="game-score" style="margin-top:4px;">${g.awayScore||0} – ${g.homeScore||0}</div>` : ''}
+    </div>`).join('');
+}
+
+// ── GAME SELECT DROPDOWN ─────────────────────────────────────
+function populateGameDropdown(sport) {
+  const games = espnGames[sport] || [];
+  const sel = document.getElementById('gameSelect');
+  sel.innerHTML = games.map(g =>
+    `<option value="${g.id}">${g.status==='LIVE'?'● ':''}${g.away} @ ${g.home}</option>`
+  ).join('');
+}
+
+// ── LOAD GAME ────────────────────────────────────────────────
+async function loadGame(game) {
+  if (!game) { logStatus('loadGame called with no game', true); return; }
+  logStatus('Loading game: ' + game.away + ' @ ' + game.home + ' (ID: ' + game.id + ')', false);
+  currentGame = game;
+  window.currentGame = game; // keep global in sync
+  try {
+    await buildGrid(game);
+  } catch (e) {
+    logStatus('buildGrid error: ' + e.message, true);
+  }
+
+  if (window._pollTimer) clearInterval(window._pollTimer);
+  window._pollTimer = setInterval(async function() {
+    if (currentGame && currentGame.id === game.id) {
+      _cache[currentGame.id] = null; // always fetch fresh on poll
+      try { await buildGrid(currentGame); } catch (e) { logStatus('Poll error: ' + e.message, true); }
+    }
+  }, 8000); // 8s refresh — fast enough for real-time sync
+
+  buildOdds(game);
+  updateBoardHeader(game);
+  updateCTA();
+  loadPaymentLockState();
+  loadPendingList();
+  updateScoreStrip(game);
+
+  document.getElementById('gameSelect').value = game.id;
+
+  document.querySelectorAll('.game-row').forEach(row => {
+    row.classList.toggle('active', row.dataset.id === game.id);
+  });
+}
+
+// ── EVENT HANDLERS ───────────────────────────────────────────
+async function updateSport(sport) {
+  logStatus('Switching to ' + sport + '...', false);
+  currentSport = sport;
+  const data = await fetchEspnScores(sport);
+  if (!data || !data.games || !data.games.length) {
+    logStatus('No games found for ' + sport, true);
+    return;
+  }
+  populateGameDropdown(sport);
+  buildGamesList(sport);
+  logStatus('Auto-selecting first game: ' + data.games[0].away + ' @ ' + data.games[0].home, false);
+  await loadGame(data.games[0]);
+}
+
+function selectGame(gameId) {
+  const games = espnGames[currentSport] || [];
+  const game = games.find(g => g.id === gameId);
+  if (game) loadGame(game);
+}
+
+function selectGameById(gameId) {
+  for (const sport of Object.keys(espnGames)) {
+    const game = espnGames[sport].find(g => g.id === gameId);
+    if (game) {
+      currentSport = sport;
+      loadGame(game);
+      return;
+    }
+  }
+}
+
+function toggleOdds(btn) {
+  btn.classList.toggle('selected');
+  const selected = document.querySelectorAll('.odds-btn.selected');
+  const legsSection = document.querySelector('.legs-section');
+
+  if (selected.length === 0) {
+    legsSection.innerHTML = `
+      <div class="legs-title">Selected Legs (0)</div>
+      <div style="font-size:11px;color:var(--text3);padding:4px 0;">Click odds above to add legs</div>`;
+    return;
+  }
+
+  let html = `<div class="legs-title">Selected Legs (${selected.length})</div>`;
+  selected.forEach(b => {
+    const label = b.querySelector('.odds-btn-label').textContent;
+    const odds = b.querySelector('.odds-value').textContent;
+    html += `<div class="leg-row"><span class="leg-label">${label}</span><span class="leg-odds">${odds}</span></div>`;
+  });
+  legsSection.innerHTML = html;
+}
+
+function setQty(n, btn) {
+  currentQty = n;
+  document.querySelectorAll('.qty-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
+  document.getElementById('totalAmount').textContent = `$${(n * price).toFixed(2)}`;
+  document.getElementById('totalSquares').textContent = `${n} Square${n > 1 ? 's' : ''}`;
+  updateCTA();
+}
+
+function updateCTA() {
+  // Update text only — never replace innerHTML (kills id + onclick)
+  var btn = document.getElementById('ctaBuyBtn');
+  if (!btn) return;
+  var textNode = Array.from(btn.childNodes).find(n => n.nodeType === 3);
+  var label = ' BUY ' + currentQty + ' SQUARE' + (currentQty > 1 ? 'S' : '') + ' NOW';
+  if (textNode) {
+    textNode.textContent = label;
+  } else {
+    // fallback: find and replace just the text part
+    btn.lastChild.textContent = label;
+  }
+}
+
+function updatePriceDisplay(val) {
+  const p = parseFloat(val);
+  window._squarePrice = p;
+  const qty = currentQty || 5;
+  const lbl = document.getElementById('modalSquaresLabel');
+  const tot = document.getElementById('modalTotal');
+  if (lbl) lbl.textContent = qty + ' Square' + (qty > 1 ? 's' : '') + ' × $' + p;
+  if (tot) tot.textContent = '$' + (qty * p).toFixed(2);
+  document.getElementById('totalAmount').textContent = `$${(qty * p).toFixed(2)}`;
+}
+
+// ── SQUARE SELECTION ────────────────────────────────────────
+let _manuallySelected = new Set(); // squares tapped directly on grid
+let _selectedPayMethod = 'cashapp';
+
+function tapSquare(idx) {
+  if (!window.currentGame) { alert('Select a game first.'); return; }
+  if (_manuallySelected.has(idx)) {
+    _manuallySelected.delete(idx);
+  } else {
+    _manuallySelected.add(idx);
+  }
+  // Highlight selected squares
+  document.querySelectorAll('.cell[data-idx]').forEach(function(cell) {
+    const i = parseInt(cell.dataset.idx);
+    if (_manuallySelected.has(i)) {
+      cell.style.background = 'rgba(250,204,21,0.25)';
+      cell.style.borderColor = '#facc15';
+      cell.style.color = '#facc15';
+    } else if (cell.classList.contains('cell-open')) {
+      cell.style.background = '';
+      cell.style.borderColor = '';
+      cell.style.color = '';
+    }
+  });
+  updateCTA();
+}
+
+function openPayModal() {
+  if (!window.currentGame) { alert('Please select a game first.'); return; }
+  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
+  const qty = _manuallySelected.size > 0 ? _manuallySelected.size : currentQty;
+  document.getElementById('modalSquaresLabel').textContent = `${qty} Square${qty !== 1 ? 's' : ''} × $${price}`;
+  document.getElementById('modalTotal').textContent = `$${(qty * price).toFixed(2)}`;
+  document.getElementById('initialsInput').value = '';
+  document.getElementById('confirmBtn').disabled = true;
+  // Show which squares are selected if manually picked
+  const preview = document.getElementById('selectedSquaresPreview');
+  if (_manuallySelected.size > 0) {
+    preview.style.display = 'block';
+    preview.textContent = 'Selected squares: ' + Array.from(_manuallySelected).sort((a,b)=>a-b).join(', ');
+  } else {
+    preview.style.display = 'none';
+  }
+  _selectedPayMethod = 'cashapp';
+  _manuallySelected.clear(); // always start fresh when modal opens
+  updatePayInstructions();
+  // Reset debug box
+  const dbg = document.getElementById('modalDebug');
+  if (dbg) { dbg.style.display='none'; dbg.textContent=''; }
+  document.getElementById('payModal').classList.add('open');
+}
+
+function selectPay(el, method) {
+  document.querySelectorAll('.modal-pay-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  _selectedPayMethod = method || 'cashapp';
+  updatePayInstructions();
+}
+
+function updatePayInstructions() {
+  const el = document.getElementById('payInstructions');
+  if (!el) return;
+  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
+  const qty = _manuallySelected.size > 0 ? _manuallySelected.size : currentQty;
+  const total = (qty * price).toFixed(2);
+  if (_selectedPayMethod === 'card') {
+    el.innerHTML = '💳 Pay securely by card via <strong style="color:#818cf8;">Stripe</strong><br><span style="font-size:10px;color:var(--text3);">You will be redirected to checkout — squares locked after payment</span>';
+  } else if (_selectedPayMethod === 'cashapp') {
+    el.innerHTML = '💚 Send <strong style="color:#22c55e;">$' + total + '</strong> to <strong style="color:#22c55e;">$7707438091</strong> on Cash App<br><span style="font-size:10px;color:var(--text3);">Include your initials in the note</span>';
+  } else if (_selectedPayMethod === 'paypal') {
+    el.innerHTML = '💙 Send <strong style="color:#60a5fa;">$' + total + '</strong> to <strong style="color:#60a5fa;">willie.mayes@gmail.com</strong> on PayPal<br><span style="font-size:10px;color:var(--text3);">Friends & Family — include your initials</span>';
+  } else {
+    el.innerHTML = '💵 Bring <strong style="color:#facc15;">$' + total + '</strong> cash in person<br><span style="font-size:10px;color:var(--text3);">Willie will lock in your squares when he receives it</span>';
+  }
+}
+
+function checkInitials() {
+  const val = document.getElementById('initialsInput').value.trim();
+  document.getElementById('confirmBtn').disabled = val.length < 3;
+}
+
+async function confirmPurchase() {
+  const initials = document.getElementById('initialsInput').value.trim().toUpperCase();
+  if (initials.length < 3) { alert('Enter at least 3 initials (e.g. DAB).'); return; }
+
+  const btn = document.getElementById('confirmBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Reserving...';
+
+  const game = window.currentGame;
+  if (!game || !game.id) {
+    btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
+    alert('No game loaded. Select a sport and game first.'); return;
+  }
+
+  const price    = parseFloat(document.getElementById('squarePrice').value) || 10;
+  const qty      = currentQty || 5;
+  const isCash   = (_selectedPayMethod === 'cash');
+  const isPending = true; // all methods pending — cash confirmed by admin tap, digital by n8n
+  const amount   = (qty * price).toFixed(2);
+
+  // ── Stripe card checkout — redirect to hosted payment page ──
+  if (_selectedPayMethod === 'card') {
+    btn.textContent = '💳 Opening Checkout...';
+    try {
+      const r = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId: game.id,
+          initials,
+          qty,
+          priceEach: Math.round(price * 100)
+        })
+      });
+      const text = await r.text();
+      let resp = {};
+      try { resp = JSON.parse(text); } catch(_) {}
+      if (resp.url) {
+        window.location.href = resp.url;
+      } else {
+        throw new Error(resp.error || 'Could not create checkout session');
+      }
+    } catch(e) {
+      btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
+      alert('Stripe error: ' + e.message);
+    }
+    return;
+  }
+
+  // ── helper: safe fetch → parsed JSON ──────────────────────
+  async function safePost(url, body) {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const text = await r.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch(_) {
+      data = { _raw: text, _status: r.status };
+    }
+    return { ok: r.ok, status: r.status, data };
+  }
+
+  // ── claim squares via server-side auto-assign ──────────────
+  let indices = [];
+  try {
+    const { ok, status, data } = await safePost('/api/auto-assign', {
+      gameId: game.id, qty, initials, pending: isPending,
+      payMethod: _selectedPayMethod, amount
+    });
+
+    if (ok && data.ok && Array.isArray(data.indices) && data.indices.length) {
+      indices = data.indices;
+
+    } else {
+      // auto-assign failed or not deployed — use claim-square with client-picked squares
+      const fresh = await fetchSquares(game.id);
+      const taken = new Set([
+        ...Object.keys(fresh.owners  || {}).map(Number),
+        ...Object.keys(fresh.pending || {}).map(Number)
+      ]);
+      const open = [];
+      for (let i = 0; i < 100; i++) { if (!taken.has(i)) open.push(i); }
+      for (let i = open.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [open[i], open[j]] = [open[j], open[i]];
+      }
+      const picked = open.slice(0, Math.min(qty, open.length));
+      if (!picked.length) throw new Error('No open squares left!');
+
+      const r2 = await safePost('/api/claim-square', {
+        gameId: game.id, indices: picked, initials,
+        pending: isPending, payMethod: _selectedPayMethod,
+        amount: (picked.length * price).toFixed(2)
+      });
+      if (!r2.ok) throw new Error(r2.data.error || 'Claim failed (HTTP ' + r2.status + ')');
+      indices = picked;
+    }
+  } catch(e) {
+    btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
+    const dbg = document.getElementById('modalDebug');
+    if (dbg) { dbg.style.display = 'block'; dbg.textContent = e.message; }
+    alert(e.message); return;
+  }
+
+  // ── success ────────────────────────────────────────────────
+  localStorage.setItem('my_'       + game.id, JSON.stringify(indices));
+  localStorage.setItem('initials_' + game.id, initials);
+  _cache[game.id] = null;
+  _manuallySelected.clear();
+
+  const total = (indices.length * price).toFixed(2);
+  document.getElementById('payModal').classList.remove('open');
+
+  var msgColor, msgIcon, msgLine2, payBtnHtml = '';
+  if (isCash) {
+    msgColor = '#facc15'; msgIcon = '💵';
+    msgLine2 = 'Hand Willie the cash — he will tap Confirm to lock your squares.';
+  } else if (_selectedPayMethod === 'cashapp') {
+    msgColor = '#22c55e'; msgIcon = '💚';
+    msgLine2 = 'Tap below to send $' + total + ' on Cash App. Include your initials in the note.';
+    var caNote = encodeURIComponent('ParlayPro Squares - ' + initials);
+    var caUrl = 'https://cash.app/$7707438091/' + total + '?note=' + caNote;
+    payBtnHtml = '<a href="' + caUrl + '" target="_blank" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#00D632;color:white;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">💚 Pay $' + total + ' on Cash App</a>';
+  } else if (_selectedPayMethod === 'paypal') {
+    msgColor = '#60a5fa'; msgIcon = '💙';
+    msgLine2 = 'Tap below to send $' + total + ' via PayPal. Use Friends & Family and include your initials.';
+    var ppUrl = 'https://paypal.me/williemayes/' + total + 'USD';
+    payBtnHtml = '<a href="' + ppUrl + '" target="_blank" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#0070ba;color:white;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">💙 Pay $' + total + ' on PayPal</a>';
+  }
+  document.getElementById('confirmMsg').innerHTML =
+    indices.length + ' square' + (indices.length > 1 ? 's' : '') + ' x $' + price + ' = <strong style="color:white;">$' + total + '</strong>' +
+    '<br><span style="color:' + msgColor + ';font-size:13px;margin-top:6px;display:block;">' + msgIcon + ' Reserved as <strong>' + initials + '</strong></span>' +
+    '<br><span style="color:var(--text3);font-size:11px;">' + msgLine2 + '</span>' +
+    payBtnHtml;
+
+  setTimeout(() => {
+    document.getElementById('confirmModal').classList.add('open');
+    buildGrid(game);
+  }, 150);
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('open');
+}
+
+// ── ADMIN ────────────────────────────────────────────────────
+async function lockNumbers(game) {
+  if (!game) { location.reload(); return; }
+  var topCells = document.querySelectorAll('.axis-header.axis-top');
+  var leftCells = document.querySelectorAll('.axis-header.axis-left');
+  var rowNums = Array.from(topCells).map(function(el){ return parseInt(el.textContent.trim()); });
+  var colNums = Array.from(leftCells).map(function(el){ return parseInt(el.textContent.trim()); });
+  if (rowNums.length !== 10 || colNums.length !== 10) { alert('Open a game board first (found ' + rowNums.length + ' top, ' + colNums.length + ' left)'); return; }
+  var pin = prompt('Enter admin PIN to lock numbers:');
+  if (!pin) return;
+  fetch('/api/lock-numbers', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({gameId: game.id, pin: pin, rowNums: rowNums, colNums: colNums})
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (d.ok) { alert('Numbers locked! All boards will now match.'); location.reload(); }
+    else { alert('Error: ' + (d.error || 'Unknown')); }
+  }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+async function adminReset() {
+  var game = window.currentGame;
+  if (!game) { showAdminMsg('No game loaded — select a sport and game first.', true); return; }
+  var pinEl = document.getElementById('resetPinInput');
+  var pin = pinEl ? pinEl.value.trim() : '';
+  if (!pin) { showAdminMsg('Enter your PIN in the box then tap Reset.', true); if(pinEl) pinEl.focus(); return; }
+  try {
+    var r = await fetch('/api/reset-squares', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({gameId: game.id, pin: pin})
+    });
+    var d = await r.json();
+    if (d.ok) {
+      if (pinEl) pinEl.value = '';
+      // Clear ALL local data for this game
+      localStorage.removeItem('pay_unlocked_' + game.id);
+      localStorage.removeItem('my_' + game.id);
+      localStorage.removeItem('initials_' + game.id);
+      _cache = {};
+      applyPaymentLockState(false);
+      await buildGrid(game);
+      loadPendingList();
+      showAdminMsg('✅ Board cleared — ' + game.away + ' @ ' + game.home, false);
+    } else {
+      showAdminMsg('❌ ' + (d.error || 'Reset failed — check PIN'), true);
+    }
+  } catch(e) {
+    showAdminMsg('Network error: ' + e.message, true);
+  }
+}
+
+function showAdminMsg(msg, isErr) {
+  var el = document.getElementById('adminMsg');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = isErr ? '#ef4444' : '#22c55e';
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  setTimeout(function(){ el.style.display = 'none'; }, 5000);
+}
+
+// ── Payment Lock / Unlock (admin only) ──────────────────────
+function applyPaymentLockState(unlocked) {
+  // Payment lock only affects the CashApp/PayPal info display cards
+  // The BUY button is ALWAYS active — players can always enter initials & pay
+  var cashCard = document.getElementById('payCardCashapp');
+  var paypalCard = document.getElementById('payCardPaypal');
+  var unlockNote = document.getElementById('payUnlockNote');
+  var unlockBtn = document.getElementById('payUnlockBtn');
+  var lockBtn = document.getElementById('payLockBtn');
+  if (!cashCard) return;
+  if (unlocked) {
+    cashCard.classList.remove('pay-locked');
+    paypalCard.classList.remove('pay-locked');
+    if (unlockNote) unlockNote.classList.remove('visible');
+    if (unlockBtn) unlockBtn.style.display = 'none';
+    if (lockBtn) lockBtn.style.display = '';
+  } else {
+    cashCard.classList.add('pay-locked');
+    paypalCard.classList.add('pay-locked');
+    if (unlockNote) unlockNote.classList.add('visible');
+    if (unlockBtn) unlockBtn.style.display = '';
+    if (lockBtn) lockBtn.style.display = 'none';
+  }
+}
+
+async function adminTogglePayment(unlock) {
+  var game = window.currentGame;
+  if (!game) { showAdminMsg('No game loaded.', true); return; }
+  var pinEl = document.getElementById('resetPinInput');
+  var pin = pinEl ? pinEl.value.trim() : '';
+  if (!pin) { showAdminMsg('Enter your PIN in the box first.', true); if(pinEl) pinEl.focus(); return; }
+  // Verify PIN via lock-numbers with dummy data — safe, just validates PIN
+  var r = await fetch('/api/lock-numbers', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({gameId: '__pincheck__', pin: pin, rowNums: [0,1,2,3,4,5,6,7,8,9], colNums: [0,1,2,3,4,5,6,7,8,9]})
+  });
+  var d = await r.json();
+  if (!d.ok && d.error && d.error.toLowerCase().includes('pin')) {
+    alert('❌ Wrong PIN');
+    return;
+  }
+  // Store unlock state per game in localStorage (admin device only)
+  if (unlock) {
+    localStorage.setItem('pay_unlocked_' + game.id, '1');
+  } else {
+    localStorage.removeItem('pay_unlocked_' + game.id);
+  }
+  applyPaymentLockState(unlock);
+  alert(unlock ? '✅ Payments unlocked for ' + game.away + ' @ ' + game.home : '🔒 Payments locked');
+}
+
+function loadPaymentLockState() {
+  var game = window.currentGame;
+  if (!game) return;
+  var unlocked = localStorage.getItem('pay_unlocked_' + game.id) === '1';
+  applyPaymentLockState(unlocked);
+  // Load pending list + start auto-refresh
+  if (document.getElementById('pendingPayList')) {
+    loadPendingList();
+    if (!window._pendingRefreshTimer) {
+      window._pendingRefreshTimer = setInterval(function() {
+        if (document.getElementById('pendingPayList')) loadPendingList();
+      }, 30000); // refresh every 30s
+    }
+  }
+}
+
+async function loadPendingList() {
+  const game = window.currentGame;
+  const inner = document.getElementById('pendingPayListInner');
+  if (!inner) return;
+  if (!game) { inner.innerHTML = '<div style="color:#555;font-size:11px;">No game selected</div>'; return; }
+  try {
+    const res = await fetch('/api/squares?gameId=' + encodeURIComponent(game.id));
+    const data = await res.json();
+    const pending = data.pending || {};
+    const keys = Object.keys(pending);
+    if (!keys.length) {
+      inner.innerHTML = '<div style="color:#555;font-size:11px;padding:6px 0;">No pending payments</div>';
+      return;
+    }
+    // Group by initials
+    const byInitials = {};
+    keys.forEach(function(i) {
+      const p = pending[i];
+      if (!byInitials[p.initials]) byInitials[p.initials] = { indices: [], payMethod: p.payMethod, amount: p.amount };
+      byInitials[p.initials].indices.push(parseInt(i));
+    });
+    inner.innerHTML = Object.entries(byInitials).map(function([init, info]) {
+      const payIcon = info.payMethod === 'cashapp' ? '💚' : info.payMethod === 'paypal' ? '💙' : '💵';
+      return '<div class="confirm-row" style="flex-wrap:wrap;gap:4px;">' +
+        '<span class="initials">' + init + '</span>' +
+        '<span class="sq-count">' + info.indices.length + ' sq — $' + info.amount + ' via ' + payIcon + info.payMethod + '</span>' +
+        '<div style="display:flex;gap:4px;margin-left:auto;">' +
+        '<button class="btn-confirm-pay" onclick="confirmPending(\'' + game.id + '\',[' + info.indices.join(',') + '])">✅ Confirm</button>' +
+        '<button class="btn-confirm-pay" style="background:#ef4444;color:white;" onclick="rejectPending(\'' + game.id + '\',[' + info.indices.join(',') + '])">✗ Reject</button>' +
+        '</div></div>';
+    }).join('');
+  } catch(e) {
+    inner.innerHTML = '<div style="color:#ef4444;font-size:11px;">Error loading: ' + e.message + '</div>';
+  }
+}
+
+async function confirmPending(gameId, indices) {
+  // No PIN needed to confirm — only reset requires PIN
+  var r = await fetch('/api/confirm-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId, indices, pin: '2826'}) });
+  var d = await r.json();
+  if (d.ok) { loadPendingList(); _cache = {}; buildGrid(window.currentGame); alert('✅ Squares confirmed!'); }
+  else alert('Error: ' + (d.error || 'Failed'));
+}
+
+async function rejectPending(gameId, indices) {
+  if (!confirm('Reject these squares? They will be released back to open.')) return;
+  var pin = prompt('Enter admin PIN:');
+  if (!pin) return;
+  var r = await fetch('/api/reject-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId, indices, pin}) });
+  var d = await r.json();
+  if (d.ok) { loadPendingList(); _cache = {}; buildGrid(window.currentGame); }
+  else alert('Error: ' + d.error);
+}
+
+async function confirmAllPending() {
+  var game = window.currentGame;
+  if (!game) return;
+  // No PIN needed — just confirm all
+  var r = await fetch('/api/confirm-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId: game.id, pin: '2826'}) });
+  var d = await r.json();
+  if (d.ok) { loadPendingList(); _cache = {}; buildGrid(game); alert('✅ ' + (d.confirmed||[]).length + ' squares confirmed!'); }
+  else alert('Error: ' + d.error);
+}
+
+// ── LIVE SCORE BAR + QUARTER TABLE ──────────────────────────
+function updateScoreStrip(game) {
+  if (!game) return;
+  var strip = document.getElementById('scoreStrip');
+  if (strip) strip.style.display = 'block';
+
+  var isLive  = game.status === 'LIVE';
+  var isFinal = game.status === 'FINAL';
+
+  // Score bar
+  var badge = document.getElementById('slbBadge');
+  document.getElementById('slbAwayAbbr').textContent  = game.away  || '';
+  document.getElementById('slbHomeAbbr').textContent  = game.home  || '';
+  document.getElementById('slbAwayScore').textContent = (isLive||isFinal) ? (game.awayScore||0) : '—';
+  document.getElementById('slbHomeScore').textContent = (isLive||isFinal) ? (game.homeScore||0) : '—';
+
+  var clockEl = document.getElementById('slbClock');
+  if (isLive) {
+    badge.textContent = 'LIVE'; badge.className = 'slb-badge live';
+    var pNum  = game.period || '';
+    var pLetter = (game.sport === 'NHL' || game.sport === 'nhl') ? 'P' : 'Q';
+    clockEl.textContent = pNum ? (pLetter + pNum + (game.clock ? ' · ' + game.clock : '')) : '';
+  } else if (isFinal) {
+    badge.textContent = 'FINAL'; badge.className = 'slb-badge final';
+    clockEl.textContent = '';
+  } else {
+    badge.textContent = game.time || 'Scheduled'; badge.className = 'slb-badge pre';
+    clockEl.textContent = '';
+  }
+
+  // Quarter table
+  var period = parseInt(game.period) || 0;
+  var qtrWrap = document.getElementById('qtrTableWrap');
+  var digRow  = document.getElementById('winDigitsRow');
+
+  if (period > 0 || isFinal) {
+    qtrWrap.style.display = 'block';
+    // FINAL — keep scores visible permanently for reference
+    var awayScores = (game.periodScores && game.periodScores.away) || [];
+    var homeScores = (game.periodScores && game.periodScores.home) || [];
+
+    var qHtml = '<div class="qtr-table-label">Quarter breakdown</div>';
+    // header row
+    qHtml += '<div class="qtr-row-grid">';
+    qHtml += '<div class="qc hdr"></div>';
+    for (var q = 0; q < 4; q++) qHtml += '<div class="qc hdr">Q'+(q+1)+'</div>';
+    qHtml += '<div class="qc hdr">TOT</div></div>';
+    // team rows
+    var teams = [
+      { abbr: game.away, scores: awayScores, total: parseInt(game.awayScore)||0 },
+      { abbr: game.home, scores: homeScores, total: parseInt(game.homeScore)||0 }
+    ];
+    teams.forEach(function(t) {
+      qHtml += '<div class="qtr-row-grid">';
+      qHtml += '<div class="qc tname">' + (t.abbr||'') + '</div>';
+      for (var q = 0; q < 4; q++) {
+        var done = isFinal || q < period - 1;
+        var cur  = q === period - 1 && isLive;
+        var val  = t.scores[q] !== undefined ? t.scores[q] : '';
+        var cls  = cur ? 'qc cur' : (done ? 'qc val' : 'qc val empty');
+        qHtml += '<div class="' + cls + '">' + (val !== '' ? val : '—') + '</div>';
+      }
+      qHtml += '<div class="qc tot">' + t.total + '</div>';
+      qHtml += '</div>';
+    });
+    qtrWrap.innerHTML = qHtml;
+
+    // Winning digits + grid highlight
+    var awayD = parseInt(game.awayScore) % 10;
+    var homeD = parseInt(game.homeScore) % 10;
+    digRow.style.display = 'flex';
+    digRow.innerHTML =
+      '<span style="color:var(--text3);">Winning digits:</span>' +
+      '<span class="win-digit-badge">' + (game.away||'Away') + ' ' + awayD + '</span>' +
+      '<span class="win-digit-badge">' + (game.home||'Home') + ' ' + homeD + '</span>' +
+      '<span style="color:var(--text3);font-size:9px;">col ' + awayD + ' + row ' + homeD + '</span>';
+
+    highlightWinners(awayD, homeD);
+  } else {
+    qtrWrap.style.display = 'none';
+    digRow.style.display  = 'none';
+  }
+
+  updateTally(game);
+}
+
+function highlightWinners(awayDigit, homeDigit) {
+  var topHeaders  = document.querySelectorAll('.axis-header.axis-top');
+  var leftHeaders = document.querySelectorAll('.axis-header.axis-left');
+  var cells       = document.querySelectorAll('.cell');
+  var colNums = [], rowNums = [];
+  topHeaders.forEach(function(el, i)  { colNums[i] = parseInt(el.textContent.trim()); });
+  leftHeaders.forEach(function(el, i) { rowNums[i] = parseInt(el.textContent.trim()); });
+
+  topHeaders.forEach(function(el, i) {
+    if (colNums[i] === awayDigit) {
+      el.style.background = 'rgba(250,204,21,.18)'; el.style.borderColor = 'var(--yellow)'; el.style.color = 'var(--yellow)';
+    } else { el.style.background = ''; el.style.borderColor = ''; el.style.color = ''; }
+  });
+  leftHeaders.forEach(function(el, i) {
+    if (rowNums[i] === homeDigit) {
+      el.style.background = 'rgba(250,204,21,.18)'; el.style.borderColor = 'var(--yellow)'; el.style.color = 'var(--yellow)';
+    } else { el.style.background = ''; el.style.borderColor = ''; el.style.color = ''; }
+  });
+  cells.forEach(function(el) {
+    var idx = parseInt(el.dataset.idx);
+    var row = Math.floor(idx / 10), col = idx % 10;
+    var isWin = (colNums[col] === awayDigit && rowNums[row] === homeDigit);
+    if (isWin) {
+      el.style.background = 'rgba(250,204,21,.22)'; el.style.borderColor = 'var(--yellow)';
+      el.style.outline = '2px solid var(--yellow)'; el.style.zIndex = '3'; el.style.transform = 'scale(1.12)';
+    } else {
+      if (!el.classList.contains('cell-sold') && !el.classList.contains('cell-mine') && !el.classList.contains('cell-pending')) {
+        el.style.background = ''; el.style.borderColor = '';
+      }
+      el.style.outline = ''; el.style.zIndex = ''; el.style.transform = '';
+    }
+  });
+}
+// ── END SCORE STRIP ───────────────────────────────────────────
+
+// ── TALLY + PAYOUT STRIP ─────────────────────────────────────
+var _potMode = 'collected';
+
+function setPotMode(mode) {
+  _potMode = mode;
+  document.getElementById('potBtnCollected').classList.toggle('active', mode === 'collected');
+  document.getElementById('potBtnFull').classList.toggle('active', mode === 'full');
+  if (window.currentGame) updateTally(window.currentGame);
+}
+
+async function updateTally(game) {
+  if (!game) return;
+  var price   = parseFloat(document.getElementById('squarePrice').value) || 10;
+  var sData   = _cache[game.id] || await fetchSquares(game.id);
+  var sold    = Object.keys(sData.owners  || {}).length;
+  var pending = Object.keys(sData.pending || {}).length;
+  var total   = sold + pending;
+  var pot       = 100 * price;
+  var collected = total * price;
+  var base      = _potMode === 'full' ? pot : collected;
+  var qPay      = base * 0.20;
+  var period    = parseInt(game.period) || 0;
+  var isLive    = game.status === 'LIVE';
+  var isFinal   = game.status === 'FINAL';
+
+  document.getElementById('tallySlod').textContent      = total + ' / 100';
+  document.getElementById('tallyCollected').textContent = '$' + Math.round(collected).toLocaleString();
+  document.getElementById('tallyPot').textContent       = '$' + Math.round(pot).toLocaleString();
+  document.getElementById('tallyProg').style.width      = total + '%';
+  document.getElementById('tallyProgL').textContent     = total + ' sold';
+  document.getElementById('tallyProgR').textContent     = (100 - total) + ' remaining';
+
+  var qtrs  = ['Q1', 'Half', 'Q3', 'Final'];
+  var pHtml = '';
+  qtrs.forEach(function(name, i) {
+    var isPaid   = isFinal || period > i + 1;
+    var isActive = isLive && period === i + 1;
+    var cls  = isPaid ? 'pq pq-paid'   : isActive ? 'pq pq-active' : 'pq';
+    var aCls = isPaid ? 'pq-a green'   : isActive ? 'pq-a yellow'  : 'pq-a';
+    pHtml += '<div class="' + cls + '"><div class="pq-n">' + name + '</div><div class="' + aCls + '">$' + Math.round(qPay).toLocaleString() + '</div></div>';
+  });
+  document.getElementById('tallyPayouts').innerHTML = pHtml;
+}
+// ── END TALLY ─────────────────────────────────────────────────
+
+// ── INIT ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  logStatus('Page loading...', false);
+
+  // ── Handle Stripe redirect callbacks ──────────────────────
+  var _sp = new URLSearchParams(window.location.search);
+  if (_sp.get('payment') === 'success') {
+    window.history.replaceState({}, '', window.location.pathname);
+    var _msg = document.createElement('div');
+    _msg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#16a34a;color:white;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);';
+    _msg.textContent = '✅ Payment received! Your squares are locked in.';
+    document.body.appendChild(_msg);
+    setTimeout(function() { _msg.remove(); }, 5000);
+  }
+  if (_sp.get('payment') === 'cancelled') {
+    window.history.replaceState({}, '', window.location.pathname);
+    var _msg2 = document.createElement('div');
+    _msg2.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#dc2626;color:white;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);';
+    _msg2.textContent = '❌ Payment cancelled — squares not reserved.';
+    document.body.appendChild(_msg2);
+    setTimeout(function() { _msg2.remove(); }, 4000);
+  }
+
+  try {
+    initDatePicker();
+    // Load game FIRST (don't wait for ticker)
+    await updateSport('NBA');
+    logStatus('Page ready ✓ | Game: ' + (currentGame ? currentGame.away + ' @ ' + currentGame.home : 'NONE'), !currentGame);
+    loadPaymentLockState();
+    // Load ticker in background (don't block)
+    buildTicker().catch(e => logStatus('Ticker error: ' + e.message, true));
+  } catch (e) {
+    logStatus('INIT FAILED: ' + e.message, true);
+  }
+});
+</script>
+
+<script src="/props.js"></script>
+</body>
+</html>
