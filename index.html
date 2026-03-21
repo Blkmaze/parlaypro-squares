@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <!-- v20260316_cleaned -->
 <html lang="en">
 <head>
@@ -105,8 +105,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 16px;
-    overflow: visible; /* never clip the grid */
-    min-width: 0;      /* allow shrinking inside grid */
+    overflow: hidden;
   }
 
   .board-header {
@@ -148,25 +147,21 @@
   .sport-select:focus, .game-select:focus { border-color: var(--green); }
 
   .grid-wrap {
-    padding: 8px;
-    overflow: visible;
-    width: 100%;
-    box-sizing: border-box;
+    padding: 20px;
+    overflow-x: auto;
   }
 
   .grid-container {
     display: grid;
-    /* axis col is min 28px, cells share remaining space equally */
-    grid-template-columns: minmax(28px, 36px) repeat(10, minmax(0, 1fr));
-    gap: 2px;
-    width: 100%;
-    box-sizing: border-box;
+    grid-template-columns: 44px repeat(10, 1fr);
+    gap: 3px;
+    min-width: 560px;
   }
 
   .axis-header {
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -222,14 +217,7 @@
     color: var(--green-light);
   }
 
-  .cell-pending {
-  background: rgba(250,204,21,0.12) !important;
-  border: 1.5px dashed #facc15 !important;
-  color: #facc15 !important;
-  font-size: 8px !important;
-  cursor: default;
-}
-.cell-sold {
+  .cell-sold {
     background: var(--surface3);
     border-color: #2a2a2a;
     color: var(--text2);
@@ -539,18 +527,6 @@
   }
 
   .pay-card:hover { filter: brightness(1.1); }
-  .pay-card.pay-locked { opacity: 0.45; pointer-events: none; position: relative; }
-  .pay-locked-badge { display: none; }
-  .pay-card.pay-locked .pay-locked-badge { display: block; position: absolute; top: 4px; right: 4px; background: #ef4444; color: white; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 4px; letter-spacing: .04em; }
-  /* cta-btn is never locked — buy is always available */
-  .pay-unlock-note { display: none; font-size: 10px; color: #ef4444; text-align: center; margin-top: 4px; }
-  .pay-unlock-note.visible { display: block; }
-  .admin-confirm-list { max-height: 200px; overflow-y: auto; }
-  .confirm-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: var(--surface3); border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
-  .confirm-row .initials { font-weight: 700; color: var(--green); font-family: 'IBM Plex Mono', monospace; }
-  .confirm-row .sq-count { color: var(--text2); }
-  .btn-confirm-pay { background: var(--green); color: #000; font-weight: 700; font-size: 10px; padding: 4px 10px; border: none; border-radius: 5px; cursor: pointer; }
-  .btn-confirm-pay.confirmed { background: #555; color: #aaa; cursor: default; }
 
   .pay-cashapp {
     background: rgba(0,214,50,0.08);
@@ -890,67 +866,13 @@
   .confirm-btn:hover { background: #15803d; }
 
   /* scrollbar */
-  .tally-strip { padding: 12px 16px; border-top: 0.5px solid var(--border); }
-  .tally-strip-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .tally-strip-label { font-size: 9px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; }
-  .pot-toggle-btn { font-size: 9px; padding: 2px 8px; border-radius: 100px; border: 0.5px solid var(--border2); background: var(--surface3); color: var(--text2); cursor: pointer; transition: all .15s; }
-  .pot-toggle-btn.active { background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.4); color: var(--green-light); }
-  .tally-metrics { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 6px; margin-bottom: 8px; }
-  .tm { background: var(--surface3); border-radius: 7px; padding: 7px 9px; }
-  .tm-l { font-size: 9px; color: var(--text3); margin-bottom: 3px; }
-  .tm-v { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text); line-height: 1; }
-  .tm-v.green { color: var(--green-light); }
-  .prog-wrap { background: var(--surface3); border-radius: 100px; height: 5px; overflow: hidden; margin-bottom: 3px; }
-  .prog-fill { height: 100%; border-radius: 100px; background: var(--green); transition: width .4s; }
-  .prog-txt { display: flex; justify-content: space-between; font-size: 9px; color: var(--text3); margin-bottom: 8px; }
-  .payout-row { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 4px; }
-  .pq { background: var(--surface3); border-radius: 6px; padding: 6px 4px; text-align: center; border: 0.5px solid transparent; }
-  .pq.pq-active { background: rgba(250,204,21,.1); border-color: var(--yellow); }
-  .pq.pq-paid { background: rgba(34,197,94,.08); border-color: rgba(34,197,94,.3); }
-  .pq-n { font-size: 9px; color: var(--text3); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .04em; }
-  .pq-a { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text); }
-  .pq-a.yellow { color: var(--yellow); }
-  .pq-a.green { color: var(--green-light); }
-  .score-live-bar { display:flex;align-items:center;justify-content:space-between;padding:9px 14px;background:var(--surface2);border-bottom:0.5px solid var(--border);gap:8px; }
-  .slb-team { display:flex;align-items:center;gap:6px;flex:1; }
-  .slb-abbr { font-size:12px;color:var(--text2);font-weight:500; }
-  .slb-score { font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:var(--text);line-height:1; }
-  .slb-center { text-align:center;flex-shrink:0; }
-  .slb-badge { font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;letter-spacing:.04em; }
-  .slb-badge.live { background:rgba(239,68,68,.15);color:#f87171; }
-  .slb-badge.final { background:rgba(34,197,94,.15);color:var(--green-light); }
-  .slb-badge.pre { background:var(--surface3);color:var(--text3); }
-  .slb-clock { font-size:10px;color:var(--yellow);margin-top:2px; }
-  .qtr-table-wrap { padding:8px 14px 10px;border-bottom:0.5px solid var(--border); }
-  .qtr-table-label { font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px; }
-  .qtr-row-grid { display:grid;grid-template-columns:36px repeat(4,1fr) 42px;gap:2px;margin-bottom:2px; }
-  .qc { border-radius:4px;padding:4px 3px;text-align:center;font-size:10px; }
-  .qc.hdr { background:transparent;color:var(--text3); }
-  .qc.tname { background:transparent;font-size:11px;font-weight:500;color:var(--text2);text-align:left;display:flex;align-items:center; }
-  .qc.val { background:var(--surface3);border:0.5px solid var(--border);font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--text); }
-  .qc.cur { background:rgba(250,204,21,.12);border-color:var(--yellow);color:var(--yellow); }
-  .qc.tot { background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.25);color:var(--green-light); }
-  .qc.empty { color:var(--text3); }
-  .win-digits-row { display:flex;align-items:center;gap:6px;padding:6px 14px 8px;font-size:10px;color:var(--text2);flex-wrap:wrap;border-bottom:0.5px solid var(--border); }
-  .win-digit-badge { background:rgba(250,204,21,.12);border:1px solid var(--yellow);border-radius:4px;padding:1px 6px;font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--yellow);font-size:11px; }
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
   @media (max-width: 768px) {
     .layout { grid-template-columns: 1fr; }
-    .page-wrap { padding: 4px 0; }
-    .board-panel { border-radius: 0; border-left: none; border-right: none; }
-    /* On mobile: tally sits inside board-panel right under grid — already correct */
-    /* Sidebar cards get comfortable padding */
-    .main-card { border-radius: 0; border-left: none; border-right: none; }
-    .legend-card, .games-card, .admin-card { border-radius: 10px; margin: 0 8px; }
-    .sidebar { gap: 10px; padding-bottom: 24px; }
-    /* Tally strip — make payout boxes 2-col on very small screens */
-  }
-  @media (max-width: 400px) {
-    .payout-row { grid-template-columns: repeat(2, 1fr); gap: 4px; }
-    .tally-metrics { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .page-wrap { padding: 8px; }
   }
 
   @media (max-width: 600px) {
@@ -991,18 +913,6 @@
       font-size: 11px !important;
       padding: 6px 10px !important;
     }
-    .grid-container {
-      gap: 1px !important;
-    }
-    .cell {
-      font-size: 8px !important;
-      min-height: clamp(18px, 4.5vw, 28px) !important;
-    }
-    .axis-header {
-      font-size: 8px !important;
-      min-height: clamp(18px, 4.5vw, 28px) !important;
-      padding: 1px !important;
-    }
     .ticker-wrap {
       font-size: 11px !important;
     }
@@ -1041,7 +951,7 @@
         </div>
       </div>
       <div class="sport-controls">
-        <select class="sport-select" onchange="updateSport(this.value)">
+        <select class="sport-select" onchange="pinUpdateSport(this.value)">
           <option value="NBA">🏀 NBA</option>
           <option value="NHL">🏒 NHL</option>
           <option value="MLB">⚾ MLB</option>
@@ -1052,20 +962,20 @@
           <option value="MM_WOMEN">🏀 March Madness (Women)</option>
         </select>
         <div style="display:flex;align-items:center;gap:4px;">
-          <button onclick="changeDate(-1)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1;">◀</button>
-          <input type="date" id="gameDate" class="game-select" onchange="updateDateFromPicker(this.value)" style="min-width:130px;color-scheme:dark;" />
-          <button onclick="changeDate(1)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1;">▶</button>
+          <button onclick="pinChangeDate(-1)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1;">◀</button>
+          <input type="date" id="gameDate" class="game-select" onchange="pinUpdateDateFromPicker(this.value)" style="min-width:130px;color-scheme:dark;" />
+          <button onclick="pinChangeDate(1)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1;">▶</button>
         </div>
-        <select class="game-select" id="gameSelect" onchange="selectGame(this.value)">
-          <option value="">Loading games...</option>
+        <select class="game-select" id="gameSelect" onchange="pinSelectGame(this.value)">
+          <!-- populated by JS -->
         </select>
       </div>
     </div>
 
     <!-- Board Tabs -->
     <div class="board-tabs" style="padding-top:16px;">
-      <button class="board-tab active">🔴 Board #1 LIVE</button>
-      <button class="board-tab">Board #2 (FULL)</button>
+      <button class="board-tab active" onclick="requireAdminPin(function(){ document.querySelectorAll('.board-tab').forEach(function(b){b.classList.remove('active');}); this.classList.add('active'); }.bind(this))">Board #1</button>
+      <button class="board-tab" onclick="requireAdminPin(function(){ alert('New board version coming soon!'); })">Board #2 (FULL)</button>
     </div>
 
     <!-- Grid -->
@@ -1075,44 +985,26 @@
       </div>
     </div>
 
-    <!-- LIVE SCORE BAR + QUARTER TABLE -->
-    <div id="scoreStrip" style="display:none;">
-      <div class="score-live-bar">
-        <div class="slb-team">
-          <span class="slb-abbr" id="slbAwayAbbr">AWAY</span>
-          <span class="slb-score" id="slbAwayScore">0</span>
-        </div>
-        <div class="slb-center">
-          <div id="slbBadge" class="slb-badge pre">—</div>
-          <div class="slb-clock" id="slbClock"></div>
-        </div>
-        <div class="slb-team" style="justify-content:flex-end;">
-          <span class="slb-score" id="slbHomeScore">0</span>
-          <span class="slb-abbr" id="slbHomeAbbr">HOME</span>
-        </div>
+    <!-- QUARTER TRACKER -->
+    <div id="qtrTracker" style="margin:12px 8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;display:none;">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:10px;">QUARTER TRACKER</div>
+      <div style="overflow-x:auto;">
+        <table id="qtrTable" style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="color:var(--text3);font-size:10px;font-weight:700;letter-spacing:.06em;">
+              <td style="padding:4px 6px;">QTR</td>
+              <td style="padding:4px 6px;text-align:center;" id="qtrAwayLabel">AWAY</td>
+              <td style="padding:4px 6px;text-align:center;" id="qtrHomeLabel">HOME</td>
+              <td style="padding:4px 6px;text-align:center;">WINNER</td>
+              <td style="padding:4px 6px;text-align:right;">PAYOUT</td>
+            </tr>
+          </thead>
+          <tbody id="qtrBody">
+            <tr><td colspan="5" style="color:var(--text3);padding:8px 6px;font-size:11px;">Waiting for game to start...</td></tr>
+          </tbody>
+        </table>
       </div>
-      <div class="qtr-table-wrap" id="qtrTableWrap" style="display:none;"></div>
-      <div class="win-digits-row" id="winDigitsRow" style="display:none;"></div>
-    </div>
-
-    <!-- TALLY + PAYOUT STRIP -->
-    <div class="tally-strip" id="tallyStrip">
-      <div class="tally-strip-hdr">
-        <span class="tally-strip-label">Board tally</span>
-        <div style="display:flex;gap:5px;align-items:center;font-size:10px;color:var(--text3);">
-          <span>Payout:</span>
-          <button class="pot-toggle-btn active" id="potBtnCollected" onclick="setPotMode('collected')">Collected</button>
-          <button class="pot-toggle-btn" id="potBtnFull" onclick="setPotMode('full')">Full pot</button>
-        </div>
-      </div>
-      <div class="tally-metrics">
-        <div class="tm"><div class="tm-l">Squares sold</div><div class="tm-v" id="tallySlod">0 / 100</div></div>
-        <div class="tm"><div class="tm-l">Collected</div><div class="tm-v green" id="tallyCollected">$0</div></div>
-        <div class="tm"><div class="tm-l">Full pot</div><div class="tm-v" id="tallyPot">$0</div></div>
-      </div>
-      <div class="prog-wrap"><div class="prog-fill" id="tallyProg" style="width:0%"></div></div>
-      <div class="prog-txt"><span id="tallyProgL">0 sold</span><span id="tallyProgR">100 remaining</span></div>
-      <div class="payout-row" id="tallyPayouts"></div>
+      <div id="qtrHouseSummary" style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:11px;color:var(--text3);display:none;"></div>
     </div>
 
   </div>
@@ -1148,83 +1040,38 @@
           <div class="odds-col-label">Moneyline</div>
         </div>
 
-        <!-- LIVE ODDS — populated by buildOdds() -->
-        <div class="odds-grid" id="oddsGrid">
-          <div class="odds-col" id="oddsCols-spread">
-            <div class="odds-btn" id="btn-spread-away" onclick="toggleOdds(this)">
-              <div class="odds-btn-label" id="lbl-spread-away">Away +3.5</div>
-              <div class="odds-value" id="val-spread-away">-110</div>
+        <div class="odds-grid">
+          <!-- Spread -->
+          <div class="odds-col">
+            <div class="odds-btn" onclick="toggleOdds(this, 'spread-away')">
+              <div class="odds-btn-label">Away +3.5</div>
+              <div class="odds-value">-110</div>
             </div>
-            <div class="odds-btn" id="btn-spread-home" onclick="toggleOdds(this)">
-              <div class="odds-btn-label" id="lbl-spread-home">Home -3.5</div>
-              <div class="odds-value" id="val-spread-home">-110</div>
-            </div>
-          </div>
-          <div class="odds-col" id="oddsCols-total">
-            <div class="odds-btn" id="btn-total-over" onclick="toggleOdds(this)">
-              <div class="odds-btn-label" id="lbl-total-over">Over 228.5</div>
-              <div class="odds-value" id="val-total-over">-110</div>
-            </div>
-            <div class="odds-btn" id="btn-total-under" onclick="toggleOdds(this)">
-              <div class="odds-btn-label" id="lbl-total-under">Under 228.5</div>
-              <div class="odds-value" id="val-total-under">-110</div>
+            <div class="odds-btn selected" onclick="toggleOdds(this, 'spread-home')">
+              <div class="odds-btn-label">Home -3.5</div>
+              <div class="odds-value">-110</div>
             </div>
           </div>
-          <div class="odds-col" id="oddsCols-ml">
-            <div class="odds-btn" id="btn-ml-away" onclick="toggleOdds(this)">
-              <div class="odds-btn-label" id="lbl-ml-away">Away ML</div>
-              <div class="odds-value" id="val-ml-away">-160</div>
+          <!-- Total -->
+          <div class="odds-col">
+            <div class="odds-btn" onclick="toggleOdds(this, 'total-over')">
+              <div class="odds-btn-label">Over 228.5</div>
+              <div class="odds-value">-110</div>
             </div>
-            <div class="odds-btn" id="btn-ml-home" onclick="toggleOdds(this)">
-              <div class="odds-btn-label" id="lbl-ml-home">Home ML</div>
-              <div class="odds-value" id="val-ml-home">+140</div>
+            <div class="odds-btn" onclick="toggleOdds(this, 'total-under')">
+              <div class="odds-btn-label">Under 228.5</div>
+              <div class="odds-value">-110</div>
             </div>
           </div>
-        </div>
-
-        <!-- LINE ADJUSTERS ── spread ±0.5 / O/U ±0.5 / team total toggle -->
-        <div id="adjPanel" style="margin:10px 0 0;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;">
-          <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Adjust Lines</div>
-          <!-- Spread adjuster -->
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-            <span style="font-size:11px;color:var(--text2);width:52px;">Spread</span>
-            <button onclick="adjLine('spread',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">−½</button>
-            <span id="adjSpreadVal" style="font-size:12px;color:var(--text);min-width:32px;text-align:center;font-family:'IBM Plex Mono',monospace;">0</span>
-            <button onclick="adjLine('spread',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">+½</button>
-            <button onclick="adjLine('spread',0,'reset')" style="background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--text3);border-radius:5px;padding:2px 6px;cursor:pointer;font-size:10px;margin-left:2px;">reset</button>
-          </div>
-          <!-- O/U adjuster -->
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-            <span style="font-size:11px;color:var(--text2);width:52px;">O/U</span>
-            <button onclick="adjLine('total',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">−½</button>
-            <span id="adjTotalVal" style="font-size:12px;color:var(--text);min-width:32px;text-align:center;font-family:'IBM Plex Mono',monospace;">0</span>
-            <button onclick="adjLine('total',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;">+½</button>
-            <button onclick="adjLine('total',0,'reset')" style="background:transparent;border:1px solid rgba(255,255,255,0.08);color:var(--text3);border-radius:5px;padding:2px 6px;cursor:pointer;font-size:10px;margin-left:2px;">reset</button>
-          </div>
-          <!-- Home/Away team total toggle -->
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:11px;color:var(--text2);width:52px;">Team</span>
-            <button id="teamTotalBtn" onclick="toggleTeamTotal()" style="background:var(--surface3);border:1px solid var(--border2);color:var(--green-light);border-radius:5px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:700;">Show Team O/U</button>
-          </div>
-          <!-- Team totals (hidden by default) -->
-          <div id="teamTotalsRow" style="display:none;margin-top:8px;display:none;">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
-              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:6px;padding:6px;text-align:center;">
-                <div style="font-size:9px;color:var(--text3);margin-bottom:3px;" id="homeTeamTotalLbl">HOME</div>
-                <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
-                  <button onclick="adjTeamTotal('home',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">−</button>
-                  <span id="homeTeamTotalVal" style="font-size:12px;color:var(--text);min-width:28px;text-align:center;font-family:'IBM Plex Mono',monospace;">—</span>
-                  <button onclick="adjTeamTotal('home',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">+</button>
-                </div>
-              </div>
-              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border2);border-radius:6px;padding:6px;text-align:center;">
-                <div style="font-size:9px;color:var(--text3);margin-bottom:3px;" id="awayTeamTotalLbl">AWAY</div>
-                <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
-                  <button onclick="adjTeamTotal('away',-0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">−</button>
-                  <span id="awayTeamTotalVal" style="font-size:12px;color:var(--text);min-width:28px;text-align:center;font-family:'IBM Plex Mono',monospace;">—</span>
-                  <button onclick="adjTeamTotal('away',+0.5)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:1px 6px;cursor:pointer;font-size:11px;">+</button>
-                </div>
-              </div>
+          <!-- Moneyline -->
+          <div class="odds-col">
+            <div class="odds-btn selected" onclick="toggleOdds(this, 'ml-away')">
+              <div class="odds-btn-label">Away ML</div>
+              <div class="odds-value">-160</div>
+            </div>
+            <div class="odds-btn" onclick="toggleOdds(this, 'ml-home')">
+              <div class="odds-btn-label">Home ML</div>
+              <div class="odds-value">+140</div>
             </div>
           </div>
         </div>
@@ -1233,7 +1080,6 @@
         <button style="width:100%;margin-top:10px;padding:8px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);border-radius:8px;color:#86efac;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s;letter-spacing:0.05em;text-transform:uppercase;"
           onmouseover="this.style.background='rgba(22,163,74,0.25)'"
           onmouseout="this.style.background='rgba(22,163,74,0.15)'"
-          onclick="buildParlayFromSelected()"
         >Build Custom Parlay</button>
       </div>
 
@@ -1254,7 +1100,7 @@
       <div class="buy-section">
         <div class="buy-meta">
           <span class="buy-meta-label">Price per Square</span>
-          <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="background:#1a1a1a;border:1px solid #333;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option><option value="250">$250</option></select>
+          <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="background:#1a1a1a;border:1px solid #333;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option></select>
         </div>
 
         <!-- Qty -->
@@ -1280,17 +1126,15 @@
 
         <!-- Pay Willie -->
         <div class="pay-label">Pay Willie</div>
-        <div class="pay-grid" id="payCardsGrid">
-          <div class="pay-card pay-cashapp" id="payCardCashapp">
-            <span class="pay-locked-badge">LOCKED</span>
+        <div class="pay-grid">
+          <div class="pay-card pay-cashapp">
             <div class="pay-icon pay-icon-cashapp">$</div>
             <div class="pay-info">
               <div class="pay-name">Cash App</div>
               <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=https://cash.app/%247707438091" alt="Cash App QR" style="width:70px;height:70px;border-radius:6px;margin-top:4px;display:block;" />
             </div>
           </div>
-          <div class="pay-card pay-paypal" id="payCardPaypal">
-            <span class="pay-locked-badge">LOCKED</span>
+          <div class="pay-card pay-paypal">
             <div class="pay-icon pay-icon-paypal">P</div>
             <div class="pay-info">
               <div class="pay-name">PayPal</div>
@@ -1298,10 +1142,9 @@
             </div>
           </div>
         </div>
-        <div class="pay-unlock-note" id="payUnlockNote">⚠ Payment not confirmed — contact Willie</div>
 
         <!-- CTA -->
-        <button class="cta-btn" id="ctaBuyBtn" onclick="openPayModal()">
+        <button class="cta-btn" onclick="openPayModal()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           BUY 5 SQUARES NOW
         </button>
@@ -1311,12 +1154,11 @@
 
     <!-- LEGEND -->
     <div class="legend-card">
-      <div class="legend-title">Legend</div>
+      <div class="legend-title" style="display:flex;justify-content:space-between;align-items:center;">
+        Legend
+        <button onclick="localStorage.clear();_cache={};alert('Local data cleared! Refreshing...');location.reload();" style="background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:9px;padding:3px 8px;border-radius:4px;cursor:pointer;">Clear My Data</button>
+      </div>
       <div class="legend-items">
-        <div class="legend-item">
-          <div class="legend-dot" style="background:rgba(250,204,21,0.12);border:1.5px dashed #facc15;"></div>
-          Pending
-        </div>
         <div class="legend-item">
           <div class="legend-dot" style="background:#16a34a;border:1px solid #22c55e;"></div>
           Yours
@@ -1352,25 +1194,8 @@
       <div class="admin-btns">
         <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
         <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
-        <button class="admin-btn admin-btn-green" id="payUnlockBtn" onclick="adminTogglePayment(true)">✅ Unlock Payment (Confirm Paid)</button>
-        <button class="admin-btn admin-btn-red" id="payLockBtn" onclick="adminTogglePayment(false)" style="display:none;">🔒 Lock Payment</button>
-        <!-- Reset with inline PIN — no prompt() needed -->
-        <div style="display:flex;gap:6px;align-items:center;margin-top:2px;">
-          <input id="resetPinInput" type="password" maxlength="4" placeholder="PIN" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;width:70px;outline:none;font-family:'IBM Plex Mono',monospace;" />
-          <button class="admin-btn admin-btn-red" style="flex:1;margin:0;" onclick="adminReset();">⨂ Reset Board</button>
-        </div>
-      </div>
-      <div id="adminMsg" style="display:none;font-size:11px;padding:4px 0;margin-top:4px;"></div>
-      <!-- Pending Payments List — auto-loads when admin unlocks -->
-      <div id="pendingPayList" style="margin-top:12px;">
-        <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">⏳ Pending Payments</div>
-        <div id="pendingPayListInner" style="max-height:260px;overflow-y:auto;">
-          <div style="color:#555;font-size:11px;padding:8px 0;">Loading...</div>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:8px;">
-          <button class="admin-btn admin-btn-green" style="flex:1;font-size:11px;" onclick="confirmAllPending()">✅ Confirm All</button>
-          <button class="admin-btn" style="flex:1;font-size:11px;background:rgba(255,255,255,0.04);color:var(--text2);" onclick="loadPendingList()">↻ Refresh</button>
-        </div>
+        <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
+        <button class="admin-btn admin-btn-red" onclick="adminReset();">⨂ Reset Board</button>
       </div>
     </div>
 
@@ -1426,30 +1251,20 @@
 
 <!-- PAYMENT MODAL -->
 <div class="modal-overlay" id="payModal">
-  <div class="modal" style="position:relative;max-width:360px;">
+  <div class="modal" style="position:relative;">
     <button class="modal-close" onclick="document.getElementById('payModal').classList.remove('open')">✕</button>
     <div class="modal-header">
-      <div class="modal-icon">🎯</div>
-      <div class="modal-title">Claim Your Squares</div>
-      <div class="modal-sub" id="modalSubText">Enter your initials, pick how you'll pay, then hit send.</div>
-      <div id="modalDebug" style="display:none;background:#1a0000;border:1px solid #ef4444;border-radius:6px;padding:8px;margin-top:8px;font-size:10px;color:#fca5a5;font-family:monospace;word-break:break-all;"></div>
+      <div class="modal-icon">💵</div>
+      <div class="modal-title">Payment Method</div>
+      <div class="modal-sub">Select how you want to pay for your squares.</div>
     </div>
     <div class="modal-body">
-      <!-- Selected squares preview -->
-      <div id="selectedSquaresPreview" style="display:none;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#86efac;font-family:'IBM Plex Mono',monospace;"></div>
-
-      <!-- Amount -->
       <div class="modal-total">
         <span class="modal-total-label" id="modalSquaresLabel">5 Squares × $10</span>
         <span class="modal-total-amount" id="modalTotal">$50.00</span>
       </div>
-
-      <!-- Initials -->
-      <div class="modal-input-label">Your Initials <span style="color:var(--text3);font-weight:400;">(3–4 letters shown on board)</span></div>
-      <input type="text" maxlength="4" placeholder="e.g. DAB" class="modal-input" id="initialsInput" oninput="checkInitials()" style="text-transform:uppercase;" />
-
-      <!-- Payment method -->
-      <div class="modal-input-label" style="margin-top:12px;">How are you paying?</div>
+      <div class="modal-input-label">Your Initials (3 letters)</div>
+      <input type="text" maxlength="3" placeholder="ABC" class="modal-input" id="initialsInput" oninput="checkInitials()" />
       <div class="modal-pay-grid">
         <div class="modal-pay-option selected" id="payOpt-cashapp" onclick="selectPay(this,'cashapp')">
           <div class="modal-pay-icon" style="background:#00D632;">$</div>
@@ -1461,25 +1276,16 @@
           <div class="modal-pay-name">PayPal</div>
           <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=https://paypal.me/williemayes" alt="QR" style="width:50px;height:50px;border-radius:4px;margin-top:4px;" />
         </div>
-        <div class="modal-pay-option" id="payOpt-cash" onclick="selectPay(this,'cash')">
-          <div class="modal-pay-icon" style="background:#555;">💵</div>
-          <div class="modal-pay-name">Cash</div>
-          <div style="font-size:9px;color:#aaa;margin-top:2px;">In person</div>
-        </div>
         <div class="modal-pay-option" id="payOpt-card" onclick="selectPay(this,'card')">
           <div class="modal-pay-icon" style="background:#6366f1;">💳</div>
           <div class="modal-pay-name">Card</div>
-          <div style="font-size:9px;color:#aaa;margin-top:2px;">Stripe checkout</div>
+          <div style="font-size:9px;color:#aaa;margin-top:4px;">Stripe checkout</div>
         </div>
       </div>
-
-      <!-- Payment instructions -->
       <div id="payInstructions" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12px;color:var(--text2);"></div>
-
       <button class="modal-cta" id="confirmBtn" disabled onclick="confirmPurchase()">
         📲 Reserve My Squares
       </button>
-      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:8px;">Your squares are reserved once Willie confirms payment ✓</div>
     </div>
   </div>
 </div>
@@ -1529,8 +1335,7 @@ const SPORT_MAP = {
 };
 
 let currentSport = 'NBA';
-window.currentGame = null; // global so adminReset & all functions see it
-var currentGame = window.currentGame;
+let currentGame = null;
 let currentDate = (function() {
   const now = new Date();
   const y = now.getFullYear();
@@ -1541,8 +1346,7 @@ let currentDate = (function() {
 let currentQty = 5;
 let currentBoardVersion = null;
 let espnGames = {}; // { sport: [games...] }
-let _cache = {};
-let _lastResetAt = {}; // track server resetAt per game to detect resets on other devices
+let _cache = {}; // { gameId: serverData }
 
 const INITIALS = ['WM','KJ','DT','AA','RB','LM','CP','JS','MB','TW','GH','PD','NT','BK','SC','FO','YI','QV','ZX','ER'];
 
@@ -1554,19 +1358,23 @@ function initDatePicker() {
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + 14); // 2 weeks out
   picker.value = currentDate;
-  picker.min = today.toISOString().slice(0, 10);
+  // Allow up to 30 days back so admin can review past boards
+  const minDate = new Date(today);
+  minDate.setDate(minDate.getDate() - 30);
+  picker.min = minDate.toISOString().slice(0, 10);
   picker.max = maxDate.toISOString().slice(0, 10);
 }
 
 function changeDate(offset) {
   const d = new Date(currentDate + 'T12:00:00');
   d.setDate(d.getDate() + offset);
-  const today = new Date();
-  const maxDate = new Date(today);
+  const minDate = new Date();
+  minDate.setDate(minDate.getDate() - 30);
+  const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + 14);
-  today.setHours(0,0,0,0);
+  minDate.setHours(0,0,0,0);
   maxDate.setHours(23,59,59,999);
-  if (d < today || d > maxDate) return;
+  if (d < minDate || d > maxDate) return;
   currentDate = d.toISOString().slice(0, 10);
   document.getElementById('gameDate').value = currentDate;
   updateSport(currentSport);
@@ -1587,18 +1395,63 @@ async function fetchEspnScores(sport) {
     const dateStr = getEspnDateParam();
     logStatus('Fetching ' + sport + ' for ' + currentDate + '...', false);
     const apiSport = SPORT_MAP[sport] || sport.toLowerCase();
-    const res = await fetch(`/api/scores?sport=${encodeURIComponent(apiSport)}&date=${dateStr}`);
-    if (!res.ok) {
-      logStatus('ESPN API error: HTTP ' + res.status + ' for ' + sport, true);
+
+    // Try Netlify function first
+    try {
+      const res = await fetch(`/api/scores?sport=${encodeURIComponent(apiSport)}&date=${dateStr}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.games && data.games.length > 0) {
+          logStatus(sport + ': ' + data.games.length + ' games loaded', false);
+          espnGames[sport] = data.games;
+          return data;
+        }
+      }
+      logStatus('Netlify /api/scores failed (HTTP ' + (res.status || '?') + '), trying ESPN direct...', true);
+    } catch(e1) {
+      logStatus('Netlify function error: ' + e1.message + ', trying ESPN direct...', true);
+    }
+
+    // Fallback: call ESPN API directly from browser
+    const espnLeagueMap = {
+      'nba': 'basketball/nba', 'nhl': 'hockey/nhl', 'mlb': 'baseball/mlb',
+      'nfl': 'football/nfl', 'mls': 'soccer/usa.1', 'wnba': 'basketball/wnba',
+      'ncaam': 'basketball/mens-college-basketball', 'ncaaw': 'basketball/womens-college-basketball'
+    };
+    const league = espnLeagueMap[apiSport] || ('basketball/nba');
+    const espnUrl = `https://site.api.espn.com/apis/site/v2/sports/${league}/scoreboard?dates=${dateStr}`;
+    const espnRes = await fetch(espnUrl);
+    if (!espnRes.ok) {
+      logStatus('ESPN direct API also failed: HTTP ' + espnRes.status, true);
       return null;
     }
-    const data = await res.json();
-    if (data && data.games) {
-      logStatus(sport + ': ' + data.games.length + ' games loaded', false);
-      espnGames[sport] = data.games;
-      return data;
+    const espnData = await espnRes.json();
+    const events = espnData.events || [];
+    const games = events.map(ev => {
+      const comp = ev.competitions && ev.competitions[0];
+      const comps = comp && comp.competitors;
+      const away = comps && comps.find(c => c.homeAway === 'away');
+      const home = comps && comps.find(c => c.homeAway === 'home');
+      const status = ev.status && ev.status.type;
+      const isLive = status && status.state === 'in';
+      const isFinal = status && status.completed;
+      return {
+        id: ev.id,
+        away: (away && away.team && away.team.abbreviation) || 'AWAY',
+        home: (home && home.team && home.team.abbreviation) || 'HOME',
+        awayScore: away && parseInt(away.score) || 0,
+        homeScore: home && parseInt(home.score) || 0,
+        status: isFinal ? 'FINAL' : isLive ? 'LIVE' : 'UPCOMING',
+        time: (status && status.shortDetail) || 'TBD',
+        period: (comp && comp.period) || 0
+      };
+    });
+    if (games.length > 0) {
+      logStatus(sport + ': ' + games.length + ' games (ESPN direct)', false);
+      espnGames[sport] = games;
+      return { games };
     }
-    logStatus('No games data in response for ' + sport, true);
+    logStatus('No games found via ESPN direct for ' + sport, true);
     return null;
   } catch (e) {
     logStatus('ESPN fetch failed for ' + sport + ': ' + e.message, true);
@@ -1642,11 +1495,21 @@ async function buildTicker() {
 }
 
 // ── GRID ─────────────────────────────────────────────────────
-function shuffle(arr) {
+// Seeded shuffle — same game ID always produces same number order on every device
+function seededShuffle(arr, seed) {
   const a = [...arr];
-  for (let i = a.length-1; i > 0; i--) {
-    const j = Math.floor(Math.random()*(i+1));
-    [a[i],a[j]] = [a[j],a[i]];
+  // Simple hash from string to number
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  }
+  function nextRand() {
+    h = (h * 1664525 + 1013904223) | 0;
+    return (h >>> 0) / 4294967296;
+  }
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(nextRand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
@@ -1658,39 +1521,35 @@ async function buildGrid(game) {
   const serverOwners = serverData.owners || {};
   const serverSold = new Set(Object.keys(serverOwners).map(Number));
 
-  // ── NUMBER SYNC: get/init grid numbers server-side so ALL devices match ──
-  let topNums, leftNums;
-  if (serverData.rowNums && serverData.rowNums.length === 10) {
-    // Server already has numbers — use them (locked or not)
-    topNums = serverData.rowNums;
-    leftNums = serverData.colNums;
-  } else {
-    // First device to load this game generates the numbers and stores them
-    const generatedRow = shuffle([0,1,2,3,4,5,6,7,8,9]);
-    const generatedCol = shuffle([0,1,2,3,4,5,6,7,8,9]);
-    try {
-      const initRes = await fetch('/api/init-numbers', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ gameId: game.id, rowNums: generatedRow, colNums: generatedCol })
-      });
-      const initText = await initRes.text();
-      let initData = {};
-      try { initData = JSON.parse(initText); } catch(_) {}
-      // Use whatever the server returned (may be another device's already-stored numbers)
-      topNums = (initData.rowNums && initData.rowNums.length===10) ? initData.rowNums : generatedRow;
-      leftNums = (initData.colNums && initData.colNums.length===10) ? initData.colNums : generatedCol;
-      // Update local cache with server numbers
-      _cache[game.id] = { ...serverData, rowNums: topNums, colNums: leftNums };
-    } catch(e) {
-      topNums = generatedRow;
-      leftNums = generatedCol;
+  const _locked = serverData && serverData.numbersLocked && serverData.rowNums && serverData.rowNums.length===10;
+  const topNums = _locked ? serverData.rowNums : seededShuffle([0,1,2,3,4,5,6,7,8,9], 'top-' + game.id);
+  const leftNums = _locked ? serverData.colNums : seededShuffle([0,1,2,3,4,5,6,7,8,9], 'left-' + game.id);
+
+  // Self-heal: remove local squares that aren't on the server anymore (board was reset)
+  const mine = getMySquares(game.id);
+  if (mine.size > 0 && Object.keys(serverOwners).length === 0) {
+    // Server is empty but local thinks we have squares — board was reset
+    localStorage.removeItem('my_' + game.id);
+    localStorage.removeItem('initials_' + game.id);
+    mine.clear();
+  } else if (mine.size > 0) {
+    // Remove any local squares not on server
+    const myInitials = getInitialsForGame(game.id);
+    let changed = false;
+    mine.forEach(idx => {
+      if (!serverOwners[idx] || (myInitials && serverOwners[idx] !== myInitials.toUpperCase())) {
+        mine.delete(idx);
+        changed = true;
+      }
+    });
+    if (changed) {
+      localStorage.setItem('my_' + game.id, JSON.stringify([...mine]));
     }
   }
-  const sold = new Set([...game.sold || [], ...serverSold]);
-  const mine = getMySquares(game.id);
+
   (game.mine || []).forEach(i => mine.add(i));
   const myInitials = getInitialsForGame(game.id) || 'YOU';
+  const sold = new Set([...(game.sold || []), ...serverSold]);
   const available = Math.max(0, 100 - sold.size);
 
   document.getElementById('availableCount').textContent = available;
@@ -1714,187 +1573,47 @@ async function buildGrid(game) {
       const idx = i * 10 + j;
       const isMine = mine.has(idx);
       const isSold = sold.has(idx);
-      // Server is source of truth for owners — local initials only for squares claimed this session
-      const pendingEntry = serverData.pending && serverData.pending[idx];
-      const isPending = !!pendingEntry;
-      const effectiveClass = isPending ? 'cell-pending' : (isMine ? 'cell-mine' : isSold ? 'cell-sold' : 'cell-open');
-      const owner = serverOwners[idx] || (isPending ? pendingEntry.initials : (isMine && !serverSold.has(idx) ? myInitials : null));
-      const cellClass = effectiveClass;
-      const clickHandler = (!isMine && !isSold && !isPending) ? `onclick="tapSquare(${idx})"` : '';
-      const pendingMark = isPending ? '⏳' : '';
-      html += `<div class="cell ${cellClass}" data-idx="${idx}" ${clickHandler}>${(owner||'') + pendingMark}</div>`;
+      const owner = serverOwners[idx] || (isMine ? myInitials : null);
+      const cellClass = isMine ? 'cell-mine' : isSold ? 'cell-sold' : 'cell-open';
+      html += `<div class="cell ${cellClass}" data-idx="${idx}">${owner || ''}</div>`;
     }
   }
 
   document.getElementById('squaresGrid').innerHTML = html;
-  if (window.currentGame) { updateScoreStrip(window.currentGame); }
+
+  // Update quarter tracker
+  updateQtrTracker(game, serverData).catch(function(){});
 }
 
 // ── ODDS BUILDER ─────────────────────────────────────────────
-// ── BASE ODDS (set when game loads) ─────────────────────────
-let _baseOdds = { spreadLine: null, totalLine: null, mlAway: null, mlHome: null,
-                  homeTeamTotal: null, awayTeamTotal: null };
-let _adjSpread = 0, _adjTotal = 0, _adjHomeTotal = 0, _adjAwayTotal = 0;
-let _teamTotalsVisible = false;
-
-function fmtOdds(n) {
-  if (!n && n !== 0) return 'N/A';
-  const num = parseFloat(n);
-  return num > 0 ? '+' + num : String(num);
-}
-
-function fmtLine(base, adj) {
-  const val = (parseFloat(base || 0) + adj);
-  // round to nearest 0.5
-  return (Math.round(val * 2) / 2).toFixed(1);
-}
-
 function buildOdds(game) {
   if (!game) return;
-  // ESPN API returns odds via predictor/spread when available
-  // We store what we have and show live or "—" for missing
-  const spread = game.spread || null;
-  const total  = game.total  || null;
-  const mlA    = game.awayOdds || game.awayML || null;
-  const mlH    = game.homeOdds || game.homeML || null;
-
-  _baseOdds = {
-    spreadLine: spread ? Math.abs(parseFloat(spread)) : 3.5,
-    totalLine:  total  ? parseFloat(total)            : 228.5,
-    mlAway:     mlA    ? parseFloat(mlA)              : -160,
-    mlHome:     mlH    ? parseFloat(mlH)              : +140,
-    homeTeamTotal: total ? parseFloat(total) / 2 : null,
-    awayTeamTotal: total ? parseFloat(total) / 2 : null,
-  };
-  _adjSpread = 0; _adjTotal = 0; _adjHomeTotal = 0; _adjAwayTotal = 0;
-  refreshOddsDisplay(game);
-}
-
-function refreshOddsDisplay(game) {
-  if (!game) game = window.currentGame;
-  if (!game) return;
-  const sl = _baseOdds.spreadLine;
-  const tl = _baseOdds.totalLine;
-  const adjSL = parseFloat(fmtLine(sl, _adjSpread));
-  const adjTL = parseFloat(fmtLine(tl, _adjTotal));
-
-  // Spread
-  const awaySpread = game.spreadFav === 'home' ? '+' + adjSL : '-' + adjSL;
-  const homeSpread = game.spreadFav === 'home' ? '-' + adjSL : '+' + adjSL;
-  setText('lbl-spread-away', game.away + ' ' + awaySpread);
-  setText('lbl-spread-home', game.home + ' ' + homeSpread);
-  setText('val-spread-away', '-110');
-  setText('val-spread-home', '-110');
-
-  // Total
-  setText('lbl-total-over',  'Over '  + adjTL);
-  setText('lbl-total-under', 'Under ' + adjTL);
-  setText('val-total-over',  '-110');
-  setText('val-total-under', '-110');
-
-  // Moneyline
-  setText('lbl-ml-away', game.away + ' ML');
-  setText('lbl-ml-home', game.home + ' ML');
-  setText('val-ml-away', fmtOdds(_baseOdds.mlAway));
-  setText('val-ml-home', fmtOdds(_baseOdds.mlHome));
-
-  // Adjuster display
-  setText('adjSpreadVal', (_adjSpread === 0 ? '0' : (_adjSpread > 0 ? '+' : '') + _adjSpread));
-  setText('adjTotalVal',  (_adjTotal  === 0 ? '0' : (_adjTotal  > 0 ? '+' : '') + _adjTotal));
-
-  // Team totals
-  if (_baseOdds.homeTeamTotal !== null) {
-    const ht = parseFloat(fmtLine(_baseOdds.homeTeamTotal, _adjHomeTotal));
-    const at = parseFloat(fmtLine(_baseOdds.awayTeamTotal, _adjAwayTotal));
-    setText('homeTeamTotalVal', ht.toFixed(1));
-    setText('awayTeamTotalVal', at.toFixed(1));
-    setText('homeTeamTotalLbl', game.home);
-    setText('awayTeamTotalLbl', game.away);
-  } else {
-    setText('homeTeamTotalVal', '—');
-    setText('awayTeamTotalVal', '—');
-  }
-}
-
-function setText(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val;
-}
-
-function adjLine(type, delta, mode) {
-  if (type === 'spread') {
-    _adjSpread = mode === 'reset' ? 0 : Math.round((_adjSpread + delta) * 2) / 2;
-  } else {
-    _adjTotal  = mode === 'reset' ? 0 : Math.round((_adjTotal  + delta) * 2) / 2;
-  }
-  refreshOddsDisplay();
-}
-
-function adjTeamTotal(side, delta) {
-  if (side === 'home') _adjHomeTotal = Math.round((_adjHomeTotal + delta) * 2) / 2;
-  else                 _adjAwayTotal = Math.round((_adjAwayTotal + delta) * 2) / 2;
-  refreshOddsDisplay();
-}
-
-function toggleTeamTotal() {
-  _teamTotalsVisible = !_teamTotalsVisible;
-  const row = document.getElementById('teamTotalsRow');
-  const btn = document.getElementById('teamTotalBtn');
-  if (row) row.style.display = _teamTotalsVisible ? 'block' : 'none';
-  if (btn) btn.textContent = _teamTotalsVisible ? 'Hide Team O/U' : 'Show Team O/U';
-  if (_teamTotalsVisible) refreshOddsDisplay();
-}
-
-// ── STAR PLAYER PROP O/U ─────────────────────────────────────
-// Accessed via Player Props section in admin + visible in sidebar
-let _playerProps = {}; // { gameId: { home: {...}, away: {...} } }
-
-function buildStarPropUI(game) {
-  // Already handled by the propsDisplay section — this ties odds into it
-  // Star prop bet is Over/Under on a scoring range
-  // Displayed in the Player Props — Over/Under card
 }
 
 // ── BOARD HEADER ─────────────────────────────────────────────
 function updateBoardHeader(game) {
+  if (!game) return;
   const d = new Date(currentDate + 'T12:00:00');
-  const el = document.getElementById('live-date');
-  if (el) el.textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  document.getElementById('live-date').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
-// Set date immediately on load
-(function() {
-  const d = new Date(currentDate + 'T12:00:00');
-  const el = document.getElementById('live-date');
-  if (el) el.textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-})();
 
 // ── SERVER SYNC ──────────────────────────────────────────────
 async function fetchSquares(gameId) {
   try {
-    const res = await fetch('/api/squares?gameId=' + encodeURIComponent(gameId));
-    if (!res.ok) return _cache[gameId] || { owners: {}, pending: {} };
-    const text = await res.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch(_) {}
-    data = data || { owners: {}, pending: {} };
-
-    // Detect reset: if server resetAt is newer than what we knew, wipe local state
-    const prevReset = _lastResetAt[gameId] || 0;
-    const serverReset = data.resetAt || 0;
-    if (serverReset > prevReset && prevReset > 0) {
-      // Server was reset after we loaded — clear local squares
-      localStorage.removeItem('my_' + gameId);
-      localStorage.removeItem('initials_' + gameId);
-      logStatus('Board was reset — cleared local squares', false);
+    logStatus('Loading squares for game ' + gameId + '...', false);
+    const res = await fetch(`/api/squares?gameId=${encodeURIComponent(gameId)}`);
+    if (!res.ok) {
+      logStatus('Squares API error: HTTP ' + res.status + ' for game ' + gameId, true);
+      return _cache[gameId] || { owners: {} };
     }
-    _lastResetAt[gameId] = serverReset;
-    _cache[gameId] = data;
-    const ownCount = Object.keys(data.owners || {}).length;
+    const data = await res.json();
+    _cache[gameId] = data || { owners: {} };
+    const ownCount = Object.keys((_cache[gameId].owners || {})).length;
     logStatus('Game ' + gameId + ': ' + ownCount + ' squares claimed', false);
     return _cache[gameId];
   } catch (e) {
     logStatus('Fetch squares failed: ' + e.message, true);
-    return _cache[gameId] || { owners: {}, pending: {} };
+    return _cache[gameId] || { owners: {} };
   }
 }
 
@@ -1933,7 +1652,7 @@ function buildGamesList(sport) {
   if (!list) return;
 
   list.innerHTML = games.map(g => `
-    <div class="game-row${g.id === (currentGame?.id) ? ' active' : ''}" data-id="${g.id}" onclick="selectGameById('${g.id}')">
+    <div class="game-row${g.id === (currentGame?.id) ? ' active' : ''}" data-id="${g.id}" onclick="pinSelectGameById('${g.id}')">
       <div class="game-row-top">
         <span class="game-teams">${g.away} @ ${g.home}</span>
         ${g.status==='LIVE'
@@ -1958,7 +1677,6 @@ async function loadGame(game) {
   if (!game) { logStatus('loadGame called with no game', true); return; }
   logStatus('Loading game: ' + game.away + ' @ ' + game.home + ' (ID: ' + game.id + ')', false);
   currentGame = game;
-  window.currentGame = game; // keep global in sync
   try {
     await buildGrid(game);
   } catch (e) {
@@ -1968,17 +1686,13 @@ async function loadGame(game) {
   if (window._pollTimer) clearInterval(window._pollTimer);
   window._pollTimer = setInterval(async function() {
     if (currentGame && currentGame.id === game.id) {
-      _cache[currentGame.id] = null; // always fetch fresh on poll
       try { await buildGrid(currentGame); } catch (e) { logStatus('Poll error: ' + e.message, true); }
     }
-  }, 8000); // 8s refresh — fast enough for real-time sync
+  }, 15000);
 
   buildOdds(game);
   updateBoardHeader(game);
   updateCTA();
-  loadPaymentLockState();
-  loadPendingList();
-  updateScoreStrip(game);
 
   document.getElementById('gameSelect').value = game.id;
 
@@ -1988,12 +1702,36 @@ async function loadGame(game) {
 }
 
 // ── EVENT HANDLERS ───────────────────────────────────────────
+// Fallback dummy game so grid always renders even when ESPN API is down
+function getFallbackGame(sport) {
+  const fallbacks = {
+    'NBA': { id: 'fallback-nba-' + currentDate, away: 'AWAY', home: 'HOME', awayScore: 0, homeScore: 0, status: 'UPCOMING', time: 'TBD', period: 0 },
+    'NHL': { id: 'fallback-nhl-' + currentDate, away: 'AWAY', home: 'HOME', awayScore: 0, homeScore: 0, status: 'UPCOMING', time: 'TBD', period: 0 },
+    'MLB': { id: 'fallback-mlb-' + currentDate, away: 'AWAY', home: 'HOME', awayScore: 0, homeScore: 0, status: 'UPCOMING', time: 'TBD', period: 0 },
+    'NFL': { id: 'fallback-nfl-' + currentDate, away: 'AWAY', home: 'HOME', awayScore: 0, homeScore: 0, status: 'UPCOMING', time: 'TBD', period: 0 },
+  };
+  return fallbacks[sport] || fallbacks['NBA'];
+}
+
 async function updateSport(sport) {
   logStatus('Switching to ' + sport + '...', false);
   currentSport = sport;
+
+  // Show loading state in grid immediately
+  const grid = document.getElementById('squaresGrid');
+  if (grid) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text3);font-size:13px;">Loading games...</div>';
+  }
+
   const data = await fetchEspnScores(sport);
   if (!data || !data.games || !data.games.length) {
-    logStatus('No games found for ' + sport, true);
+    logStatus('No games found for ' + sport + ' — using fallback board', true);
+    // Still render the grid with a fallback game so board is usable
+    const fallback = getFallbackGame(sport);
+    espnGames[sport] = [fallback];
+    populateGameDropdown(sport);
+    buildGamesList(sport);
+    await loadGame(fallback);
     return;
   }
   populateGameDropdown(sport);
@@ -2019,7 +1757,45 @@ function selectGameById(gameId) {
   }
 }
 
-function toggleOdds(btn) {
+// ── ADMIN PIN GATE ───────────────────────────────────────────
+var _adminUnlocked = false;
+var _adminUnlockTimer = null;
+
+function requireAdminPin(callback) {
+  // Already unlocked in this session (5 min window)
+  if (_adminUnlocked) { callback(); return; }
+  var pin = prompt('Enter admin PIN to change the board:');
+  if (!pin) return;
+  if (pin === '2826' || pin === '0614') {
+    _adminUnlocked = true;
+    // Auto-lock after 5 minutes of no use
+    clearTimeout(_adminUnlockTimer);
+    _adminUnlockTimer = setTimeout(function() { _adminUnlocked = false; }, 5 * 60 * 1000);
+    callback();
+  } else {
+    alert('Incorrect PIN.');
+  }
+}
+
+function pinUpdateSport(val) {
+  requireAdminPin(function() { updateSport(val); });
+}
+
+function pinChangeDate(offset) {
+  requireAdminPin(function() { changeDate(offset); });
+}
+
+function pinUpdateDateFromPicker(val) {
+  requireAdminPin(function() { updateDateFromPicker(val); });
+}
+
+function pinSelectGame(val) {
+  requireAdminPin(function() { selectGame(val); });
+}
+
+function pinSelectGameById(gameId) {
+  requireAdminPin(function() { selectGameById(gameId); });
+}
   btn.classList.toggle('selected');
   const selected = document.querySelectorAll('.odds-btn.selected');
   const legsSection = document.querySelector('.legs-section');
@@ -2051,17 +1827,9 @@ function setQty(n, btn) {
 }
 
 function updateCTA() {
-  // Update text only — never replace innerHTML (kills id + onclick)
-  var btn = document.getElementById('ctaBuyBtn');
-  if (!btn) return;
-  var textNode = Array.from(btn.childNodes).find(n => n.nodeType === 3);
-  var label = ' BUY ' + currentQty + ' SQUARE' + (currentQty > 1 ? 'S' : '') + ' NOW';
-  if (textNode) {
-    textNode.textContent = label;
-  } else {
-    // fallback: find and replace just the text part
-    btn.lastChild.textContent = label;
-  }
+  document.querySelector('.cta-btn').innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    BUY ${currentQty} SQUARE${currentQty > 1 ? 'S' : ''} NOW`;
 }
 
 function updatePriceDisplay(val) {
@@ -2075,57 +1843,16 @@ function updatePriceDisplay(val) {
   document.getElementById('totalAmount').textContent = `$${(qty * p).toFixed(2)}`;
 }
 
-// ── SQUARE SELECTION ────────────────────────────────────────
-let _manuallySelected = new Set(); // squares tapped directly on grid
-let _selectedPayMethod = 'cashapp';
-
-function tapSquare(idx) {
-  if (!window.currentGame) { alert('Select a game first.'); return; }
-  if (_manuallySelected.has(idx)) {
-    _manuallySelected.delete(idx);
-  } else {
-    _manuallySelected.add(idx);
-  }
-  // Highlight selected squares
-  document.querySelectorAll('.cell[data-idx]').forEach(function(cell) {
-    const i = parseInt(cell.dataset.idx);
-    if (_manuallySelected.has(i)) {
-      cell.style.background = 'rgba(250,204,21,0.25)';
-      cell.style.borderColor = '#facc15';
-      cell.style.color = '#facc15';
-    } else if (cell.classList.contains('cell-open')) {
-      cell.style.background = '';
-      cell.style.borderColor = '';
-      cell.style.color = '';
-    }
-  });
-  updateCTA();
-}
-
 function openPayModal() {
-  if (!window.currentGame) { alert('Please select a game first.'); return; }
   const price = parseFloat(document.getElementById('squarePrice').value) || 10;
-  const qty = _manuallySelected.size > 0 ? _manuallySelected.size : currentQty;
-  document.getElementById('modalSquaresLabel').textContent = `${qty} Square${qty !== 1 ? 's' : ''} × $${price}`;
-  document.getElementById('modalTotal').textContent = `$${(qty * price).toFixed(2)}`;
+  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} × $${price}`;
+  document.getElementById('modalTotal').textContent = `$${(currentQty * price).toFixed(2)}`;
   document.getElementById('initialsInput').value = '';
   document.getElementById('confirmBtn').disabled = true;
-  // Show which squares are selected if manually picked
-  const preview = document.getElementById('selectedSquaresPreview');
-  if (_manuallySelected.size > 0) {
-    preview.style.display = 'block';
-    preview.textContent = 'Selected squares: ' + Array.from(_manuallySelected).sort((a,b)=>a-b).join(', ');
-  } else {
-    preview.style.display = 'none';
-  }
-  _selectedPayMethod = 'cashapp';
-  _manuallySelected.clear(); // always start fresh when modal opens
-  updatePayInstructions();
-  // Reset debug box
-  const dbg = document.getElementById('modalDebug');
-  if (dbg) { dbg.style.display='none'; dbg.textContent=''; }
   document.getElementById('payModal').classList.add('open');
 }
+
+let _selectedPayMethod = 'cashapp';
 
 function selectPay(el, method) {
   document.querySelectorAll('.modal-pay-option').forEach(o => o.classList.remove('selected'));
@@ -2138,57 +1865,44 @@ function updatePayInstructions() {
   const el = document.getElementById('payInstructions');
   if (!el) return;
   const price = parseFloat(document.getElementById('squarePrice').value) || 10;
-  const qty = _manuallySelected.size > 0 ? _manuallySelected.size : currentQty;
+  const qty = currentQty || 5;
   const total = (qty * price).toFixed(2);
   if (_selectedPayMethod === 'card') {
     el.innerHTML = '💳 Pay securely by card via <strong style="color:#818cf8;">Stripe</strong><br><span style="font-size:10px;color:var(--text3);">You will be redirected to checkout — squares locked after payment</span>';
   } else if (_selectedPayMethod === 'cashapp') {
-    el.innerHTML = '💚 Send <strong style="color:#22c55e;">$' + total + '</strong> to <strong style="color:#22c55e;">$7707438091</strong> on Cash App<br><span style="font-size:10px;color:var(--text3);">Include your initials in the note</span>';
+    el.innerHTML = '💚 Send <strong style="color:#22c55e;">$' + total + '</strong> to <strong style="color:#22c55e;">$7707438091</strong> on Cash App<br><span style="font-size:10px;color:var(--text3);">Scan QR or tap Pay button — include your initials in the note</span>';
   } else if (_selectedPayMethod === 'paypal') {
-    el.innerHTML = '💙 Send <strong style="color:#60a5fa;">$' + total + '</strong> to <strong style="color:#60a5fa;">willie.mayes@gmail.com</strong> on PayPal<br><span style="font-size:10px;color:var(--text3);">Friends & Family — include your initials</span>';
-  } else {
-    el.innerHTML = '💵 Bring <strong style="color:#facc15;">$' + total + '</strong> cash in person<br><span style="font-size:10px;color:var(--text3);">Willie will lock in your squares when he receives it</span>';
+    el.innerHTML = '💙 Send <strong style="color:#60a5fa;">$' + total + '</strong> to <strong style="color:#60a5fa;">willie.mayes@gmail.com</strong> on PayPal<br><span style="font-size:10px;color:var(--text3);">Friends & Family — include your initials in the note</span>';
   }
 }
 
 function checkInitials() {
-  const val = document.getElementById('initialsInput').value.trim();
-  document.getElementById('confirmBtn').disabled = val.length < 3;
+  document.getElementById('confirmBtn').disabled = document.getElementById('initialsInput').value.trim().length < 3;
+  updatePayInstructions();
 }
 
 async function confirmPurchase() {
   const initials = document.getElementById('initialsInput').value.trim().toUpperCase();
-  if (initials.length < 3) { alert('Enter at least 3 initials (e.g. DAB).'); return; }
-
+  if (initials.length < 3) { alert('Enter at least 3 initials.'); return; }
   const btn = document.getElementById('confirmBtn');
   btn.disabled = true;
-  btn.textContent = '⏳ Reserving...';
-
-  const game = window.currentGame;
+  const game = currentGame;
   if (!game || !game.id) {
-    btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
+    btn.disabled = false;
     alert('No game loaded. Select a sport and game first.'); return;
   }
+  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
+  const qty = currentQty || 5;
+  const total = (qty * price).toFixed(2);
 
-  const price    = parseFloat(document.getElementById('squarePrice').value) || 10;
-  const qty      = currentQty || 5;
-  const isCash   = (_selectedPayMethod === 'cash');
-  const isPending = true; // all methods pending — cash confirmed by admin tap, digital by n8n
-  const amount   = (qty * price).toFixed(2);
-
-  // ── Stripe card checkout — redirect to hosted payment page ──
+  // ── Card → Stripe checkout ──────────────────────────────
   if (_selectedPayMethod === 'card') {
     btn.textContent = '💳 Opening Checkout...';
     try {
       const r = await fetch('/api/create-checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          gameId: game.id,
-          initials,
-          qty,
-          priceEach: Math.round(price * 100)
-        })
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ gameId: game.id, initials, qty, priceEach: Math.round(price * 100) })
       });
       const text = await r.text();
       let resp = {};
@@ -2200,103 +1914,59 @@ async function confirmPurchase() {
       }
     } catch(e) {
       btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
-      alert('Stripe error: ' + e.message);
+      if (e.message && e.message.includes('fetch')) {
+        alert('Card checkout is not yet available. Please use Cash App or PayPal to pay Willie directly.');
+      } else {
+        alert('Stripe error: ' + e.message);
+      }
     }
     return;
   }
 
-  // ── helper: safe fetch → parsed JSON ──────────────────────
-  async function safePost(url, body) {
-    const r = await fetch(url, {
+  // ── CashApp / PayPal → reserve pending + show pay button ──
+  btn.textContent = '⏳ Reserving...';
+  try {
+    const r = await fetch('/api/auto-assign', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ gameId: game.id, qty, initials, pending: true, payMethod: _selectedPayMethod, amount: total })
     });
     const text = await r.text();
     let data = {};
-    try { data = JSON.parse(text); } catch(_) {
-      data = { _raw: text, _status: r.status };
+    try { data = JSON.parse(text); } catch(_) {}
+    if (!r.ok || !data.ok) throw new Error(data.error || 'Reserve failed');
+
+    localStorage.setItem('my_' + game.id, JSON.stringify(data.indices));
+    localStorage.setItem('initials_' + game.id, initials);
+    _cache[game.id] = null;
+
+    document.getElementById('payModal').classList.remove('open');
+
+    // Build pay button
+    var payBtnHtml = '';
+    if (_selectedPayMethod === 'cashapp') {
+      var caNote = encodeURIComponent('ParlayPro Squares - ' + initials);
+      var caUrl = 'https://cash.app/$7707438091/' + total + '?note=' + caNote;
+      payBtnHtml = '<a href="' + caUrl + '" target="_blank" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#00D632;color:white;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">💚 Pay $' + total + ' on Cash App</a>';
+    } else if (_selectedPayMethod === 'paypal') {
+      var ppUrl = 'https://paypal.me/williemayes/' + total + 'USD';
+      payBtnHtml = '<a href="' + ppUrl + '" target="_blank" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#0070ba;color:white;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">💙 Pay $' + total + ' on PayPal</a>';
     }
-    return { ok: r.ok, status: r.status, data };
-  }
 
-  // ── claim squares via server-side auto-assign ──────────────
-  let indices = [];
-  try {
-    const { ok, status, data } = await safePost('/api/auto-assign', {
-      gameId: game.id, qty, initials, pending: isPending,
-      payMethod: _selectedPayMethod, amount
-    });
+    document.getElementById('confirmMsg').innerHTML =
+      data.indices.length + ' square' + (data.indices.length > 1 ? 's' : '') + ' x $' + price + ' = <strong style="color:white;">$' + total + '</strong>' +
+      '<br><span style="color:#22c55e;font-size:13px;margin-top:6px;display:block;">Reserved as <strong>' + initials + '</strong></span>' +
+      '<br><span style="color:var(--text3);font-size:11px;">Tap below to complete payment — squares lock automatically</span>' +
+      payBtnHtml;
 
-    if (ok && data.ok && Array.isArray(data.indices) && data.indices.length) {
-      indices = data.indices;
-
-    } else {
-      // auto-assign failed or not deployed — use claim-square with client-picked squares
-      const fresh = await fetchSquares(game.id);
-      const taken = new Set([
-        ...Object.keys(fresh.owners  || {}).map(Number),
-        ...Object.keys(fresh.pending || {}).map(Number)
-      ]);
-      const open = [];
-      for (let i = 0; i < 100; i++) { if (!taken.has(i)) open.push(i); }
-      for (let i = open.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [open[i], open[j]] = [open[j], open[i]];
-      }
-      const picked = open.slice(0, Math.min(qty, open.length));
-      if (!picked.length) throw new Error('No open squares left!');
-
-      const r2 = await safePost('/api/claim-square', {
-        gameId: game.id, indices: picked, initials,
-        pending: isPending, payMethod: _selectedPayMethod,
-        amount: (picked.length * price).toFixed(2)
-      });
-      if (!r2.ok) throw new Error(r2.data.error || 'Claim failed (HTTP ' + r2.status + ')');
-      indices = picked;
-    }
+    setTimeout(() => {
+      document.getElementById('confirmModal').classList.add('open');
+      buildGrid(game);
+    }, 150);
   } catch(e) {
     btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
-    const dbg = document.getElementById('modalDebug');
-    if (dbg) { dbg.style.display = 'block'; dbg.textContent = e.message; }
-    alert(e.message); return;
+    alert(e.message);
   }
-
-  // ── success ────────────────────────────────────────────────
-  localStorage.setItem('my_'       + game.id, JSON.stringify(indices));
-  localStorage.setItem('initials_' + game.id, initials);
-  _cache[game.id] = null;
-  _manuallySelected.clear();
-
-  const total = (indices.length * price).toFixed(2);
-  document.getElementById('payModal').classList.remove('open');
-
-  var msgColor, msgIcon, msgLine2, payBtnHtml = '';
-  if (isCash) {
-    msgColor = '#facc15'; msgIcon = '💵';
-    msgLine2 = 'Hand Willie the cash — he will tap Confirm to lock your squares.';
-  } else if (_selectedPayMethod === 'cashapp') {
-    msgColor = '#22c55e'; msgIcon = '💚';
-    msgLine2 = 'Tap below to send $' + total + ' on Cash App. Include your initials in the note.';
-    var caNote = encodeURIComponent('ParlayPro Squares - ' + initials);
-    var caUrl = 'https://cash.app/$7707438091/' + total + '?note=' + caNote;
-    payBtnHtml = '<a href="' + caUrl + '" target="_blank" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#00D632;color:white;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">💚 Pay $' + total + ' on Cash App</a>';
-  } else if (_selectedPayMethod === 'paypal') {
-    msgColor = '#60a5fa'; msgIcon = '💙';
-    msgLine2 = 'Tap below to send $' + total + ' via PayPal. Use Friends & Family and include your initials.';
-    var ppUrl = 'https://paypal.me/williemayes/' + total + 'USD';
-    payBtnHtml = '<a href="' + ppUrl + '" target="_blank" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#0070ba;color:white;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">💙 Pay $' + total + ' on PayPal</a>';
-  }
-  document.getElementById('confirmMsg').innerHTML =
-    indices.length + ' square' + (indices.length > 1 ? 's' : '') + ' x $' + price + ' = <strong style="color:white;">$' + total + '</strong>' +
-    '<br><span style="color:' + msgColor + ';font-size:13px;margin-top:6px;display:block;">' + msgIcon + ' Reserved as <strong>' + initials + '</strong></span>' +
-    '<br><span style="color:var(--text3);font-size:11px;">' + msgLine2 + '</span>' +
-    payBtnHtml;
-
-  setTimeout(() => {
-    document.getElementById('confirmModal').classList.add('open');
-    buildGrid(game);
-  }, 150);
 }
 
 function closeConfirm() {
@@ -2324,350 +1994,206 @@ async function lockNumbers(game) {
 }
 
 async function adminReset() {
+  // Try to get game from currentGame or from the dropdown
   var game = window.currentGame;
-  if (!game) { showAdminMsg('No game loaded — select a sport and game first.', true); return; }
-  var pinEl = document.getElementById('resetPinInput');
-  var pin = pinEl ? pinEl.value.trim() : '';
-  if (!pin) { showAdminMsg('Enter your PIN in the box then tap Reset.', true); if(pinEl) pinEl.focus(); return; }
-  try {
-    var r = await fetch('/api/reset-squares', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({gameId: game.id, pin: pin})
-    });
-    var d = await r.json();
-    if (d.ok) {
-      if (pinEl) pinEl.value = '';
-      // Clear ALL local data for this game
-      localStorage.removeItem('pay_unlocked_' + game.id);
-      localStorage.removeItem('my_' + game.id);
-      localStorage.removeItem('initials_' + game.id);
-      _cache = {};
-      applyPaymentLockState(false);
-      await buildGrid(game);
-      loadPendingList();
-      showAdminMsg('✅ Board cleared — ' + game.away + ' @ ' + game.home, false);
-    } else {
-      showAdminMsg('❌ ' + (d.error || 'Reset failed — check PIN'), true);
+  if (!game) {
+    var sel = document.getElementById('gameSelect');
+    if (sel && sel.value) {
+      for (var sp of Object.keys(espnGames)) {
+        var found = (espnGames[sp] || []).find(function(g) { return g.id === sel.value; });
+        if (found) { game = found; window.currentGame = found; break; }
+      }
     }
-  } catch(e) {
-    showAdminMsg('Network error: ' + e.message, true);
   }
-}
-
-function showAdminMsg(msg, isErr) {
-  var el = document.getElementById('adminMsg');
-  if (!el) return;
-  el.textContent = msg;
-  el.style.color = isErr ? '#ef4444' : '#22c55e';
-  el.style.display = 'block';
-  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  setTimeout(function(){ el.style.display = 'none'; }, 5000);
-}
-
-// ── Payment Lock / Unlock (admin only) ──────────────────────
-function applyPaymentLockState(unlocked) {
-  // Payment lock only affects the CashApp/PayPal info display cards
-  // The BUY button is ALWAYS active — players can always enter initials & pay
-  var cashCard = document.getElementById('payCardCashapp');
-  var paypalCard = document.getElementById('payCardPaypal');
-  var unlockNote = document.getElementById('payUnlockNote');
-  var unlockBtn = document.getElementById('payUnlockBtn');
-  var lockBtn = document.getElementById('payLockBtn');
-  if (!cashCard) return;
-  if (unlocked) {
-    cashCard.classList.remove('pay-locked');
-    paypalCard.classList.remove('pay-locked');
-    if (unlockNote) unlockNote.classList.remove('visible');
-    if (unlockBtn) unlockBtn.style.display = 'none';
-    if (lockBtn) lockBtn.style.display = '';
-  } else {
-    cashCard.classList.add('pay-locked');
-    paypalCard.classList.add('pay-locked');
-    if (unlockNote) unlockNote.classList.add('visible');
-    if (unlockBtn) unlockBtn.style.display = '';
-    if (lockBtn) lockBtn.style.display = 'none';
+  if (!game) {
+    await updateSport(currentSport || 'NBA');
+    game = window.currentGame;
   }
-}
+  if (!game) { alert('No game loaded. Pick a sport and game first.'); return; }
 
-async function adminTogglePayment(unlock) {
-  var game = window.currentGame;
-  if (!game) { showAdminMsg('No game loaded.', true); return; }
-  var pinEl = document.getElementById('resetPinInput');
-  var pin = pinEl ? pinEl.value.trim() : '';
-  if (!pin) { showAdminMsg('Enter your PIN in the box first.', true); if(pinEl) pinEl.focus(); return; }
-  // Verify PIN via lock-numbers with dummy data — safe, just validates PIN
-  var r = await fetch('/api/lock-numbers', {
+  var pin = prompt('Enter admin PIN to reset board for ' + game.away + ' @ ' + game.home + ':');
+  if (!pin) return;
+  fetch('/api/reset-squares', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({gameId: '__pincheck__', pin: pin, rowNums: [0,1,2,3,4,5,6,7,8,9], colNums: [0,1,2,3,4,5,6,7,8,9]})
-  });
-  var d = await r.json();
-  if (!d.ok && d.error && d.error.toLowerCase().includes('pin')) {
-    alert('❌ Wrong PIN');
-    return;
-  }
-  // Store unlock state per game in localStorage (admin device only)
-  if (unlock) {
-    localStorage.setItem('pay_unlocked_' + game.id, '1');
-  } else {
-    localStorage.removeItem('pay_unlocked_' + game.id);
-  }
-  applyPaymentLockState(unlock);
-  alert(unlock ? '✅ Payments unlocked for ' + game.away + ' @ ' + game.home : '🔒 Payments locked');
-}
-
-function loadPaymentLockState() {
-  var game = window.currentGame;
-  if (!game) return;
-  var unlocked = localStorage.getItem('pay_unlocked_' + game.id) === '1';
-  applyPaymentLockState(unlocked);
-  // Load pending list + start auto-refresh
-  if (document.getElementById('pendingPayList')) {
-    loadPendingList();
-    if (!window._pendingRefreshTimer) {
-      window._pendingRefreshTimer = setInterval(function() {
-        if (document.getElementById('pendingPayList')) loadPendingList();
-      }, 30000); // refresh every 30s
-    }
-  }
-}
-
-async function loadPendingList() {
-  const game = window.currentGame;
-  const inner = document.getElementById('pendingPayListInner');
-  if (!inner) return;
-  if (!game) { inner.innerHTML = '<div style="color:#555;font-size:11px;">No game selected</div>'; return; }
-  try {
-    const res = await fetch('/api/squares?gameId=' + encodeURIComponent(game.id));
-    const data = await res.json();
-    const pending = data.pending || {};
-    const keys = Object.keys(pending);
-    if (!keys.length) {
-      inner.innerHTML = '<div style="color:#555;font-size:11px;padding:6px 0;">No pending payments</div>';
-      return;
-    }
-    // Group by initials
-    const byInitials = {};
-    keys.forEach(function(i) {
-      const p = pending[i];
-      if (!byInitials[p.initials]) byInitials[p.initials] = { indices: [], payMethod: p.payMethod, amount: p.amount };
-      byInitials[p.initials].indices.push(parseInt(i));
-    });
-    inner.innerHTML = Object.entries(byInitials).map(function([init, info]) {
-      const payIcon = info.payMethod === 'cashapp' ? '💚' : info.payMethod === 'paypal' ? '💙' : '💵';
-      return '<div class="confirm-row" style="flex-wrap:wrap;gap:4px;">' +
-        '<span class="initials">' + init + '</span>' +
-        '<span class="sq-count">' + info.indices.length + ' sq — $' + info.amount + ' via ' + payIcon + info.payMethod + '</span>' +
-        '<div style="display:flex;gap:4px;margin-left:auto;">' +
-        '<button class="btn-confirm-pay" onclick="confirmPending(\'' + game.id + '\',[' + info.indices.join(',') + '])">✅ Confirm</button>' +
-        '<button class="btn-confirm-pay" style="background:#ef4444;color:white;" onclick="rejectPending(\'' + game.id + '\',[' + info.indices.join(',') + '])">✗ Reject</button>' +
-        '</div></div>';
-    }).join('');
-  } catch(e) {
-    inner.innerHTML = '<div style="color:#ef4444;font-size:11px;">Error loading: ' + e.message + '</div>';
-  }
-}
-
-async function confirmPending(gameId, indices) {
-  // No PIN needed to confirm — only reset requires PIN
-  var r = await fetch('/api/confirm-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId, indices, pin: '2826'}) });
-  var d = await r.json();
-  if (d.ok) { loadPendingList(); _cache = {}; buildGrid(window.currentGame); alert('✅ Squares confirmed!'); }
-  else alert('Error: ' + (d.error || 'Failed'));
-}
-
-async function rejectPending(gameId, indices) {
-  if (!confirm('Reject these squares? They will be released back to open.')) return;
-  var pin = prompt('Enter admin PIN:');
-  if (!pin) return;
-  var r = await fetch('/api/reject-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId, indices, pin}) });
-  var d = await r.json();
-  if (d.ok) { loadPendingList(); _cache = {}; buildGrid(window.currentGame); }
-  else alert('Error: ' + d.error);
-}
-
-async function confirmAllPending() {
-  var game = window.currentGame;
-  if (!game) return;
-  // No PIN needed — just confirm all
-  var r = await fetch('/api/confirm-pending', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({gameId: game.id, pin: '2826'}) });
-  var d = await r.json();
-  if (d.ok) { loadPendingList(); _cache = {}; buildGrid(game); alert('✅ ' + (d.confirmed||[]).length + ' squares confirmed!'); }
-  else alert('Error: ' + d.error);
-}
-
-// ── LIVE SCORE BAR + QUARTER TABLE ──────────────────────────
-function updateScoreStrip(game) {
-  if (!game) return;
-  var strip = document.getElementById('scoreStrip');
-  if (strip) strip.style.display = 'block';
-
-  var isLive  = game.status === 'LIVE';
-  var isFinal = game.status === 'FINAL';
-
-  // Score bar
-  var badge = document.getElementById('slbBadge');
-  document.getElementById('slbAwayAbbr').textContent  = game.away  || '';
-  document.getElementById('slbHomeAbbr').textContent  = game.home  || '';
-  document.getElementById('slbAwayScore').textContent = (isLive||isFinal) ? (game.awayScore||0) : '—';
-  document.getElementById('slbHomeScore').textContent = (isLive||isFinal) ? (game.homeScore||0) : '—';
-
-  var clockEl = document.getElementById('slbClock');
-  if (isLive) {
-    badge.textContent = 'LIVE'; badge.className = 'slb-badge live';
-    var pNum  = game.period || '';
-    var pLetter = (game.sport === 'NHL' || game.sport === 'nhl') ? 'P' : 'Q';
-    clockEl.textContent = pNum ? (pLetter + pNum + (game.clock ? ' · ' + game.clock : '')) : '';
-  } else if (isFinal) {
-    badge.textContent = 'FINAL'; badge.className = 'slb-badge final';
-    clockEl.textContent = '';
-  } else {
-    badge.textContent = game.time || 'Scheduled'; badge.className = 'slb-badge pre';
-    clockEl.textContent = '';
-  }
-
-  // Quarter table
-  var period = parseInt(game.period) || 0;
-  var qtrWrap = document.getElementById('qtrTableWrap');
-  var digRow  = document.getElementById('winDigitsRow');
-
-  if (period > 0 || isFinal) {
-    qtrWrap.style.display = 'block';
-    // FINAL — keep scores visible permanently for reference
-    var awayScores = (game.periodScores && game.periodScores.away) || [];
-    var homeScores = (game.periodScores && game.periodScores.home) || [];
-
-    var qHtml = '<div class="qtr-table-label">Quarter breakdown</div>';
-    // header row
-    qHtml += '<div class="qtr-row-grid">';
-    qHtml += '<div class="qc hdr"></div>';
-    for (var q = 0; q < 4; q++) qHtml += '<div class="qc hdr">Q'+(q+1)+'</div>';
-    qHtml += '<div class="qc hdr">TOT</div></div>';
-    // team rows
-    var teams = [
-      { abbr: game.away, scores: awayScores, total: parseInt(game.awayScore)||0 },
-      { abbr: game.home, scores: homeScores, total: parseInt(game.homeScore)||0 }
-    ];
-    teams.forEach(function(t) {
-      qHtml += '<div class="qtr-row-grid">';
-      qHtml += '<div class="qc tname">' + (t.abbr||'') + '</div>';
-      for (var q = 0; q < 4; q++) {
-        var done = isFinal || q < period - 1;
-        var cur  = q === period - 1 && isLive;
-        var val  = t.scores[q] !== undefined ? t.scores[q] : '';
-        var cls  = cur ? 'qc cur' : (done ? 'qc val' : 'qc val empty');
-        qHtml += '<div class="' + cls + '">' + (val !== '' ? val : '—') + '</div>';
-      }
-      qHtml += '<div class="qc tot">' + t.total + '</div>';
-      qHtml += '</div>';
-    });
-    qtrWrap.innerHTML = qHtml;
-
-    // Winning digits + grid highlight
-    var awayD = parseInt(game.awayScore) % 10;
-    var homeD = parseInt(game.homeScore) % 10;
-    digRow.style.display = 'flex';
-    digRow.innerHTML =
-      '<span style="color:var(--text3);">Winning digits:</span>' +
-      '<span class="win-digit-badge">' + (game.away||'Away') + ' ' + awayD + '</span>' +
-      '<span class="win-digit-badge">' + (game.home||'Home') + ' ' + homeD + '</span>' +
-      '<span style="color:var(--text3);font-size:9px;">col ' + awayD + ' + row ' + homeD + '</span>';
-
-    highlightWinners(awayD, homeD);
-  } else {
-    qtrWrap.style.display = 'none';
-    digRow.style.display  = 'none';
-  }
-
-  updateTally(game);
-}
-
-function highlightWinners(awayDigit, homeDigit) {
-  var topHeaders  = document.querySelectorAll('.axis-header.axis-top');
-  var leftHeaders = document.querySelectorAll('.axis-header.axis-left');
-  var cells       = document.querySelectorAll('.cell');
-  var colNums = [], rowNums = [];
-  topHeaders.forEach(function(el, i)  { colNums[i] = parseInt(el.textContent.trim()); });
-  leftHeaders.forEach(function(el, i) { rowNums[i] = parseInt(el.textContent.trim()); });
-
-  topHeaders.forEach(function(el, i) {
-    if (colNums[i] === awayDigit) {
-      el.style.background = 'rgba(250,204,21,.18)'; el.style.borderColor = 'var(--yellow)'; el.style.color = 'var(--yellow)';
-    } else { el.style.background = ''; el.style.borderColor = ''; el.style.color = ''; }
-  });
-  leftHeaders.forEach(function(el, i) {
-    if (rowNums[i] === homeDigit) {
-      el.style.background = 'rgba(250,204,21,.18)'; el.style.borderColor = 'var(--yellow)'; el.style.color = 'var(--yellow)';
-    } else { el.style.background = ''; el.style.borderColor = ''; el.style.color = ''; }
-  });
-  cells.forEach(function(el) {
-    var idx = parseInt(el.dataset.idx);
-    var row = Math.floor(idx / 10), col = idx % 10;
-    var isWin = (colNums[col] === awayDigit && rowNums[row] === homeDigit);
-    if (isWin) {
-      el.style.background = 'rgba(250,204,21,.22)'; el.style.borderColor = 'var(--yellow)';
-      el.style.outline = '2px solid var(--yellow)'; el.style.zIndex = '3'; el.style.transform = 'scale(1.12)';
+    body: JSON.stringify({gameId: game.id, pin: pin})
+  }).then(function(r) {
+    return r.json();
+  }).then(function(d) {
+    if (d.ok) {
+      // Clear server cache AND localStorage for this game
+      _cache = {};
+      localStorage.removeItem('my_' + game.id);
+      localStorage.removeItem('initials_' + game.id);
+      alert('Board cleared for ' + game.away + ' @ ' + game.home + '!');
+      buildGrid(game);
     } else {
-      if (!el.classList.contains('cell-sold') && !el.classList.contains('cell-mine') && !el.classList.contains('cell-pending')) {
-        el.style.background = ''; el.style.borderColor = '';
-      }
-      el.style.outline = ''; el.style.zIndex = ''; el.style.transform = '';
+      alert('Error: ' + (d.error || 'failed'));
     }
+  }).catch(function(e) {
+    alert('Network error: ' + e.message);
   });
 }
-// ── END SCORE STRIP ───────────────────────────────────────────
-
-// ── TALLY + PAYOUT STRIP ─────────────────────────────────────
-var _potMode = 'collected';
-
-function setPotMode(mode) {
-  _potMode = mode;
-  document.getElementById('potBtnCollected').classList.toggle('active', mode === 'collected');
-  document.getElementById('potBtnFull').classList.toggle('active', mode === 'full');
-  if (window.currentGame) updateTally(window.currentGame);
-}
-
-async function updateTally(game) {
-  if (!game) return;
-  var price   = parseFloat(document.getElementById('squarePrice').value) || 10;
-  var sData   = _cache[game.id] || await fetchSquares(game.id);
-  var sold    = Object.keys(sData.owners  || {}).length;
-  var pending = Object.keys(sData.pending || {}).length;
-  var total   = sold + pending;
-  var pot       = 100 * price;
-  var collected = total * price;
-  var base      = _potMode === 'full' ? pot : collected;
-  var qPay      = base * 0.20;
-  var period    = parseInt(game.period) || 0;
-  var isLive    = game.status === 'LIVE';
-  var isFinal   = game.status === 'FINAL';
-
-  document.getElementById('tallySlod').textContent      = total + ' / 100';
-  document.getElementById('tallyCollected').textContent = '$' + Math.round(collected).toLocaleString();
-  document.getElementById('tallyPot').textContent       = '$' + Math.round(pot).toLocaleString();
-  document.getElementById('tallyProg').style.width      = total + '%';
-  document.getElementById('tallyProgL').textContent     = total + ' sold';
-  document.getElementById('tallyProgR').textContent     = (100 - total) + ' remaining';
-
-  var qtrs  = ['Q1', 'Half', 'Q3', 'Final'];
-  var pHtml = '';
-  qtrs.forEach(function(name, i) {
-    var isPaid   = isFinal || period > i + 1;
-    var isActive = isLive && period === i + 1;
-    var cls  = isPaid ? 'pq pq-paid'   : isActive ? 'pq pq-active' : 'pq';
-    var aCls = isPaid ? 'pq-a green'   : isActive ? 'pq-a yellow'  : 'pq-a';
-    pHtml += '<div class="' + cls + '"><div class="pq-n">' + name + '</div><div class="' + aCls + '">$' + Math.round(qPay).toLocaleString() + '</div></div>';
-  });
-  document.getElementById('tallyPayouts').innerHTML = pHtml;
-}
-// ── END TALLY ─────────────────────────────────────────────────
 
 // ── INIT ─────────────────────────────────────────────────────
+// ── INIT ─────────────────────────────────────────────────────
+// ── QUARTER TRACKER ──────────────────────────────────────────
+var _qtrData = {}; // cached period results per gameId
+
+// Returns sport config: { periods, labels, payouts, housecut }
+// housecut: flat % off top for house (only NCAA Men halves = 0.20)
+function getSportConfig(sport) {
+  if (sport === 'MM_MEN') {
+    // 2 halves: H1=40%, H2=40%, house always gets flat 20%
+    return { periods: 2, labels: ['H1','H2'], payouts: [0.40, 0.40], housecut: 0.20 };
+  } else if (sport === 'MLB') {
+    // 9 innings: house always gets 20%, remaining 80% split equally across 9 innings (~8.89% each)
+    const pct = 0.80 / 9;
+    return { periods: 9, labels: ['I1','I2','I3','I4','I5','I6','I7','I8','I9'], payouts: Array(9).fill(pct), housecut: 0.20 };
+  } else {
+    // NBA/NHL/NFL/MLS/WNBA/MM_WOMEN: 4 quarters, 20% each, house always gets 20% flat
+    return { periods: 4, labels: ['Q1','Q2','Q3','Q4'], payouts: [0.20, 0.20, 0.20, 0.20], housecut: 0.20 };
+  }
+}
+
+async function updateQtrTracker(game, squaresData) {
+  if (!game) return;
+  const tracker = document.getElementById('qtrTracker');
+  const body = document.getElementById('qtrBody');
+  const houseSummary = document.getElementById('qtrHouseSummary');
+  if (!tracker || !body) return;
+
+  const owners = squaresData && squaresData.owners ? squaresData.owners : {};
+  const totalSold = Object.keys(owners).length;
+  const price = parseFloat(document.getElementById('squarePrice') && document.getElementById('squarePrice').value) || 10;
+
+  // Hide tracker if no squares sold yet
+  if (totalSold === 0) { tracker.style.display = 'none'; return; }
+  tracker.style.display = 'block';
+
+  // Set team labels
+  const awayEl = document.getElementById('qtrAwayLabel');
+  const homeEl = document.getElementById('qtrHomeLabel');
+  if (awayEl) awayEl.textContent = game.away || 'AWAY';
+  if (homeEl) homeEl.textContent = game.home || 'HOME';
+
+  const pot = totalSold * price;
+  const cfg = getSportConfig(currentSport);
+  const houseFlatAmt = pot * cfg.housecut;
+  const playablePot = pot - houseFlatAmt;
+
+  const period = parseInt(game.period) || 0;
+  const awayScore = parseInt(game.awayScore) || 0;
+  const homeScore = parseInt(game.homeScore) || 0;
+
+  if (!_qtrData[game.id]) _qtrData[game.id] = {};
+  const stored = _qtrData[game.id];
+
+  if ((game.status === 'LIVE' || game.status === 'FINAL') && period >= 1) {
+    if (game.status === 'FINAL') {
+      for (let p = 1; p <= Math.max(cfg.periods, period); p++) {
+        if (!stored['p' + p] && (p === period || p === cfg.periods)) {
+          stored['p' + p] = { away: awayScore, home: homeScore };
+        }
+      }
+    } else {
+      stored['p' + period] = { away: awayScore, home: homeScore };
+    }
+  }
+
+  let houseWinTotal = houseFlatAmt;
+  let houseUnclaimed = [];
+  let rows = '';
+
+  for (let p = 1; p <= cfg.periods; p++) {
+    const snap = stored['p' + p];
+    const isComplete = snap && (game.status === 'FINAL' || period > p);
+    const isCurrent = period === p && game.status === 'LIVE';
+    const periodPayout = playablePot * cfg.payouts[p - 1];
+    const label = cfg.labels[p - 1];
+
+    if (!snap && !isCurrent) {
+      rows += `<tr style="opacity:0.4;">
+        <td style="padding:5px 6px;font-weight:700;color:var(--text2);">${label}</td>
+        <td style="padding:5px 6px;text-align:center;">—</td>
+        <td style="padding:5px 6px;text-align:center;">—</td>
+        <td style="padding:5px 6px;text-align:center;color:var(--text3);">TBD</td>
+        <td style="padding:5px 6px;text-align:right;color:var(--text3);">$${periodPayout.toFixed(2)}</td>
+      </tr>`;
+      continue;
+    }
+
+    const scoreSnap = snap || { away: awayScore, home: homeScore };
+    const awayDig = scoreSnap.away % 10;
+    const homeDig = scoreSnap.home % 10;
+
+    let winner = null;
+    if (squaresData && squaresData.rowNums && squaresData.colNums) {
+      const rowIdx = squaresData.colNums.indexOf(awayDig);
+      const colIdx = squaresData.rowNums.indexOf(homeDig);
+      if (rowIdx !== -1 && colIdx !== -1) {
+        winner = owners[rowIdx * 10 + colIdx] || null;
+      }
+    }
+
+    const winnerDisplay = winner || (isComplete || isCurrent ? 'House' : 'TBD');
+    const winnerColor = winner ? '#22c55e' : (winnerDisplay === 'House' ? '#f59e0b' : 'var(--text3)');
+
+    if ((isComplete || isCurrent) && !winner) {
+      houseWinTotal += periodPayout;
+      houseUnclaimed.push(label);
+    }
+
+    const rowBg = isCurrent ? 'background:rgba(250,204,21,0.06);' : isComplete ? 'background:rgba(34,197,94,0.04);' : '';
+    rows += `<tr style="${rowBg}border-top:1px solid rgba(255,255,255,0.04);">
+      <td style="padding:5px 6px;font-weight:700;color:var(--text2);">${label}${isCurrent ? ' <span style="color:var(--yellow);font-size:9px;">LIVE</span>' : isComplete ? ' <span style="color:#22c55e;font-size:9px;">FINAL</span>' : ''}</td>
+      <td style="padding:5px 6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;">${scoreSnap.away}</td>
+      <td style="padding:5px 6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;">${scoreSnap.home}</td>
+      <td style="padding:5px 6px;text-align:center;font-weight:700;color:${winnerColor};">${winnerDisplay}</td>
+      <td style="padding:5px 6px;text-align:right;font-weight:700;color:${winner ? '#22c55e' : winnerDisplay === 'House' ? '#f59e0b' : 'var(--text3)'};">$${periodPayout.toFixed(2)}</td>
+    </tr>`;
+  }
+
+  // NCAA Men: always show flat house cut row
+  if (cfg.housecut > 0) {
+    rows += `<tr style="border-top:1px solid rgba(255,255,255,0.06);background:rgba(245,158,11,0.04);">
+      <td colspan="3" style="padding:5px 6px;font-weight:700;color:#f59e0b;font-size:11px;">🏠 HOUSE CUT (20%)</td>
+      <td style="padding:5px 6px;text-align:center;color:#f59e0b;">Always</td>
+      <td style="padding:5px 6px;text-align:right;font-weight:700;color:#f59e0b;">$${houseFlatAmt.toFixed(2)}</td>
+    </tr>`;
+  }
+
+  rows += `<tr style="border-top:2px solid rgba(255,255,255,0.1);">
+    <td colspan="3" style="padding:6px 6px;font-weight:700;color:var(--text2);font-size:11px;">TOTAL POT</td>
+    <td style="padding:6px 6px;text-align:center;font-weight:700;color:var(--text2);">—</td>
+    <td style="padding:6px 6px;text-align:right;font-weight:700;color:white;">$${pot.toFixed(2)}</td>
+  </tr>`;
+
+  body.innerHTML = rows;
+
+  if (houseWinTotal > 0) {
+    houseSummary.style.display = 'block';
+    let msg = '🏠 <strong style="color:#f59e0b;">House</strong> collects <strong style="color:#f59e0b;">$' + houseWinTotal.toFixed(2) + '</strong>';
+    if (cfg.housecut > 0) msg += ' (20% flat cut';
+    if (houseUnclaimed.length > 0) msg += (cfg.housecut > 0 ? ' + ' : ' — ') + houseUnclaimed.join(', ') + ' unclaimed';
+    if (cfg.housecut > 0) msg += ')';
+    houseSummary.innerHTML = msg;
+  } else {
+    houseSummary.style.display = 'none';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   logStatus('Page loading...', false);
 
-  // ── Handle Stripe redirect callbacks ──────────────────────
+  // ── Set date immediately ──────────────────────────────────
+  (function() {
+    const d = new Date(currentDate + 'T12:00:00');
+    const el = document.getElementById('live-date');
+    if (el) el.textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  })();
+
+  // ── Handle Stripe redirect callbacks ─────────────────────
   var _sp = new URLSearchParams(window.location.search);
   if (_sp.get('payment') === 'success') {
     window.history.replaceState({}, '', window.location.pathname);
@@ -2691,7 +2217,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load game FIRST (don't wait for ticker)
     await updateSport('NBA');
     logStatus('Page ready ✓ | Game: ' + (currentGame ? currentGame.away + ' @ ' + currentGame.home : 'NONE'), !currentGame);
-    loadPaymentLockState();
     // Load ticker in background (don't block)
     buildTicker().catch(e => logStatus('Ticker error: ' + e.message, true));
   } catch (e) {
