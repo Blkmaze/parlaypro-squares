@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <!-- v20260316_cleaned -->
 <html lang="en">
 <head>
@@ -951,8 +951,8 @@
         </div>
       </div>
       <div class="sport-controls">
-        <select class="sport-select" id="sportSelect" onchange="pinUpdateSport(this.value)">
-          <option value="NBA" selected>🏀 NBA</option>
+        <select class="sport-select" onchange="pinUpdateSport(this.value)">
+          <option value="NBA">🏀 NBA</option>
           <option value="NHL">🏒 NHL</option>
           <option value="MLB">⚾ MLB</option>
           <option value="NFL">🏈 NFL</option>
@@ -1778,33 +1778,25 @@ function requireAdminPin(callback) {
 }
 
 function pinUpdateSport(val) {
-  // If a game is already loaded, require PIN to switch sport
-  if (currentGame && currentGame.id && !currentGame.id.startsWith('fallback-')) {
-    requireAdminPin(function() { updateSport(val); });
-  } else {
-    updateSport(val);
-  }
+  requireAdminPin(function() { updateSport(val); });
 }
 
 function pinChangeDate(offset) {
-  // Allow date browsing freely
-  changeDate(offset);
+  requireAdminPin(function() { changeDate(offset); });
 }
 
 function pinUpdateDateFromPicker(val) {
-  // Allow date browsing freely
-  updateDateFromPicker(val);
+  requireAdminPin(function() { updateDateFromPicker(val); });
 }
 
 function pinSelectGame(val) {
-  // PIN required to switch the active game on the board
   requireAdminPin(function() { selectGame(val); });
 }
 
 function pinSelectGameById(gameId) {
-  // PIN required to switch the active game on the board
   requireAdminPin(function() { selectGameById(gameId); });
 }
+function toggleOdds(btn) {
   btn.classList.toggle('selected');
   const selected = document.querySelectorAll('.odds-btn.selected');
   const legsSection = document.querySelector('.legs-section');
@@ -2237,4 +2229,3 @@ document.addEventListener('DOMContentLoaded', async () => {
 <script src="/props.js"></script>
 </body>
 </html>
- 
