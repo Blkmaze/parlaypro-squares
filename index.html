@@ -987,7 +987,10 @@
 
     <!-- QUARTER TRACKER -->
     <div id="qtrTracker" style="margin:12px 8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;display:none;">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:10px;">QUARTER TRACKER</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+        QUARTER TRACKER
+        <span id="qtrLiveScore" style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--yellow);letter-spacing:0;"></span>
+      </div>
       <div style="overflow-x:auto;">
         <table id="qtrTable" style="width:100%;border-collapse:collapse;font-size:12px;">
           <thead>
@@ -2127,6 +2130,20 @@ async function updateQtrTracker(game, squaresData) {
   const homeEl = document.getElementById('qtrHomeLabel');
   if (awayEl) awayEl.textContent = game.away || 'AWAY';
   if (homeEl) homeEl.textContent = game.home || 'HOME';
+
+  // Live score in header
+  const scoreEl = document.getElementById('qtrLiveScore');
+  if (scoreEl) {
+    if (game.status === 'LIVE') {
+      scoreEl.textContent = game.away + ' ' + (game.awayScore||0) + ' — ' + (game.homeScore||0) + ' ' + game.home + ' | ' + (game.period ? 'Q'+game.period : '');
+      scoreEl.style.color = 'var(--yellow)';
+    } else if (game.status === 'FINAL') {
+      scoreEl.textContent = game.away + ' ' + (game.awayScore||0) + ' — ' + (game.homeScore||0) + ' ' + game.home + ' | FINAL';
+      scoreEl.style.color = 'var(--text2)';
+    } else {
+      scoreEl.textContent = '';
+    }
+  }
 
   const pot = totalSold * price;
   const cfg = getSportConfig(currentSport);
