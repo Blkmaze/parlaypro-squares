@@ -2121,8 +2121,7 @@ async function updateQtrTracker(game, squaresData) {
   const totalSold = Object.keys(owners).length;
   const price = parseFloat(document.getElementById('squarePrice') && document.getElementById('squarePrice').value) || 10;
 
-  // Hide tracker if no squares sold yet
-  if (totalSold === 0) { tracker.style.display = 'none'; return; }
+  // Always show tracker when a game is loaded
   tracker.style.display = 'block';
 
   // Set team labels
@@ -2131,18 +2130,26 @@ async function updateQtrTracker(game, squaresData) {
   if (awayEl) awayEl.textContent = game.away || 'AWAY';
   if (homeEl) homeEl.textContent = game.home || 'HOME';
 
-  // Live score in header
+  // Live score in header — always update
   const scoreEl = document.getElementById('qtrLiveScore');
   if (scoreEl) {
     if (game.status === 'LIVE') {
-      scoreEl.textContent = game.away + ' ' + (game.awayScore||0) + ' — ' + (game.homeScore||0) + ' ' + game.home + ' | ' + (game.period ? 'Q'+game.period : '');
+      scoreEl.textContent = game.away + ' ' + (game.awayScore||0) + ' — ' + (game.homeScore||0) + ' ' + game.home + ' | Q' + (game.period||'');
       scoreEl.style.color = 'var(--yellow)';
     } else if (game.status === 'FINAL') {
       scoreEl.textContent = game.away + ' ' + (game.awayScore||0) + ' — ' + (game.homeScore||0) + ' ' + game.home + ' | FINAL';
       scoreEl.style.color = 'var(--text2)';
     } else {
-      scoreEl.textContent = '';
+      scoreEl.textContent = game.away + ' vs ' + game.home + ' | ' + (game.time || 'Upcoming');
+      scoreEl.style.color = 'var(--text3)';
     }
+  }
+
+  // If no squares sold, just show the score — no payout rows needed
+  if (totalSold === 0) {
+    body.innerHTML = '<tr><td colspan="5" style="color:var(--text3);padding:8px 6px;font-size:11px;text-align:center;">No squares sold yet</td></tr>';
+    if (houseSummary) houseSummary.style.display = 'none';
+    return;
   }
 
   const pot = totalSold * price;
