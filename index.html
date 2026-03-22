@@ -1265,7 +1265,7 @@
       </div>
       <div class="modal-input-label">Your Initials (3 letters)</div>
       <input type="text" maxlength="3" placeholder="ABC" class="modal-input" id="initialsInput" oninput="checkInitials()" />
-      <div class="modal-pay-grid">
+        <div class="modal-pay-grid" style="grid-template-columns:1fr 1fr 1fr;">
         <div class="modal-pay-option selected" id="payOpt-cashapp" onclick="selectPay(this,'cashapp')">
           <div class="modal-pay-icon" style="background:#00D632;">$</div>
           <div class="modal-pay-name">Cash App</div>
@@ -1276,10 +1276,10 @@
           <div class="modal-pay-name">PayPal</div>
           <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=https://paypal.me/williemayes" alt="QR" style="width:50px;height:50px;border-radius:4px;margin-top:4px;" />
         </div>
-        <div class="modal-pay-option" id="payOpt-card" onclick="selectPay(this,'card')">
-          <div class="modal-pay-icon" style="background:#6366f1;">💳</div>
-          <div class="modal-pay-name">Card</div>
-          <div style="font-size:9px;color:#aaa;margin-top:4px;">Stripe checkout</div>
+        <div class="modal-pay-option" id="payOpt-cash" onclick="selectPay(this,'cash')">
+          <div class="modal-pay-icon" style="background:#15803d;">💵</div>
+          <div class="modal-pay-name">Cash</div>
+          <div style="font-size:9px;color:#aaa;margin-top:4px;">Pay in person</div>
         </div>
       </div>
       <div id="payInstructions" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12px;color:var(--text2);"></div>
@@ -1874,6 +1874,8 @@ function updatePayInstructions() {
     el.innerHTML = '💚 Send <strong style="color:#22c55e;">$' + total + '</strong> to <strong style="color:#22c55e;">$7707438091</strong> on Cash App<br><span style="font-size:10px;color:var(--text3);">Scan QR or tap Pay button — include your initials in the note</span>';
   } else if (_selectedPayMethod === 'paypal') {
     el.innerHTML = '💙 Send <strong style="color:#60a5fa;">$' + total + '</strong> to <strong style="color:#60a5fa;">willie.mayes@gmail.com</strong> on PayPal<br><span style="font-size:10px;color:var(--text3);">Friends & Family — include your initials in the note</span>';
+  } else if (_selectedPayMethod === 'cash') {
+    el.innerHTML = '💵 Pay <strong style="color:#86efac;">$' + total + '</strong> cash in person to Willie<br><span style="font-size:10px;color:var(--text3);">Squares reserved — admin will confirm after receiving cash</span>';
   }
 }
 
@@ -1952,6 +1954,8 @@ async function confirmPurchase() {
     } else if (_selectedPayMethod === 'paypal') {
       var ppUrl = 'https://paypal.me/williemayes/' + total + 'USD';
       payBtnHtml = '<a href="' + ppUrl + '" target="_blank" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#0070ba;color:white;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">💙 Pay $' + total + ' on PayPal</a>';
+    } else if (_selectedPayMethod === 'cash') {
+      payBtnHtml = '<div style="margin-top:12px;padding:12px 16px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);border-radius:10px;color:#86efac;font-size:13px;font-weight:700;">💵 Pay $' + total + ' cash to Willie — squares held pending confirmation</div>';
     }
 
     document.getElementById('confirmMsg').innerHTML =
