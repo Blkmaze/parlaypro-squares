@@ -1168,6 +1168,10 @@
           Sold
         </div>
         <div class="legend-item">
+          <div class="legend-dot" style="background:#3f3200;border:1px solid #ca8a04;"></div>
+          Pending
+        </div>
+        <div class="legend-item">
           <div class="legend-dot" style="background:#111;border:1px solid #2a2a2a;"></div>
           Open
         </div>
@@ -1194,6 +1198,7 @@
       <div class="admin-btns">
         <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
         <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
+        <button class="admin-btn admin-btn-green" onclick="confirmPendingPayments()">✅ Confirm Pending Payments</button>
         <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
         <button class="admin-btn admin-btn-red" onclick="adminReset();">⨂ Reset Board</button>
       </div>
@@ -1547,10 +1552,12 @@ async function buildGrid(game) {
     }
   }
 
+  const serverPending = serverData.pending || {};
+
   (game.mine || []).forEach(i => mine.add(i));
   const myInitials = getInitialsForGame(game.id) || 'YOU';
   const sold = new Set([...(game.sold || []), ...serverSold]);
-  const available = Math.max(0, 100 - sold.size);
+  const available = Math.max(0, 100 - sold.size - Object.keys(serverPending).length);
 
   document.getElementById('availableCount').textContent = available;
 
@@ -1573,9 +1580,24 @@ async function buildGrid(game) {
       const idx = i * 10 + j;
       const isMine = mine.has(idx);
       const isSold = sold.has(idx);
+      const isPending = serverPending[idx] !== undefined;
+      const pendingInitials = isPending ? serverPending[idx].initials : null;
       const owner = serverOwners[idx] || (isMine ? myInitials : null);
-      const cellClass = isMine ? 'cell-mine' : isSold ? 'cell-sold' : 'cell-open';
-      html += `<div class="cell ${cellClass}" data-idx="${idx}">${owner || ''}</div>`;
+      let cellClass, cellStyle = '', displayText = '';
+      if (isMine) {
+        cellClass = 'cell-mine';
+        displayText = owner || myInitials;
+      } else if (isSold) {
+        cellClass = 'cell-sold';
+        displayText = owner || '';
+      } else if (isPending) {
+        cellClass = 'cell-sold';
+        cellStyle = 'background:#3f3200;border-color:#ca8a04;color:#fbbf24;';
+        displayText = (pendingInitials || '⏳');
+      } else {
+        cellClass = 'cell-open';
+      }
+      html += `<div class="cell ${cellClass}" data-idx="${idx}" style="${cellStyle}">${displayText}</div>`;
     }
   }
 
@@ -1979,6 +2001,30 @@ function closeConfirm() {
 }
 
 // ── ADMIN ────────────────────────────────────────────────────
+async function confirmPendingPayments() {
+  var game = currentGame;
+  if (!game) { alert('No game loaded.'); return; }
+  var pin = prompt('Enter admin PIN to confirm all pending payments:');
+  if (!pin) return;
+  try {
+    var r = await fetch('/api/confirm-pending', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ gameId: game.id, pin: pin })
+    });
+    var d = await r.json();
+    if (d.ok) {
+      alert('Confirmed ' + (d.confirmed ? d.confirmed.length : 0) + ' pending squares!');
+      _cache[game.id] = null;
+      buildGrid(game);
+    } else {
+      alert('Error: ' + (d.error || 'Failed'));
+    }
+  } catch(e) {
+    alert('Network error: ' + e.message);
+  }
+}
+
 async function lockNumbers(game) {
   if (!game) { location.reload(); return; }
   var topCells = document.querySelectorAll('.axis-header.axis-top');
