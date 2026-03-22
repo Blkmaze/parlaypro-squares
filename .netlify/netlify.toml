@@ -1,8 +1,8 @@
 functionsDirectory = "C:\\Users\\Willie Mayes\\Downloads\\parlaypro-squares-repo\\netlify\\functions"
 functionsDirectoryOrigin = "config-v1"
-redirectsOrigin = "config"
 plugins = []
 headers = []
+redirects = []
 
 [build]
 publish = "C:\\Users\\Willie Mayes\\Downloads\\parlaypro-squares-repo"
@@ -26,15 +26,3 @@ functions = "C:\\Users\\Willie Mayes\\Downloads\\parlaypro-squares-repo\\netlify
 [functions]
 
 [functions."*"]
-
-[[redirects]]
-from = "/api/*"
-to = "/.netlify/functions/api/:splat"
-status = 200.0
-force = false
-
-[redirects.query]
-
-[redirects.conditions]
-
-[redirects.headers]

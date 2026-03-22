@@ -195,6 +195,5 @@ export default async function handler(req,context) {
   return json(req,{error:"Not found"},404);
 }
 
-export const config = {
-  path: ["/api/scores","/api/squares","/api/claim-square","/api/auto-assign","/api/init-numbers","/api/lock-numbers","/api/reset-squares","/api/confirm-pending","/api/reject-pending"]
-};
+export const config = { path: ["/api/scores","/api/squares","/api/claim-square","/api/auto-assign","/api/init-numbers","/api/lock-numbers","/api/reset-squares","/api/confirm-pending","/api/reject-pending","/api/create-checkout","/api/stripe-webhook"] };
+
