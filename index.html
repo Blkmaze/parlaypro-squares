@@ -870,6 +870,111 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
 
+  /* ── BOARD LOCK ───────────────────────────────────────── */
+  #lockBanner {
+    display: none;
+    position: sticky;
+    top: 38px;
+    z-index: 90;
+    background: #991b1b;
+    border-bottom: 2px solid #ef4444;
+    padding: 7px 16px;
+    text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 17px;
+    letter-spacing: 2px;
+    color: #fff;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  #lockBanner.on { display: flex; }
+  #lockBannerGame {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fca5a5;
+    letter-spacing: 0;
+    background: rgba(0,0,0,0.3);
+    padding: 2px 10px;
+    border-radius: 4px;
+  }
+  /* Only dim the nav controls — NOT the grid, sidebar, or buy flow */
+  .board-locked .sport-select,
+  .board-locked .game-select,
+  .board-locked input[type="date"] {
+    pointer-events: none;
+    opacity: 0.35;
+    filter: grayscale(1);
+  }
+  .board-locked .board-header button { pointer-events: none; opacity: 0.35; filter: grayscale(1); }
+
+  #ppLockBtn {
+    width: 100%;
+    padding: 7px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid rgba(234,179,8,0.35);
+    background: rgba(234,179,8,0.1);
+    color: #fbbf24;
+    transition: all .15s;
+  }
+  #ppLockBtn:hover { background: rgba(234,179,8,0.2); }
+  #ppLockBtn.locked { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); color: #f87171; }
+
+  /* Unlock PIN prompt */
+  #unlockPrompt {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.88);
+    backdrop-filter: blur(6px);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  #unlockPrompt.open { display: flex; }
+  .unlock-box {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 16px;
+    padding: 28px 24px;
+    max-width: 320px;
+    width: 100%;
+    text-align: center;
+  }
+  .unlock-box h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: #f5f5f5;
+    margin-bottom: 6px;
+  }
+  .unlock-box p { font-size: 12px; color: #a3a3a3; margin-bottom: 16px; }
+  .unlock-pin {
+    width: 100%;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px;
+    color: #f5f5f5;
+    font-size: 22px;
+    font-family: 'IBM Plex Mono', monospace;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 8px;
+    outline: none;
+    margin-bottom: 8px;
+  }
+  .unlock-pin:focus { border-color: #eab308; }
+  .unlock-err { font-size: 11px; color: #f87171; min-height: 16px; margin-bottom: 10px; }
+  .unlock-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .unlock-cancel { padding: 10px; border-radius: 8px; background: #1a1a1a; border: 1px solid #333; color: #a3a3a3; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .unlock-go { padding: 10px; border-radius: 8px; background: #16a34a; border: 1px solid #22c55e; color: white; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer; }
+
   @media (max-width: 768px) {
     .layout { grid-template-columns: 1fr; }
     .page-wrap { padding: 8px; }
@@ -936,6 +1041,14 @@
 
 <!-- LAYOUT -->
 <div class="page-wrap">
+
+<!-- BOARD LOCK BANNER -->
+<div id="lockBanner">
+  🔒 BOARD LOCKED &nbsp;
+  <span id="lockBannerGame"></span>
+  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.4);letter-spacing:0;">VIEW ONLY — buying squares still open</span>
+</div>
+
 <div class="layout">
 
   <!-- BOARD PANEL -->
@@ -1199,6 +1312,7 @@
         Admin Zone
       </div>
       <div class="admin-btns">
+        <button id="ppLockBtn" onclick="ppToggleLock()">🔒 Lock Board</button>
         <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
         <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
         <button class="admin-btn admin-btn-green" onclick="confirmPendingPayments()">✅ Confirm Pending Payments</button>
@@ -2298,6 +2412,134 @@ document.addEventListener('DOMContentLoaded', async () => {
     logStatus('INIT FAILED: ' + e.message, true);
   }
 });
+</script>
+
+<!-- UNLOCK PROMPT -->
+<div id="unlockPrompt">
+  <div class="unlock-box">
+    <h3>🔓 Unlock Board</h3>
+    <p>Enter your admin PIN to restore controls</p>
+    <input class="unlock-pin" id="unlockPinInput" type="password"
+      inputmode="numeric" maxlength="6" placeholder="••••"
+      oninput="document.getElementById('unlockErr').textContent=''" />
+    <div class="unlock-err" id="unlockErr"></div>
+    <div class="unlock-btns">
+      <button class="unlock-cancel" onclick="ppCloseUnlock()">Cancel</button>
+      <button class="unlock-go" onclick="ppConfirmUnlock()">UNLOCK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  BOARD LOCK — freezes nav only, squares still buyable
+// ═══════════════════════════════════════════════════
+(function() {
+  const LOCK_KEY   = 'pp_lock_v1';
+  const ADMIN_PIN  = '2826';
+  const MASTER_PIN = '0614';
+  let locked = false;
+
+  function currentGameLabel() {
+    const sel  = document.getElementById('gameSelect');
+    const sport = document.querySelector('.sport-select');
+    const date  = document.getElementById('gameDate');
+    const game  = sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '';
+    return [sport ? sport.value : '', date ? date.value : '', game].filter(Boolean).join(' · ');
+  }
+
+  function applyLock(label) {
+    locked = true;
+    document.querySelector('.board-panel')?.classList.add('board-locked');
+    document.getElementById('lockBannerGame').textContent = label || '';
+    document.getElementById('lockBanner').classList.add('on');
+    document.getElementById('ppLockBtn').innerHTML = '🔓 Unlock Board';
+    document.getElementById('ppLockBtn').classList.add('locked');
+
+    // Override the 5 nav functions — board/grid/buy flow untouched
+    window._ppOrigSport  = window.pinUpdateSport;
+    window._ppOrigDate   = window.pinUpdateDateFromPicker;
+    window._ppOrigArrow  = window.pinChangeDate;
+    window._ppOrigGame   = window.pinSelectGame;
+    window._ppOrigGameById = window.pinSelectGameById;
+
+    window.pinUpdateSport          = function() { flashBanner(); };
+    window.pinUpdateDateFromPicker = function() { flashBanner(); };
+    window.pinChangeDate           = function() { flashBanner(); };
+    window.pinSelectGame           = function() { flashBanner(); };
+    window.pinSelectGameById       = function() { flashBanner(); };
+
+    try { localStorage.setItem(LOCK_KEY, label || ''); } catch(e) {}
+  }
+
+  function releaseLock() {
+    locked = false;
+    document.querySelector('.board-panel')?.classList.remove('board-locked');
+    document.getElementById('lockBanner').classList.remove('on');
+    document.getElementById('ppLockBtn').innerHTML = '🔒 Lock Board';
+    document.getElementById('ppLockBtn').classList.remove('locked');
+
+    if (window._ppOrigSport)    window.pinUpdateSport          = window._ppOrigSport;
+    if (window._ppOrigDate)     window.pinUpdateDateFromPicker = window._ppOrigDate;
+    if (window._ppOrigArrow)    window.pinChangeDate           = window._ppOrigArrow;
+    if (window._ppOrigGame)     window.pinSelectGame           = window._ppOrigGame;
+    if (window._ppOrigGameById) window.pinSelectGameById       = window._ppOrigGameById;
+
+    try { localStorage.removeItem(LOCK_KEY); } catch(e) {}
+  }
+
+  function flashBanner() {
+    const b = document.getElementById('lockBanner');
+    if (!b) return;
+    b.style.background = '#dc2626';
+    setTimeout(() => { b.style.background = '#991b1b'; }, 400);
+  }
+
+  // Public: lock button click
+  window.ppToggleLock = function() {
+    if (!locked) {
+      applyLock(currentGameLabel());
+    } else {
+      document.getElementById('unlockPinInput').value = '';
+      document.getElementById('unlockErr').textContent = '';
+      document.getElementById('unlockPrompt').classList.add('open');
+      setTimeout(() => document.getElementById('unlockPinInput').focus(), 150);
+    }
+  };
+
+  window.ppCloseUnlock = function() {
+    document.getElementById('unlockPrompt').classList.remove('open');
+  };
+
+  window.ppConfirmUnlock = function() {
+    const pin = document.getElementById('unlockPinInput').value.trim();
+    if (pin !== ADMIN_PIN && pin !== MASTER_PIN) {
+      document.getElementById('unlockErr').textContent = '❌ Wrong PIN';
+      document.getElementById('unlockPinInput').value = '';
+      document.getElementById('unlockPinInput').focus();
+      return;
+    }
+    releaseLock();
+    ppCloseUnlock();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') ppCloseUnlock();
+    if (e.key === 'Enter' && document.getElementById('unlockPrompt').classList.contains('open')) {
+      ppConfirmUnlock();
+    }
+  });
+
+  // Restore lock after page refresh
+  try {
+    const saved = localStorage.getItem(LOCK_KEY);
+    if (saved !== null) {
+      window.addEventListener('load', function() {
+        setTimeout(function() { applyLock(saved); }, 900);
+      });
+    }
+  } catch(e) {}
+})();
 </script>
 
 <script src="/props.js"></script>
