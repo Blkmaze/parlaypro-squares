@@ -2693,47 +2693,51 @@ document.addEventListener('DOMContentLoaded', async () => {
       const gameId = data.gameId || '';
       const label  = data.label  || 'Locked Board';
 
-      // ── Step 1: Set date BEFORE fetching ESPN so we get the right day ──
+      // ── Step 1: Always set date + sport UI immediately ─────────────
       currentDate = date;
       const dp = document.getElementById('gameDate');
       if (dp) dp.value = date;
       const ld = document.getElementById('live-date');
       if (ld) {
         const d = new Date(date + 'T12:00:00');
-        ld.textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        ld.textContent = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
       }
       const ss = document.querySelector('.sport-select');
       if (ss) ss.value = sport;
 
-      // ── Step 2: Try to find game in ESPN (works when game is today/live) ──
-      // But don't wait for ESPN if game is tomorrow or already finished
-      let targetGame = null;
-      try {
-        await updateSport(sport);
-        const games = espnGames[sport] || [];
-        targetGame = games.find(g => g.id === gameId);
-      } catch(e) {}
+      // ── Step 2: Build game object from saved label (works for any game,
+      //    any sport, any date — past, present, or future) ─────────────
+      const cleanLabel = label.replace(/^[●•]\s*/, '').trim();
+      const sep = cleanLabel.includes(' @ ') ? ' @ ' : ' vs ';
+      const parts = cleanLabel.split(sep);
+      const savedGame = {
+        id: gameId,
+        away: (parts[0] || 'AWAY').trim(),
+        home: (parts[1] || 'HOME').trim(),
+        awayScore: 0, homeScore: 0,
+        status: 'UPCOMING', time: '', period: 0
+      };
 
-      // ── Step 3: Load the game — use ESPN data if available, otherwise
-      //    build from the saved label (covers tomorrow's games & finished games) ──
-      if (targetGame) {
-        await loadGame(targetGame);
-      } else {
-        // Parse team names from saved label e.g. "● UCLA @ SC" or "UCLA @ SC"
-        const cleanLabel = label.replace(/^●\s*/, '').trim();
-        const sep = cleanLabel.includes(' @ ') ? ' @ ' : ' vs ';
-        const parts = cleanLabel.split(sep);
-        const fallbackGame = {
-          id: gameId,
-          away: parts[0] ? parts[0].trim() : 'AWAY',
-          home: parts[1] ? parts[1].trim() : 'HOME',
-          awayScore: 0, homeScore: 0,
-          status: 'UPCOMING', time: 'Tomorrow', period: 0
-        };
-        await loadGame(fallbackGame);
-      }
+      // ── Step 3: Try ESPN to get live scores (optional enhancement) ──
+      // Load ESPN in background — if it finds the game update the scores,
+      // but NEVER let it override which game is displayed
+      loadGame(savedGame); // Load immediately from saved data
 
-      // ── Step 4: Apply lock UI ──
+      // In background, try to enrich with live ESPN data
+      updateSport(sport).then(function() {
+        const espnGame = (espnGames[sport] || []).find(g => g.id === gameId);
+        if (espnGame && (espnGame.status === 'LIVE' || espnGame.status === 'FINAL')) {
+          // Only update scores if game is actually live or final
+          savedGame.awayScore = espnGame.awayScore;
+          savedGame.homeScore = espnGame.homeScore;
+          savedGame.status    = espnGame.status;
+          savedGame.period    = espnGame.period;
+          savedGame.time      = espnGame.time;
+          buildGrid(savedGame);
+        }
+      }).catch(function() {});
+
+      // ── Step 4: Apply lock UI ───────────────────────────────────────
       applyLockUI(label, true);
 
     } catch(e) {
