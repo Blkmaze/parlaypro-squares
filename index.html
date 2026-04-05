@@ -1658,6 +1658,9 @@ async function fetchEspnScores(sport) {
 
 // ── TICKER ───────────────────────────────────────────────────────
 async function buildTicker() {
+  // Don't run ticker if board is locked — it calls updateSport for each sport
+  // which would override the locked game
+  if (window._boardIsLocked) return;
   const allSports = ['NBA', 'NHL', 'MLB', 'NFL', 'MLS'];
   let allGames = [];
   for (const sport of allSports) {
@@ -2585,7 +2588,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Load ticker in background (don't block)
-    buildTicker().catch(e => logStatus('Ticker error: ' + e.message, true));
+    // When locked, only fetch scores for locked sport — don't load other sports
+    if (_serverLocked) {
+      // Just show a minimal ticker without loading other sports
+      logStatus('Board locked — ticker suppressed to prevent board override', false);
+    } else {
+      buildTicker().catch(e => logStatus('Ticker error: ' + e.message, true));
+    }
   } catch (e) {
     logStatus('INIT FAILED: ' + e.message, true);
   }
