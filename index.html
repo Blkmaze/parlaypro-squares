@@ -1889,6 +1889,11 @@ function populateGameDropdown(sport) {
 // ── LOAD GAME ────────────────────────────────────────────────
 async function loadGame(game) {
   if (!game) { logStatus('loadGame called with no game', true); return; }
+  // If board is locked, only allow loading the locked game itself
+  if (window._boardIsLocked && window._lockedGameId && game.id !== window._lockedGameId) {
+    logStatus('Board locked — ignoring loadGame for ' + (game.away||'') + ' @ ' + (game.home||''), false);
+    return;
+  }
   logStatus('Loading game: ' + game.away + ' @ ' + game.home + ' (ID: ' + game.id + ')', false);
   currentGame = game;
   try {
@@ -1928,6 +1933,11 @@ function getFallbackGame(sport) {
 }
 
 async function updateSport(sport) {
+  // If board is locked, block any sport switches (only allow background score fetch)
+  if (window._boardIsLocked && !window._ppLockScoreFetch) {
+    logStatus('Board locked — blocking updateSport(' + sport + ')', false);
+    return;
+  }
   logStatus('Switching to ' + sport + '...', false);
   currentSport = sport;
 
@@ -2479,13 +2489,71 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     initDatePicker();
 
-    // ── Check server for lock state first, then load default if not locked ──
-    if (window._ppCheckServerLock) {
-      await window._ppCheckServerLock();
+    // ── Check server for board lock BEFORE loading any sport ─────────
+    // Inline here so it runs before the lock script tag loads
+    let _serverLocked = false;
+    try {
+      const _lockRes = await fetch('/api/board-lock');
+      if (_lockRes.ok) {
+        const _lockData = await _lockRes.json();
+        if (_lockData && _lockData.locked) {
+          _serverLocked = true;
+          const _sport  = _lockData.sport  || 'NBA';
+          const _date   = _lockData.date   || currentDate;
+          const _gameId = _lockData.gameId || '';
+          const _label  = _lockData.label  || 'Locked Board';
+
+          // Set date and sport UI
+          currentDate = _date;
+          const _dp = document.getElementById('gameDate');
+          if (_dp) _dp.value = _date;
+          const _ld = document.getElementById('live-date');
+          if (_ld) {
+            const _d = new Date(_date + 'T12:00:00');
+            _ld.textContent = _d.toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric'});
+          }
+          const _ss = document.querySelector('.sport-select');
+          if (_ss) _ss.value = _sport;
+
+          // Build game from saved label — works for any sport, past/present/future
+          const _clean = _label.replace(/^[^ ]+ /, '').trim(); // strip leading bullet
+          const _sep = _clean.includes(' @ ') ? ' @ ' : ' vs ';
+          const _parts = _clean.split(_sep);
+          const _game = {
+            id: _gameId,
+            away: (_parts[0] || 'AWAY').trim(),
+            home: (_parts[1] || 'HOME').trim(),
+            awayScore: 0, homeScore: 0,
+            status: 'UPCOMING', time: '', period: 0
+          };
+
+          // Set global lock flag BEFORE loadGame so nothing can override it
+          window._boardIsLocked = true;
+          window._lockedGameId  = _gameId;
+
+          // Load the locked game board
+          await loadGame(_game);
+
+          // Show lock UI
+          const _banner = document.getElementById('lockBanner');
+          const _bannerGame = document.getElementById('lockBannerGame');
+          const _lockBtn = document.getElementById('ppLockBtn');
+          const _vi = document.getElementById('viewerInstructions');
+          if (_banner) _banner.classList.add('on');
+          if (_bannerGame) _bannerGame.textContent = _label;
+          if (_lockBtn) { _lockBtn.innerHTML = '🔓 Unlock Board'; _lockBtn.classList.add('locked'); }
+          if (_vi) _vi.classList.add('on');
+          document.querySelector('.board-panel')?.classList.add('board-locked');
+
+          logStatus('Locked board loaded: ' + _game.away + ' @ ' + _game.home, false);
+        }
+      }
+    } catch(_e) {
+      logStatus('Lock check failed: ' + _e.message, true);
     }
 
-    // If not locked by server, load default NBA
-    if (!document.querySelector('.board-panel')?.classList.contains('board-locked')) {
+    // Only load default NBA if board is NOT locked
+    if (!_serverLocked) {
       await updateSport('NBA');
       logStatus('Page ready ✓ | Game: ' + (currentGame ? currentGame.away + ' @ ' + currentGame.home : 'NONE'), !currentGame);
     }
@@ -2540,6 +2608,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function applyLockUI(label, fromServer) {
     locked = true;
+    window._boardIsLocked = true;
+    window._lockedGameId = currentGame ? currentGame.id : null;
     document.querySelector('.board-panel')?.classList.add('board-locked');
     document.getElementById('lockBannerGame').textContent = label || '';
     document.getElementById('lockBanner').classList.add('on');
@@ -2563,6 +2633,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function releaseLockUI() {
     locked = false;
+    window._boardIsLocked = false;
+    window._lockedGameId = null;
     document.querySelector('.board-panel')?.classList.remove('board-locked');
     document.getElementById('lockBanner').classList.remove('on');
     document.getElementById('ppLockBtn').innerHTML = '🔒 Lock Board';
@@ -2725,14 +2797,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       // This overrides the nav functions so updateSport can't replace the board
       applyLockUI(label, true);
 
-      // ── Step 5: In background, enrich with live scores only ─────────
-      // updateSport is now blocked by lock — call the original directly
-      try {
-        const origUpdateSport = window._ppOrigSport
-          ? function(s) { return window._ppOrigSport.call(window, s); }
-          : updateSport;
-
+      // ── Step 5: In background, fetch live scores only (won't replace board) ──
+      setTimeout(function() {
+        window._ppLockScoreFetch = true; // signal: this is a score-only fetch
         fetchEspnScores(sport).then(function(data) {
+          window._ppLockScoreFetch = false;
           if (!data || !data.games) return;
           const espnGame = data.games.find(function(g) { return g.id === gameId; });
           if (espnGame && (espnGame.status === 'LIVE' || espnGame.status === 'FINAL')) {
@@ -2743,8 +2812,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             savedGame.time      = espnGame.time;
             buildGrid(savedGame);
           }
-        }).catch(function() {});
-      } catch(e) {}
+        }).catch(function() { window._ppLockScoreFetch = false; });
+      }, 2000);
 
     } catch(e) {
       // Server unreachable — continue normally
