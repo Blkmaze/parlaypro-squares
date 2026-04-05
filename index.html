@@ -2595,6 +2595,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           _serverLocked = true;
           window._boardIsLocked = true; // block updateSport from this point on
           window._currentLockTime = _lockData.lockedAt || 0;
+          if (window._ppSetLocked) window._ppSetLocked(true); // sync IIFE locked var
           const _sport  = _lockData.sport  || 'NBA';
           const _date   = _lockData.date   || currentDate;
           const _gameId = _lockData.gameId || '';
@@ -2697,6 +2698,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const MASTER_PIN = '0614';
   let locked = false;
 
+  // Allow external code to sync the locked state
+  window._ppSetLocked = function(val) { locked = val; };
+
   function getSnapshot() {
     const sel   = document.getElementById('gameSelect');
     const sport = document.querySelector('.sport-select');
@@ -2772,7 +2776,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Lock button click ─────────────────────────────────────────────
   window.ppToggleLock = function() {
-    if (!locked) {
+    // Use window._boardIsLocked as the authoritative state (works after page reload)
+    if (locked) window._boardIsLocked = true;
+    if (!locked && !window._boardIsLocked) {
       // Ask for PIN before locking (so only admin can lock)
       const pin = prompt('Enter admin PIN to lock this board:');
       if (!pin) return;
