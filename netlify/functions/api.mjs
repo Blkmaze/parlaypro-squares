@@ -192,12 +192,26 @@ export default async function handler(req,context) {
     }catch(e){return json(req,{error:"Server error"},500);}
   }
 
+  // ── BOARD LOCK ─────────────────────────────────────────────────
+  if(path==="/api/board-lock"&&method==="GET"){
+    if(!token) return json(req,{locked:false});
+    try{var ld=await blobGet(token,"__board_lock__");return json(req,ld||{locked:false});}
+    catch(e){return json(req,{locked:false});}
+  }
+
+  if(path==="/api/board-lock"&&method==="POST"){
+    if(!token) return json(req,{error:"Server error"},500);
+    var pin=typeof body.pin==="string"?body.pin.slice(0,8):"";
+    if(!validPin(pin)) return json(req,{error:"Wrong PIN"},401);
+    try{
+      if(body.action==="unlock"){await blobSet(token,"__board_lock__",{locked:false});return json(req,{ok:true,locked:false});}
+      var ldata={locked:true,sport:String(body.sport||"").slice(0,20),date:String(body.date||"").slice(0,10),gameId:String(body.gameId||"").slice(0,64),label:String(body.label||"").slice(0,80),lockedAt:Date.now()};
+      await blobSet(token,"__board_lock__",ldata);
+      return json(req,{ok:true,...ldata});
+    }catch(e){return json(req,{error:e.message||"Lock failed"},500);}
+  }
+
   return json(req,{error:"Not found"},404);
 }
-
-
-
-
-
 
 export const config = { path: "/api/*" };
