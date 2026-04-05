@@ -2458,26 +2458,6 @@ async function updateQtrTracker(game, squaresData) {
   }
 }
 
-// ── PRE-LOAD LOCK CHECK ─────────────────────────────────────────────
-// Runs immediately when script parses — sets _boardIsLocked flag
-// BEFORE DOMContentLoaded fires, so updateSport('NBA') is blocked
-// from the very first line
-(async function() {
-  try {
-    const r = await fetch('/api/board-lock');
-    if (r.ok) {
-      const d = await r.json();
-      if (d && d.locked) {
-        window._boardIsLocked  = true;
-        window._lockedGameId   = d.gameId || '';
-        window._lockedSport    = d.sport  || 'NBA';
-        window._lockedDate     = d.date   || '';
-        window._lockedLabel    = d.label  || 'Locked Board';
-      }
-    }
-  } catch(e) {}
-})();
-
 document.addEventListener('DOMContentLoaded', async () => {
   logStatus('Page loading...', false);
 
@@ -2510,13 +2490,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     initDatePicker();
 
-    // ── Use pre-loaded lock state (fetched before DOMContentLoaded) ────
+    // ── FETCH LOCK STATE FIRST — await before ANY sport loading ──────
+    // This is the single authoritative check. Nothing loads until this resolves.
     let _serverLocked = false;
     try {
-      if (window._boardIsLocked) {
-        _serverLocked = true;
-        const _lockData = { locked: true, sport: window._lockedSport, date: window._lockedDate, gameId: window._lockedGameId, label: window._lockedLabel };
-        {
+      const _lockRes = await fetch('/api/board-lock');
+      if (_lockRes.ok) {
+        const _lockData = await _lockRes.json();
+        if (_lockData && _lockData.locked) {
+          _serverLocked = true;
+          window._boardIsLocked = true; // block updateSport from this point on
           const _sport  = _lockData.sport  || 'NBA';
           const _date   = _lockData.date   || currentDate;
           const _gameId = _lockData.gameId || '';
