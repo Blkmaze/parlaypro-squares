@@ -2352,7 +2352,22 @@ async function lockNumbers(game) {
 
 function printBoard() {
   if (!currentGame) { alert('Please load a game first.'); return; }
-  var gameTitle = currentGame.away + ' @ ' + currentGame.home;
+  // Get real team names - try DOM first, then currentGame
+  var awayTeam = currentGame.awayFull || currentGame.away || '';
+  var homeTeam = currentGame.homeFull || currentGame.home || '';
+  // Also try reading from the board header in DOM
+  var teamBanner = document.querySelector('.team-banner');
+  var awayCorner = document.querySelector('.axis-corner span');
+  if (teamBanner && homeTeam === 'HOME') homeTeam = teamBanner.textContent.trim().split(' ')[0] || homeTeam;
+  if (awayCorner && awayTeam === '') awayTeam = awayCorner.textContent.trim() || awayTeam;
+  // Try lock label as fallback
+  var lockLabel = document.getElementById('lockBannerGame');
+  if (lockLabel && lockLabel.textContent && (awayTeam === '' || homeTeam === 'HOME')) {
+    var label = lockLabel.textContent.trim();
+    var parts = label.split(' @ ');
+    if (parts.length === 2) { awayTeam = parts[0]; homeTeam = parts[1]; }
+  }
+  var gameTitle = awayTeam + ' @ ' + homeTeam;
   var dateEl = document.getElementById('live-date');
   var gameDate = dateEl ? dateEl.textContent : '';
   var priceEl = document.getElementById('squarePrice');
