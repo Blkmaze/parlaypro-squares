@@ -2351,9 +2351,79 @@ async function lockNumbers(game) {
 }
 
 function printBoard() {
-  document.body.classList.add('printing');
-  window.print();
-  setTimeout(function() { document.body.classList.remove('printing'); }, 2000);
+  if (!currentGame) { alert('Please load a game first.'); return; }
+  var gameTitle = currentGame.away + ' @ ' + currentGame.home;
+  var dateEl = document.getElementById('live-date');
+  var gameDate = dateEl ? dateEl.textContent : '';
+  var priceEl = document.getElementById('squarePrice');
+  var price = priceEl ? priceEl.value : '10';
+
+  // Read numbers from DOM
+  var topNumEls = document.querySelectorAll('.axis-header.axis-top');
+  var leftNumEls = document.querySelectorAll('.axis-header.axis-left');
+  var colNs = Array.from(topNumEls).map(function(el){ return el.textContent.trim(); });
+  var rowNs = Array.from(leftNumEls).map(function(el){ return el.textContent.trim(); });
+
+  // Read squares data
+  var data = window._lastSquaresData || {};
+  var owners = data.owners || {};
+  var pending = data.pending || {};
+
+  // Read cell data from DOM as fallback
+  var cellEls = document.querySelectorAll('#squaresGrid .cell-mine, #squaresGrid .cell-sold, #squaresGrid .cell-open');
+
+  var html = '<!DOCTYPE html><html><head><title>' + gameTitle + '</title>';
+  html += '<style>';
+  html += '@page{size:landscape;margin:0.4in}';
+  html += '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}';
+  html += 'body{font-family:Arial,sans-serif;background:white}';
+  html += 'h2{text-align:center;font-size:20px;font-weight:900;margin-bottom:4px;letter-spacing:1px}';
+  html += 'p{text-align:center;font-size:11px;color:#666;margin-bottom:10px}';
+  html += 'table{width:100%;border-collapse:collapse;table-layout:fixed}';
+  html += 'td,th{border:1.5px solid #888;text-align:center;vertical-align:middle;font-size:11px;font-weight:700;height:48px}';
+  html += '.corner{background:#0f0f1a;color:white;font-size:9px;padding:4px}';
+  html += '.top-num{background:#1a1a3e;color:#7dd3fc;font-size:13px;height:36px}';
+  html += '.left-num{background:#1a1a3e;color:#86efac;font-size:13px;width:48px}';
+  html += '.taken{background:#dcfce7;color:#166534;font-size:12px}';
+  html += '.pend{background:#fef9c3;color:#854d0e;font-size:12px}';
+  html += '.open{background:#fafafa;color:#ddd}';
+  html += '</style></head><body>';
+  html += '<h2>SUPER SQUARES &mdash; ' + gameTitle + '</h2>';
+  html += '<p>' + gameDate + ' &nbsp;&bull;&nbsp; $' + price + ' per square &nbsp;&bull;&nbsp; parlaypro-squares.netlify.app</p>';
+  html += '<table>';
+
+  // Header row
+  html += '<tr><th class="corner">' + currentGame.away + '<br>&darr;&nbsp;&nbsp;' + currentGame.home + '&nbsp;&rarr;</th>';
+  for (var c = 0; c < 10; c++) {
+    html += '<th class="top-num">' + (colNs[c] !== undefined ? colNs[c] : c) + '</th>';
+  }
+  html += '</tr>';
+
+  // Data rows
+  for (var r = 0; r < 10; r++) {
+    html += '<tr><th class="left-num">' + (rowNs[r] !== undefined ? rowNs[r] : r) + '</th>';
+    for (var c = 0; c < 10; c++) {
+      var idx = r * 10 + c;
+      var owner = owners[idx];
+      var pend = pending[idx];
+      if (owner) {
+        html += '<td class="taken">' + owner + '</td>';
+      } else if (pend) {
+        html += '<td class="pend">' + (pend.initials || '?') + '</td>';
+      } else {
+        html += '<td class="open"></td>';
+      }
+    }
+    html += '</tr>';
+  }
+
+  html += '</table></body></html>';
+
+  var win = window.open('', '_blank', 'width=1200,height=900');
+  if (!win) { alert('Allow popups for parlaypro-squares.netlify.app to print.'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(function() { win.focus(); win.print(); }, 500);
 }
 
 async function releasePendingPayments() {
