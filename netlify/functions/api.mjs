@@ -1,7 +1,6 @@
-// ParlayPro Squares API - ASCII only
+// ParlayPro Squares API - ASCII only v2
 const SITE_ID    = "658f40e1-9d0f-4072-80a5-d6d0eb35d77e";
 const STORE      = "sq3";
-const LOCK_KEY   = "__board_lock__";
 const ADMIN_PIN  = process.env.ADMIN_PIN  || "2826";
 const MASTER_PIN = process.env.MASTER_PIN || "0614";
 const ORIGIN     = "https://parlaypro-squares.netlify.app";
@@ -193,30 +192,12 @@ export default async function handler(req,context) {
     }catch(e){return json(req,{error:"Server error"},500);}
   }
 
-  if(path==="/api/board-lock"&&method==="GET"){
-    if(!token) return json(req,{locked:false});
-    try{var ld=await blobGet(token,LOCK_KEY);return json(req,ld||{locked:false});}
-    catch(e){return json(req,{locked:false});}
-  }
-
-  if(path==="/api/board-lock"&&method==="POST"){
-    if(!token) return json(req,{error:"Server error"},500);
-    var pin=typeof body.pin==="string"?body.pin.slice(0,8):"";
-    if(!validPin(pin)) return json(req,{error:"Wrong PIN"},401);
-    try{
-      if(body.action==="unlock"){
-        await blobSet(token,LOCK_KEY,{locked:false});
-        return json(req,{ok:true,locked:false});
-      }
-      var ldata={locked:true,sport:String(body.sport||"").slice(0,20),date:String(body.date||"").slice(0,10),gameId:String(body.gameId||"").slice(0,64),label:String(body.label||"").slice(0,80),lockedAt:Date.now()};
-      await blobSet(token,LOCK_KEY,ldata);
-      return json(req,{ok:true,...ldata});
-    }catch(e){return json(req,{error:e.message||"Lock failed"},500);}
-  }
-
   return json(req,{error:"Not found"},404);
 }
 
 
 
 
+
+
+export const config = { path: "/api/*" };
