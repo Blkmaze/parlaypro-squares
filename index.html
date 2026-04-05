@@ -1470,7 +1470,7 @@
       </div>
       <div class="admin-btns">
         <button id="ppLockBtn" onclick="ppToggleLock()">🔒 Lock Board</button>
-        <button class="admin-btn" onclick="window.print()" style="background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.3);color:#a5b4fc;">🖨️ Print Board</button>
+        <button class="admin-btn" onclick="printBoard()" style="background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.3);color:#a5b4fc;">🖨️ Print Board</button>
         <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
         <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
         <button class="admin-btn admin-btn-green" onclick="confirmPendingPayments()">✅ Confirm Pending Payments</button>
@@ -2356,6 +2356,64 @@ async function lockNumbers(game) {
     if (d.ok) { alert('Numbers locked! All boards will now match.'); location.reload(); }
     else { alert('Error: ' + (d.error || 'Unknown')); }
   }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+function printBoard() {
+  // Build a clean print window with just the board scaled to fit one landscape page
+  var grid = document.getElementById('squaresGrid');
+  var boardPanel = document.querySelector('.board-panel');
+  if (!boardPanel) { window.print(); return; }
+
+  // Get team labels
+  var awayLabel = '';
+  var homeLabel = '';
+  var awayEl = document.querySelector('.away-label, .team-away, [class*="away"]');
+  var homeEl = document.querySelector('.home-label, .team-home, [class*="home"]');
+
+  // Get game title from header
+  var titleEl = document.querySelector('.board-title, .board-header h1, #boardTitle');
+  var gameTitle = currentGame ? (currentGame.away + ' @ ' + currentGame.home) : 'Super Squares';
+  var dateEl = document.getElementById('live-date');
+  var gameDate = dateEl ? dateEl.textContent : '';
+
+  // Clone the board panel
+  var clone = boardPanel.cloneNode(true);
+
+  // Remove non-print elements from clone
+  var toRemove = clone.querySelectorAll('.board-tabs, .sport-controls, .game-date-nav, .board-subtitle, button, .admin-zone');
+  toRemove.forEach(function(el) { el.remove(); });
+
+  var win = window.open('', '_blank', 'width=1100,height=800');
+  win.document.write('<!DOCTYPE html><html><head><title>Super Squares — ' + gameTitle + '</title><style>');
+  win.document.write('* { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }');
+  win.document.write('@page { size: landscape; margin: 0.4in; }');
+  win.document.write('body { background: white; font-family: Inter, Arial, sans-serif; }');
+  win.document.write('.print-header { text-align: center; margin-bottom: 8px; }');
+  win.document.write('.print-title { font-size: 18px; font-weight: 800; color: #111; }');
+  win.document.write('.print-sub { font-size: 12px; color: #555; margin-top: 2px; }');
+  win.document.write('.board-wrap { width: 100%; transform-origin: top left; }');
+  win.document.write('</style>');
+  // Copy the page stylesheet
+  var links = document.querySelectorAll('link[rel="stylesheet"], style');
+  links.forEach(function(l) { win.document.write(l.outerHTML); });
+  win.document.write('</head><body>');
+  win.document.write('<div class="print-header">');
+  win.document.write('<div class="print-title">🏈 SUPER SQUARES — ' + gameTitle + '</div>');
+  win.document.write('<div class="print-sub">' + gameDate + ' &nbsp;|&nbsp; $' + (currentPrice || 10) + ' per square</div>');
+  win.document.write('</div>');
+  win.document.write('<div class="board-wrap">' + boardPanel.outerHTML + '</div>');
+  win.document.write('<script>');
+  win.document.write('window.onload = function() {');
+  win.document.write('  var wrap = document.querySelector(".board-wrap");');
+  win.document.write('  var btns = wrap.querySelectorAll("button, .board-tabs, .sport-controls, .game-date-nav, .board-subtitle");');
+  win.document.write('  btns.forEach(function(b) { b.style.display = "none"; });');
+  win.document.write('  var pw = document.body.clientWidth;');
+  win.document.write('  var bw = wrap.scrollWidth;');
+  win.document.write('  if (bw > pw) { var scale = pw / bw; wrap.style.transform = "scale(" + scale + ")"; wrap.style.width = (100/scale) + "%"; }');
+  win.document.write('  setTimeout(function() { window.print(); window.close(); }, 800);');
+  win.document.write('};');
+  win.document.write('<\/script></body></html>');
+  win.document.close();
 }
 
 async function releasePendingPayments() {
