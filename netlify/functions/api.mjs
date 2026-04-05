@@ -199,3 +199,5 @@ export default async function handler(req,context) {
 
 
 
+
+export const config = { path: "/api/*" };
