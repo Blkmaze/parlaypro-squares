@@ -134,6 +134,9 @@
     display: flex;
     gap: 8px;
     align-items: center;
+    flex: 1;
+    min-width: 0;
+    flex-wrap: wrap;
   }
 
   .sport-select, .game-select {
@@ -147,7 +150,11 @@
     cursor: pointer;
     outline: none;
     transition: border-color 0.15s;
+    min-width: 0;
+    flex: 1;
   }
+  .sport-select { max-width: 200px; min-width: 140px; }
+  .game-select  { max-width: 220px; min-width: 120px; }
   .sport-select:focus, .game-select:focus { border-color: var(--green); }
 
   .grid-wrap {
