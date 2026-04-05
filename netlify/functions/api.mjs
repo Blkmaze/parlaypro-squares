@@ -7,10 +7,10 @@ const ORIGIN     = "https://parlaypro-squares.netlify.app";
 
 function corsHeaders(req) {
   var origin = req.headers.get("origin") || "";
-  var allowed = !origin || origin.includes("parlaypro-squares") || origin === "http://localhost:8888";
+  var allowed = origin === ORIGIN || origin === "http://localhost:8888";
   return {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": allowed ? (origin || "*") : ORIGIN,
+    "Access-Control-Allow-Origin": allowed ? origin : ORIGIN,
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "X-Content-Type-Options": "nosniff"
