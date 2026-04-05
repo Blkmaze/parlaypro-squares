@@ -2718,27 +2718,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         status: 'UPCOMING', time: '', period: 0
       };
 
-      // ── Step 3: Try ESPN to get live scores (optional enhancement) ──
-      // Load ESPN in background — if it finds the game update the scores,
-      // but NEVER let it override which game is displayed
-      loadGame(savedGame); // Load immediately from saved data
+      // ── Step 3: Load the locked game immediately ──────────────────
+      await loadGame(savedGame);
 
-      // In background, try to enrich with live ESPN data
-      updateSport(sport).then(function() {
-        const espnGame = (espnGames[sport] || []).find(g => g.id === gameId);
-        if (espnGame && (espnGame.status === 'LIVE' || espnGame.status === 'FINAL')) {
-          // Only update scores if game is actually live or final
-          savedGame.awayScore = espnGame.awayScore;
-          savedGame.homeScore = espnGame.homeScore;
-          savedGame.status    = espnGame.status;
-          savedGame.period    = espnGame.period;
-          savedGame.time      = espnGame.time;
-          buildGrid(savedGame);
-        }
-      }).catch(function() {});
-
-      // ── Step 4: Apply lock UI ───────────────────────────────────────
+      // ── Step 4: Apply lock UI BEFORE any ESPN background fetch ─────
+      // This overrides the nav functions so updateSport can't replace the board
       applyLockUI(label, true);
+
+      // ── Step 5: In background, enrich with live scores only ─────────
+      // updateSport is now blocked by lock — call the original directly
+      try {
+        const origUpdateSport = window._ppOrigSport
+          ? function(s) { return window._ppOrigSport.call(window, s); }
+          : updateSport;
+
+        fetchEspnScores(sport).then(function(data) {
+          if (!data || !data.games) return;
+          const espnGame = data.games.find(function(g) { return g.id === gameId; });
+          if (espnGame && (espnGame.status === 'LIVE' || espnGame.status === 'FINAL')) {
+            savedGame.awayScore = espnGame.awayScore;
+            savedGame.homeScore = espnGame.homeScore;
+            savedGame.status    = espnGame.status;
+            savedGame.period    = espnGame.period;
+            savedGame.time      = espnGame.time;
+            buildGrid(savedGame);
+          }
+        }).catch(function() {});
+      } catch(e) {}
 
     } catch(e) {
       // Server unreachable — continue normally
