@@ -2734,11 +2734,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
     } else {
-      // Show unlock prompt
-      document.getElementById('unlockPinInput').value = '';
-      document.getElementById('unlockErr').textContent = '';
-      document.getElementById('unlockPrompt').classList.add('open');
-      setTimeout(() => document.getElementById('unlockPinInput').focus(), 150);
+      // Unlock — prompt for PIN directly
+      const pin = prompt('Enter admin PIN to unlock:');
+      if (!pin) return;
+      if (pin !== ADMIN_PIN && pin !== MASTER_PIN) { alert('Wrong PIN.'); return; }
+      fetch('/api/board-lock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin, action: 'unlock' })
+      })
+      .then(r => r.json())
+      .then(data => {
+        releaseLockUI();
+        showToast('🔓 Board unlocked');
+      })
+      .catch(() => { releaseLockUI(); });
     }
   };
 
@@ -2799,6 +2809,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const date   = data.date   || currentDate;
       const gameId = data.gameId || '';
       const label  = data.label  || 'Locked Board';
+      if (!gameId) { applyLockUI(label, true); return; } // no gameId saved, just show lock UI
 
       // ── Step 1: Always set date + sport UI immediately ─────────────
       currentDate = date;
