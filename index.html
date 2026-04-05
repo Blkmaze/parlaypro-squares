@@ -2318,14 +2318,9 @@ async function releasePendingPayments() {
     names[initials] = (names[initials] || 0) + 1;
   });
 
-  var summary = Object.entries(names).map(function(e) { return e[1] + ' sq — ' + e[0]; }).join('
-');
-  var confirm = window.confirm('Release these pending squares?
-
-' + summary + '
-
-They will become open for others to buy.');
-  if (!confirm) return;
+    var summary = Object.entries(names).map(function(e) { return e[1] + ' sq - ' + e[0]; }).join('\n');
+  var confirmed = window.confirm('Release these pending squares? ' + summary + ' They will become open for others to buy.');
+  if (!confirmed) return;
 
   try {
     var res = await fetch('/api/reject-pending', {
