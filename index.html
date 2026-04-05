@@ -1391,6 +1391,7 @@
         <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
         <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
         <button class="admin-btn admin-btn-green" onclick="confirmPendingPayments()">✅ Confirm Pending Payments</button>
+        <button class="admin-btn admin-btn-red" onclick="releasePendingPayments()" style="background:rgba(234,179,8,0.1);border-color:rgba(234,179,8,0.3);color:#fbbf24;">🔓 Release Pending Squares</button>
         <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
         <button class="admin-btn admin-btn-red" onclick="adminReset();">⨂ Reset Board</button>
       </div>
@@ -2272,6 +2273,63 @@ async function lockNumbers(game) {
     if (d.ok) { alert('Numbers locked! All boards will now match.'); location.reload(); }
     else { alert('Error: ' + (d.error || 'Unknown')); }
   }).catch(function(e){ alert('Error: ' + e.message); });
+}
+
+async function releasePendingPayments() {
+  if (!currentGame) { alert('No game loaded.'); return; }
+  var pin = prompt('Enter admin PIN to release pending squares:');
+  if (!pin) return;
+
+  // Show pending squares first
+  var data = _cache[currentGame.id];
+  if (!data) {
+    try {
+      var r = await fetch('/api/squares?gameId=' + encodeURIComponent(currentGame.id));
+      data = await r.json();
+    } catch(e) { alert('Could not load squares data.'); return; }
+  }
+
+  var pending = data.pending || {};
+  var pendingList = Object.entries(pending);
+
+  if (!pendingList.length) {
+    alert('No pending squares to release.');
+    return;
+  }
+
+  // Show who has pending squares
+  var names = {};
+  pendingList.forEach(function(entry) {
+    var initials = entry[1].initials;
+    names[initials] = (names[initials] || 0) + 1;
+  });
+
+  var summary = Object.entries(names).map(function(e) { return e[1] + ' sq — ' + e[0]; }).join('
+');
+  var confirm = window.confirm('Release these pending squares?
+
+' + summary + '
+
+They will become open for others to buy.');
+  if (!confirm) return;
+
+  try {
+    var res = await fetch('/api/reject-pending', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: currentGame.id, pin: pin })
+    });
+    var result = await res.json();
+    if (result.ok) {
+      _cache[currentGame.id] = null;
+      await buildGrid(currentGame);
+      alert('Pending squares released — they are now open for purchase.');
+    } else {
+      alert('Error: ' + (result.error || 'failed'));
+    }
+  } catch(e) {
+    alert('Network error: ' + e.message);
+  }
 }
 
 async function adminReset() {
