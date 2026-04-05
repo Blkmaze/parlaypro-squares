@@ -1907,6 +1907,29 @@ async function loadGame(game) {
     if (currentGame && currentGame.id === game.id) {
       try { await buildGrid(currentGame); } catch (e) { logStatus('Poll error: ' + e.message, true); }
     }
+    // ── Check if admin switched to a new locked game ──────────────
+    try {
+      const _lr = await fetch('/api/board-lock');
+      if (_lr.ok) {
+        const _ld = await _lr.json();
+        if (_ld && _ld.locked && _ld.lockedAt && _ld.lockedAt !== window._currentLockTime) {
+          // Lock state changed — show refresh notification
+          window._currentLockTime = _ld.lockedAt;
+          if (!document.getElementById('_gameChangedBanner')) {
+            const _b = document.createElement('div');
+            _b.id = '_gameChangedBanner';
+            _b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#7c3aed;color:white;text-align:center;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);';
+            _b.innerHTML = '🔄 New game locked by admin — <u>tap here to refresh</u>';
+            _b.onclick = function() { window.location.reload(); };
+            document.body.prepend(_b);
+          }
+        }
+        // If unlocked, remove any stale banner
+        if (_ld && !_ld.locked && document.getElementById('_gameChangedBanner')) {
+          document.getElementById('_gameChangedBanner').remove();
+        }
+      }
+    } catch(e) {}
   }, 15000);
 
   buildOdds(game);
@@ -2500,6 +2523,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (_lockData && _lockData.locked) {
           _serverLocked = true;
           window._boardIsLocked = true; // block updateSport from this point on
+          window._currentLockTime = _lockData.lockedAt || 0;
           const _sport  = _lockData.sport  || 'NBA';
           const _date   = _lockData.date   || currentDate;
           const _gameId = _lockData.gameId || '';
