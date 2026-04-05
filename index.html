@@ -1918,7 +1918,8 @@ async function loadGame(game) {
         if (_ld && _ld.locked && _ld.lockedAt && _ld.lockedAt !== window._currentLockTime) {
           // Lock state changed — show refresh notification
           window._currentLockTime = _ld.lockedAt;
-          if (!document.getElementById('_gameChangedBanner')) {
+          // Only show to viewers, not to the admin who just locked it
+          if (!document.getElementById('_gameChangedBanner') && !window._ppIsAdmin) {
             const _b = document.createElement('div');
             _b.id = '_gameChangedBanner';
             _b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#7c3aed;color:white;text-align:center;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);';
@@ -2650,10 +2651,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('lockBanner').classList.add('on');
     document.getElementById('ppLockBtn').innerHTML = '🔓 Unlock Board';
     document.getElementById('ppLockBtn').classList.add('locked');
-    if (fromServer) {
-      const vi = document.getElementById('viewerInstructions');
-      if (vi) vi.classList.add('on');
-    }
+    // Always show instructions when board is locked (admin and viewers)
+    const vi = document.getElementById('viewerInstructions');
+    if (vi) vi.classList.add('on');
     window._ppOrigSport    = window.pinUpdateSport;
     window._ppOrigDate     = window.pinUpdateDateFromPicker;
     window._ppOrigArrow    = window.pinChangeDate;
@@ -2728,8 +2728,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       .then(r => r.json())
       .then(data => {
         if (data.ok) {
+          window._ppIsAdmin = true; // suppress "new game" banner for admin
           applyLockUI(snap.label, false);
-          showToast('🔒 Board locked! Share the site URL — everyone sees this board.');
+          showToast('🔒 Board locked! Share parlaypro-squares.netlify.app');
         } else {
           btn.textContent = '🔒 Lock Board';
           btn.disabled = false;
@@ -2747,6 +2748,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const pin = prompt('Enter admin PIN to unlock:');
       if (!pin) return;
       if (pin !== ADMIN_PIN && pin !== MASTER_PIN) { alert('Wrong PIN.'); return; }
+      const unlockBtn = document.getElementById('ppLockBtn');
+      unlockBtn.textContent = '⏳ Unlocking...';
+      unlockBtn.disabled = true;
       fetch('/api/board-lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2755,9 +2759,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       .then(r => r.json())
       .then(data => {
         releaseLockUI();
-        showToast('🔓 Board unlocked');
+        showToast('🔓 Board unlocked — you can now change boards');
+        // Reload current sport to restore nav without wiping the board
+        if (typeof updateSport === 'function' && currentSport) {
+          updateSport(currentSport);
+        }
       })
-      .catch(() => { releaseLockUI(); });
+      .catch(() => {
+        releaseLockUI();
+        showToast('🔓 Board unlocked');
+      });
     }
   };
 
