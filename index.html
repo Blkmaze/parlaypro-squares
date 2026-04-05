@@ -2707,6 +2707,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (pin !== ADMIN_PIN && pin !== MASTER_PIN) { alert('Wrong PIN.'); return; }
 
       const snap = getSnapshot();
+      // Validate - must have a real game selected
+      if (!snap.gameId || snap.gameId.trim() === '') {
+        alert('Please select a game first before locking the board.');
+        return;
+      }
+      if (!snap.label || snap.label.includes('Loading') || snap.label.trim() === '') {
+        alert('Please wait for games to load, then select a game before locking.');
+        return;
+      }
       const btn = document.getElementById('ppLockBtn');
       btn.textContent = '⏳ Locking...';
       btn.disabled = true;
