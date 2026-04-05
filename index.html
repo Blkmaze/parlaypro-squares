@@ -1038,71 +1038,63 @@
   .unlock-go { padding: 10px; border-radius: 8px; background: #16a34a; border: 1px solid #22c55e; color: white; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer; }
 
   @media print {
-    @page { size: landscape; margin: 0.3in; }
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box !important; }
-    html, body { 
-      width: 100% !important; 
-      height: 100% !important;
-      margin: 0 !important; 
-      padding: 0 !important;
-      background: white !important;
-      overflow: hidden !important;
-    }
-    /* Hide everything except the board */
-    .lock-banner, #lockBanner, #viewerInstructions, .ticker-wrap, .ticker-bar,
-    .sidebar, #adminZone, .parlay-card, nav, header,
-    #ppLockBtn, #unlockPrompt, #_gameChangedBanner,
-    .board-tabs, .quarter-tracker, .player-props-section,
-    .board-subtitle, .sport-controls, .game-date-nav { display: none !important; }
-    /* Scale entire layout to fit one page */
-    .layout { 
-      display: block !important; 
-      width: 100% !important;
-      transform-origin: top left !important;
-    }
-    .board-panel { 
-      width: 100% !important; 
-      border: 2px solid #333 !important; 
-      border-radius: 4px !important;
-      page-break-inside: avoid !important;
+    @page { size: landscape; margin: 0.25in; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    
+    /* Hide EVERYTHING first */
+    body > * { display: none !important; }
+    
+    /* Show only the board panel */
+    body > .ticker-wrap,
+    body > #lockBanner,
+    body > #viewerInstructions,
+    body > #unlockPrompt,
+    body > #_gameChangedBanner { display: none !important; }
+    
+    /* Show the main layout */
+    body > div:not(#lockBanner):not(#viewerInstructions):not(#unlockPrompt) { display: block !important; }
+    
+    .layout { display: block !important; }
+    
+    /* Hide sidebar and non-board elements */
+    .sidebar,
+    .board-tabs,
+    .sport-controls,
+    .game-date-nav,
+    .board-subtitle,
+    .quarter-tracker,
+    .player-props-section,
+    .ticker-wrap,
+    #lockBanner,
+    #viewerInstructions { display: none !important; }
+    
+    /* Board fills page */
+    .board-panel {
+      width: 100vw !important;
+      max-width: 100% !important;
+      border: 1px solid #333 !important;
+      border-radius: 0 !important;
       break-inside: avoid !important;
-    }
-    .board-header { 
-      padding: 6px 10px !important;
       page-break-inside: avoid !important;
     }
-    .board-title { font-size: 14px !important; }
-    .grid-wrap { 
+    
+    .board-header { padding: 8px 12px !important; }
+    
+    .grid-wrap {
       overflow: visible !important;
-      page-break-inside: avoid !important;
       break-inside: avoid !important;
     }
-    /* Force grid to fit */
-    #squaresGrid, .squares-grid { 
-      width: 100% !important;
-      page-break-inside: avoid !important;
+    
+    #squaresGrid {
       break-inside: avoid !important;
+      page-break-inside: avoid !important;
     }
-    /* Make cells smaller to fit on one page */
-    .sq-cell, [class*="sq-cell"] { 
-      height: 44px !important; 
-      min-height: 44px !important;
-      max-height: 44px !important;
+    
+    /* Shrink cells to fit */
+    .sq-cell {
+      height: 42px !important;
       font-size: 9px !important;
-      border: 1px solid #999 !important;
-      background: #f9f9f9 !important;
-      color: #111 !important;
-      page-break-inside: avoid !important;
     }
-    .sq-cell.taken, .sq-owner { background: #d1fae5 !important; color: #065f46 !important; font-weight: bold !important; }
-    .sq-cell.pending { background: #fef3c7 !important; color: #92400e !important; }
-    .col-header, .row-header { 
-      font-size: 10px !important; 
-      background: #1a1a2e !important; 
-      color: white !important;
-      height: 32px !important;
-    }
-    .team-label { font-size: 12px !important; font-weight: bold !important; }
   }
 
   @media (max-width: 768px) {
@@ -2359,88 +2351,9 @@ async function lockNumbers(game) {
 }
 
 function printBoard() {
-  if (!currentGame) { alert('Please load a game first.'); return; }
-  var gameTitle = currentGame.away + ' @ ' + currentGame.home;
-  var dateEl = document.getElementById('live-date');
-  var gameDate = dateEl ? dateEl.textContent : '';
-  var price = document.getElementById('squarePrice') ? document.getElementById('squarePrice').value : '10';
-
-  // Build grid data from DOM
-  var cells = document.querySelectorAll('.sq-cell, [data-idx]');
-  var colNums = [], rowNums = [];
-  document.querySelectorAll('.col-num, .col-header-num').forEach(function(el) { colNums.push(el.textContent.trim()); });
-  document.querySelectorAll('.row-num, .row-header-num').forEach(function(el) { rowNums.push(el.textContent.trim()); });
-
-  // Get the actual grid element HTML
-  var gridEl = document.getElementById('squaresGrid');
-  if (!gridEl) { alert('Board not loaded.'); return; }
-
-  // Build simple HTML table for printing
-  var rows = {};
-  var allCells = gridEl.querySelectorAll('[data-row][data-col]');
-  if (!allCells.length) allCells = gridEl.children;
-
-  var html = '<!DOCTYPE html><html><head><title>' + gameTitle + '</title>';
-  html += '<style>';
-  html += '@page{size:landscape;margin:0.4in}';
-  html += '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
-  html += 'body{font-family:Arial,sans-serif;background:white;margin:0;padding:0}';
-  html += 'h2{text-align:center;font-size:16px;margin:0 0 4px}';
-  html += 'p{text-align:center;font-size:11px;color:#555;margin:0 0 8px}';
-  html += '.wrap{width:100%}';
-  html += 'table{width:100%;border-collapse:collapse;table-layout:fixed}';
-  html += 'td,th{border:1px solid #999;text-align:center;vertical-align:middle;font-size:10px;height:46px;word-break:break-word}';
-  html += 'th{background:#1a1a2e;color:white;font-weight:bold;height:32px}';
-  html += '.taken{background:#d1fae5;color:#065f46;font-weight:bold}';
-  html += '.pending{background:#fef3c7;color:#92400e}';
-  html += '.open{background:#f9f9f9;color:#ccc}';
-  html += '.corner{background:#111;color:white}';
-  html += '.home-row th{background:#1a1a2e}';
-  html += '</style></head><body>';
-  html += '<h2>SUPER SQUARES — ' + gameTitle + '</h2>';
-  html += '<p>' + gameDate + ' &nbsp;|&nbsp; $' + price + ' per square &nbsp;|&nbsp; parlaypro-squares.netlify.app</p>';
-
-  // Read squares data from current board state
-  var squaresData = window._lastSquaresData || {};
-  var owners = squaresData.owners || {};
-  var pending = squaresData.pending || {};
-  var colNs = squaresData.colNums || currentGame._colNums || [];
-  var rowNs = squaresData.rowNums || currentGame._rowNums || [];
-
-  // Get numbers from DOM if not in data
-  if (!colNs.length) {
-    gridEl.querySelectorAll('.col-header .sq-num, .num-cell').forEach(function(el,i){ if(i<10) colNs.push(el.textContent.trim()); });
-  }
-
-  html += '<table>';
-  // Header row
-  html += '<tr><th class="corner">' + currentGame.away + ' \\ ' + currentGame.home + '</th>';
-  for (var c=0; c<10; c++) { html += '<th>' + (colNs[c] !== undefined ? colNs[c] : '?') + '</th>'; }
-  html += '</tr>';
-  // Data rows
-  for (var r=0; r<10; r++) {
-    html += '<tr><th>' + (rowNs[r] !== undefined ? rowNs[r] : '?') + '</th>';
-    for (var c=0; c<10; c++) {
-      var idx = r*10+c;
-      var owner = owners[idx];
-      var pend = pending[idx];
-      if (owner) {
-        html += '<td class="taken">' + owner + '</td>';
-      } else if (pend) {
-        html += '<td class="pending">' + pend.initials + '</td>';
-      } else {
-        html += '<td class="open"></td>';
-      }
-    }
-    html += '</tr>';
-  }
-  html += '</table></body></html>';
-
-  var win = window.open('', '_blank');
-  if (!win) { alert('Please allow popups for this site to print.'); return; }
-  win.document.write(html);
-  win.document.close();
-  setTimeout(function() { win.print(); }, 600);
+  document.body.classList.add('printing');
+  window.print();
+  setTimeout(function() { document.body.classList.remove('printing'); }, 2000);
 }
 
 async function releasePendingPayments() {
