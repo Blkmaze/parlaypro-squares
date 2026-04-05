@@ -200,5 +200,4 @@ export default async function handler(req,context) {
 
 
 
-export const config = { path: "/api/{path:splat}", excludedPath: ["/api/board-lock"] };
-
+export const config = { path: "/api/*" };
