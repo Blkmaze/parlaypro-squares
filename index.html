@@ -1037,6 +1037,41 @@
   .unlock-cancel { padding: 10px; border-radius: 8px; background: #1a1a1a; border: 1px solid #333; color: #a3a3a3; font-size: 13px; font-weight: 700; cursor: pointer; }
   .unlock-go { padding: 10px; border-radius: 8px; background: #16a34a; border: 1px solid #22c55e; color: white; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer; }
 
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: white !important; margin: 0; padding: 0; }
+    .lock-banner, .viewer-instructions, #viewerInstructions, .ticker-bar,
+    .sidebar, .admin-zone, #adminZone, .parlay-card, nav,
+    #ppLockBtn, #unlockPrompt, #_gameChangedBanner,
+    .board-tabs, .quarter-tracker, .player-props-section { display: none !important; }
+    .layout { display: block !important; width: 100% !important; }
+    .board-panel { width: 100% !important; border: none !important; border-radius: 0 !important; }
+    .board-header { padding: 8px 12px !important; }
+    .board-header h1, .board-header .board-title { font-size: 16px !important; }
+    .grid-wrap { overflow: visible !important; }
+    .squares-grid { 
+      display: grid !important;
+      grid-template-columns: 32px repeat(10, 1fr) !important;
+      gap: 1px !important;
+      width: 100% !important;
+    }
+    .sq-cell { 
+      width: auto !important; 
+      height: 48px !important; 
+      min-width: 0 !important;
+      font-size: 10px !important;
+      border: 1px solid #ccc !important;
+      background: white !important;
+      color: black !important;
+    }
+    .sq-cell.taken { background: #d1fae5 !important; color: #065f46 !important; }
+    .sq-cell.pending { background: #fef3c7 !important; color: #92400e !important; }
+    .sq-num { font-size: 9px !important; color: #666 !important; }
+    .col-header, .row-header { font-size: 10px !important; background: #1a1a2e !important; color: white !important; }
+    .team-label { font-size: 11px !important; }
+    @page { size: landscape; margin: 0.5in; }
+  }
+
   @media (max-width: 768px) {
     .layout { grid-template-columns: 1fr; }
     .page-wrap { padding: 8px; }
@@ -1402,6 +1437,7 @@
       </div>
       <div class="admin-btns">
         <button id="ppLockBtn" onclick="ppToggleLock()">🔒 Lock Board</button>
+        <button class="admin-btn" onclick="window.print()" style="background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.3);color:#a5b4fc;">🖨️ Print Board</button>
         <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
         <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
         <button class="admin-btn admin-btn-green" onclick="confirmPendingPayments()">✅ Confirm Pending Payments</button>
@@ -2776,9 +2812,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Lock button click ─────────────────────────────────────────────
   window.ppToggleLock = function() {
-    // Use window._boardIsLocked as the authoritative state (works after page reload)
-    if (locked) window._boardIsLocked = true;
-    if (!locked && !window._boardIsLocked) {
+    // window._boardIsLocked is the single authoritative source of truth
+    // locked (IIFE var) is synced via _ppSetLocked when server lock loads
+    var isLocked = locked || window._boardIsLocked;
+    if (!isLocked) {
       // Ask for PIN before locking (so only admin can lock)
       const pin = prompt('Enter admin PIN to lock this board:');
       if (!pin) return;
@@ -2822,7 +2859,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
     } else {
-      // Unlock — prompt for PIN directly
+      // Board is locked — unlock it
       const pin = prompt('Enter admin PIN to unlock:');
       if (!pin) return;
       if (pin !== ADMIN_PIN && pin !== MASTER_PIN) { alert('Wrong PIN.'); return; }
