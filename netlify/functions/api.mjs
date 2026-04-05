@@ -1,7 +1,6 @@
 // ParlayPro Squares API - ASCII only
 const SITE_ID    = "658f40e1-9d0f-4072-80a5-d6d0eb35d77e";
 const STORE      = "sq3";
-const LOCK_KEY   = "__board_lock__";
 const ADMIN_PIN  = process.env.ADMIN_PIN  || "2826";
 const MASTER_PIN = process.env.MASTER_PIN || "0614";
 const ORIGIN     = "https://parlaypro-squares.netlify.app";
@@ -55,38 +54,6 @@ export default async function handler(req,context) {
   var body={};
   if(method==="POST"){try{var raw=await req.text();body=JSON.parse(raw);}catch(e){body={};}}
   var token=process.env.NETLIFY_TOKEN;
-
-  // ── BOARD LOCK GET ─────────────────────────────────────────────
-  if(path==="/api/board-lock"&&method==="GET"){
-    if(!token) return json(req,{locked:false});
-    try{
-      var lockData=await blobGet(token,LOCK_KEY);
-      return json(req,lockData||{locked:false});
-    }catch(e){return json(req,{locked:false});}
-  }
-
-  // ── BOARD LOCK POST (lock or unlock) ───────────────────────────
-  if(path==="/api/board-lock"&&method==="POST"){
-    if(!token) return json(req,{error:"Server error"},500);
-    var pin=typeof body.pin==="string"?body.pin.slice(0,8):"";
-    if(!validPin(pin)) return json(req,{error:"Wrong PIN"},401);
-    try{
-      if(body.action==="unlock"){
-        await blobSet(token,LOCK_KEY,{locked:false});
-        return json(req,{ok:true,locked:false});
-      }
-      var ldata={
-        locked:true,
-        sport:typeof body.sport==="string"?body.sport.slice(0,20):"",
-        date:typeof body.date==="string"?body.date.slice(0,10):"",
-        gameId:typeof body.gameId==="string"?body.gameId.slice(0,64):"",
-        label:typeof body.label==="string"?body.label.slice(0,80):"",
-        lockedAt:Date.now()
-      };
-      await blobSet(token,LOCK_KEY,ldata);
-      return json(req,{ok:true,...ldata});
-    }catch(e){return json(req,{error:e.message||"Lock failed"},500);}
-  }
 
   if(path==="/api/scores"&&method==="GET"){
     var SPORTS={ncaam:"https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard",ncaaw:"https://site.api.espn.com/apis/site/v2/sports/basketball/womens-college-basketball/scoreboard",nba:"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",wnba:"https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard",nhl:"https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard",mlb:"https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard",nfl:"https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard",mls:"https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard"};
@@ -227,3 +194,7 @@ export default async function handler(req,context) {
 
   return json(req,{error:"Not found"},404);
 }
+
+
+
+
