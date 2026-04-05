@@ -2359,61 +2359,88 @@ async function lockNumbers(game) {
 }
 
 function printBoard() {
-  // Build a clean print window with just the board scaled to fit one landscape page
-  var grid = document.getElementById('squaresGrid');
-  var boardPanel = document.querySelector('.board-panel');
-  if (!boardPanel) { window.print(); return; }
-
-  // Get team labels
-  var awayLabel = '';
-  var homeLabel = '';
-  var awayEl = document.querySelector('.away-label, .team-away, [class*="away"]');
-  var homeEl = document.querySelector('.home-label, .team-home, [class*="home"]');
-
-  // Get game title from header
-  var titleEl = document.querySelector('.board-title, .board-header h1, #boardTitle');
-  var gameTitle = currentGame ? (currentGame.away + ' @ ' + currentGame.home) : 'Super Squares';
+  if (!currentGame) { alert('Please load a game first.'); return; }
+  var gameTitle = currentGame.away + ' @ ' + currentGame.home;
   var dateEl = document.getElementById('live-date');
   var gameDate = dateEl ? dateEl.textContent : '';
+  var price = document.getElementById('squarePrice') ? document.getElementById('squarePrice').value : '10';
 
-  // Clone the board panel
-  var clone = boardPanel.cloneNode(true);
+  // Build grid data from DOM
+  var cells = document.querySelectorAll('.sq-cell, [data-idx]');
+  var colNums = [], rowNums = [];
+  document.querySelectorAll('.col-num, .col-header-num').forEach(function(el) { colNums.push(el.textContent.trim()); });
+  document.querySelectorAll('.row-num, .row-header-num').forEach(function(el) { rowNums.push(el.textContent.trim()); });
 
-  // Remove non-print elements from clone
-  var toRemove = clone.querySelectorAll('.board-tabs, .sport-controls, .game-date-nav, .board-subtitle, button, .admin-zone');
-  toRemove.forEach(function(el) { el.remove(); });
+  // Get the actual grid element HTML
+  var gridEl = document.getElementById('squaresGrid');
+  if (!gridEl) { alert('Board not loaded.'); return; }
 
-  var win = window.open('', '_blank', 'width=1100,height=800');
-  win.document.write('<!DOCTYPE html><html><head><title>Super Squares — ' + gameTitle + '</title><style>');
-  win.document.write('* { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }');
-  win.document.write('@page { size: landscape; margin: 0.4in; }');
-  win.document.write('body { background: white; font-family: Inter, Arial, sans-serif; }');
-  win.document.write('.print-header { text-align: center; margin-bottom: 8px; }');
-  win.document.write('.print-title { font-size: 18px; font-weight: 800; color: #111; }');
-  win.document.write('.print-sub { font-size: 12px; color: #555; margin-top: 2px; }');
-  win.document.write('.board-wrap { width: 100%; transform-origin: top left; }');
-  win.document.write('</style>');
-  // Copy the page stylesheet
-  var links = document.querySelectorAll('link[rel="stylesheet"], style');
-  links.forEach(function(l) { win.document.write(l.outerHTML); });
-  win.document.write('</head><body>');
-  win.document.write('<div class="print-header">');
-  win.document.write('<div class="print-title">🏈 SUPER SQUARES — ' + gameTitle + '</div>');
-  win.document.write('<div class="print-sub">' + gameDate + ' &nbsp;|&nbsp; $' + (currentPrice || 10) + ' per square</div>');
-  win.document.write('</div>');
-  win.document.write('<div class="board-wrap">' + boardPanel.outerHTML + '</div>');
-  win.document.write('<script>');
-  win.document.write('window.onload = function() {');
-  win.document.write('  var wrap = document.querySelector(".board-wrap");');
-  win.document.write('  var btns = wrap.querySelectorAll("button, .board-tabs, .sport-controls, .game-date-nav, .board-subtitle");');
-  win.document.write('  btns.forEach(function(b) { b.style.display = "none"; });');
-  win.document.write('  var pw = document.body.clientWidth;');
-  win.document.write('  var bw = wrap.scrollWidth;');
-  win.document.write('  if (bw > pw) { var scale = pw / bw; wrap.style.transform = "scale(" + scale + ")"; wrap.style.width = (100/scale) + "%"; }');
-  win.document.write('  setTimeout(function() { window.print(); window.close(); }, 800);');
-  win.document.write('};');
-  win.document.write('<\/script></body></html>');
+  // Build simple HTML table for printing
+  var rows = {};
+  var allCells = gridEl.querySelectorAll('[data-row][data-col]');
+  if (!allCells.length) allCells = gridEl.children;
+
+  var html = '<!DOCTYPE html><html><head><title>' + gameTitle + '</title>';
+  html += '<style>';
+  html += '@page{size:landscape;margin:0.4in}';
+  html += '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+  html += 'body{font-family:Arial,sans-serif;background:white;margin:0;padding:0}';
+  html += 'h2{text-align:center;font-size:16px;margin:0 0 4px}';
+  html += 'p{text-align:center;font-size:11px;color:#555;margin:0 0 8px}';
+  html += '.wrap{width:100%}';
+  html += 'table{width:100%;border-collapse:collapse;table-layout:fixed}';
+  html += 'td,th{border:1px solid #999;text-align:center;vertical-align:middle;font-size:10px;height:46px;word-break:break-word}';
+  html += 'th{background:#1a1a2e;color:white;font-weight:bold;height:32px}';
+  html += '.taken{background:#d1fae5;color:#065f46;font-weight:bold}';
+  html += '.pending{background:#fef3c7;color:#92400e}';
+  html += '.open{background:#f9f9f9;color:#ccc}';
+  html += '.corner{background:#111;color:white}';
+  html += '.home-row th{background:#1a1a2e}';
+  html += '</style></head><body>';
+  html += '<h2>SUPER SQUARES — ' + gameTitle + '</h2>';
+  html += '<p>' + gameDate + ' &nbsp;|&nbsp; $' + price + ' per square &nbsp;|&nbsp; parlaypro-squares.netlify.app</p>';
+
+  // Read squares data from current board state
+  var squaresData = window._lastSquaresData || {};
+  var owners = squaresData.owners || {};
+  var pending = squaresData.pending || {};
+  var colNs = squaresData.colNums || currentGame._colNums || [];
+  var rowNs = squaresData.rowNums || currentGame._rowNums || [];
+
+  // Get numbers from DOM if not in data
+  if (!colNs.length) {
+    gridEl.querySelectorAll('.col-header .sq-num, .num-cell').forEach(function(el,i){ if(i<10) colNs.push(el.textContent.trim()); });
+  }
+
+  html += '<table>';
+  // Header row
+  html += '<tr><th class="corner">' + currentGame.away + ' \\ ' + currentGame.home + '</th>';
+  for (var c=0; c<10; c++) { html += '<th>' + (colNs[c] !== undefined ? colNs[c] : '?') + '</th>'; }
+  html += '</tr>';
+  // Data rows
+  for (var r=0; r<10; r++) {
+    html += '<tr><th>' + (rowNs[r] !== undefined ? rowNs[r] : '?') + '</th>';
+    for (var c=0; c<10; c++) {
+      var idx = r*10+c;
+      var owner = owners[idx];
+      var pend = pending[idx];
+      if (owner) {
+        html += '<td class="taken">' + owner + '</td>';
+      } else if (pend) {
+        html += '<td class="pending">' + pend.initials + '</td>';
+      } else {
+        html += '<td class="open"></td>';
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</table></body></html>';
+
+  var win = window.open('', '_blank');
+  if (!win) { alert('Please allow popups for this site to print.'); return; }
+  win.document.write(html);
   win.document.close();
+  setTimeout(function() { win.print(); }, 600);
 }
 
 async function releasePendingPayments() {
