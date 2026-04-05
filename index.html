@@ -1933,9 +1933,10 @@ function getFallbackGame(sport) {
 }
 
 async function updateSport(sport) {
-  // If board is locked, block any sport switches (only allow background score fetch)
+  // Block ALL sport switches while board is locked
+  // _ppLockScoreFetch is the only exception (background score enrichment)
   if (window._boardIsLocked && !window._ppLockScoreFetch) {
-    logStatus('Board locked — blocking updateSport(' + sport + ')', false);
+    logStatus('Board locked — blocked updateSport(' + sport + ')', false);
     return;
   }
   logStatus('Switching to ' + sport + '...', false);
@@ -2457,6 +2458,26 @@ async function updateQtrTracker(game, squaresData) {
   }
 }
 
+// ── PRE-LOAD LOCK CHECK ─────────────────────────────────────────────
+// Runs immediately when script parses — sets _boardIsLocked flag
+// BEFORE DOMContentLoaded fires, so updateSport('NBA') is blocked
+// from the very first line
+(async function() {
+  try {
+    const r = await fetch('/api/board-lock');
+    if (r.ok) {
+      const d = await r.json();
+      if (d && d.locked) {
+        window._boardIsLocked  = true;
+        window._lockedGameId   = d.gameId || '';
+        window._lockedSport    = d.sport  || 'NBA';
+        window._lockedDate     = d.date   || '';
+        window._lockedLabel    = d.label  || 'Locked Board';
+      }
+    }
+  } catch(e) {}
+})();
+
 document.addEventListener('DOMContentLoaded', async () => {
   logStatus('Page loading...', false);
 
@@ -2489,15 +2510,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     initDatePicker();
 
-    // ── Check server for board lock BEFORE loading any sport ─────────
-    // Inline here so it runs before the lock script tag loads
+    // ── Use pre-loaded lock state (fetched before DOMContentLoaded) ────
     let _serverLocked = false;
     try {
-      const _lockRes = await fetch('/api/board-lock');
-      if (_lockRes.ok) {
-        const _lockData = await _lockRes.json();
-        if (_lockData && _lockData.locked) {
-          _serverLocked = true;
+      if (window._boardIsLocked) {
+        _serverLocked = true;
+        const _lockData = { locked: true, sport: window._lockedSport, date: window._lockedDate, gameId: window._lockedGameId, label: window._lockedLabel };
+        {
           const _sport  = _lockData.sport  || 'NBA';
           const _date   = _lockData.date   || currentDate;
           const _gameId = _lockData.gameId || '';
