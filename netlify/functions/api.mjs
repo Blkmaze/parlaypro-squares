@@ -205,7 +205,7 @@ export default async function handler(req,context) {
     if(!validPin(pin)) return json(req,{error:"Wrong PIN"},401);
     try{
       if(body.action==="unlock"){await blobSet(token,"__board_lock__",{locked:false});return json(req,{ok:true,locked:false});}
-      var ldata={locked:true,sport:String(body.sport||"").slice(0,20),date:String(body.date||"").slice(0,10),gameId:String(body.gameId||"").slice(0,64),label:String(body.label||"").slice(0,80),lockedAt:Date.now()};
+      var ldata={locked:true,sport:String(body.sport||"").slice(0,20),date:String(body.date||"").slice(0,10),gameId:String(body.gameId||"").slice(0,64),label:String(body.label||"").slice(0,80),price:String(body.price||"10").slice(0,6),lockedAt:Date.now()};
       await blobSet(token,"__board_lock__",ldata);
       return json(req,{ok:true,...ldata});
     }catch(e){return json(req,{error:e.message||"Lock failed"},500);}

@@ -1103,22 +1103,22 @@
   <div class="vi-steps">
     <div class="vi-step">
       <div class="vi-step-num">1</div>
-      <span>Click any <strong style="color:#22c55e;">open square</strong> on the board</span>
+      <span>Pick quantity on the <strong style="color:#22c55e;">right side</strong> (1, 2, 5, 10, 20)</span>
     </div>
     <div class="vi-divider">›</div>
     <div class="vi-step">
       <div class="vi-step-num">2</div>
-      <span>Choose how many squares & enter your initials</span>
+      <span>Click <strong style="color:#22c55e;">BUY SQUARES NOW</strong></span>
     </div>
     <div class="vi-divider">›</div>
     <div class="vi-step">
       <div class="vi-step-num">3</div>
-      <span>Pay via <strong style="color:#00D632;">Cash App</strong> or <strong style="color:#60a5fa;">PayPal</strong></span>
+      <span>Enter your <strong style="color:#22c55e;">initials</strong> & pay via <strong style="color:#00D632;">Cash App</strong> or <strong style="color:#60a5fa;">PayPal</strong></span>
     </div>
     <div class="vi-divider">›</div>
     <div class="vi-step">
       <div class="vi-step-num">4</div>
-      <span>Your squares are <strong style="color:#22c55e;">locked in</strong> instantly</span>
+      <span>Squares <strong style="color:#22c55e;">auto-assigned</strong> randomly after payment verified</span>
     </div>
   </div>
   <div style="font-size:11px;color:rgba(255,255,255,0.35);white-space:nowrap;">Board locked by admin · game & date cannot be changed</div>
@@ -2634,11 +2634,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const sel   = document.getElementById('gameSelect');
     const sport = document.querySelector('.sport-select');
     const date  = document.getElementById('gameDate');
+    const price = document.getElementById('squarePrice');
     return {
       sport:  sport ? sport.value : 'NBA',
       date:   date  ? date.value  : currentDate,
       gameId: sel   ? sel.value   : '',
-      label:  sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : ''
+      label:  sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '',
+      price:  price ? price.value : '10'
     };
   }
 
@@ -2676,6 +2678,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('ppLockBtn').classList.remove('locked');
     const vi = document.getElementById('viewerInstructions');
     if (vi) vi.classList.remove('on');
+    // Unfreeze price dropdown
+    const priceEl = document.getElementById('squarePrice');
+    if (priceEl) { priceEl.disabled = false; priceEl.style.opacity = ''; priceEl.style.pointerEvents = ''; }
     if (window._ppOrigSport)    window.pinUpdateSport          = window._ppOrigSport;
     if (window._ppOrigDate)     window.pinUpdateDateFromPicker = window._ppOrigDate;
     if (window._ppOrigArrow)    window.pinChangeDate           = window._ppOrigArrow;
@@ -2856,7 +2861,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         status: 'UPCOMING', time: '', period: 0
       };
 
-      // ── Step 3: Load the locked game immediately ──────────────────
+      // ── Step 3: Restore saved price ────────────────────────────────
+      if (data.price) {
+        const priceEl = document.getElementById('squarePrice');
+        if (priceEl) {
+          priceEl.value = data.price;
+          if (typeof updatePriceDisplay === 'function') updatePriceDisplay(data.price);
+        }
+      }
+      // ── Step 4: Load the locked game immediately ──────────────────
       await loadGame(savedGame);
 
       // ── Step 4: Apply lock UI BEFORE any ESPN background fetch ─────
