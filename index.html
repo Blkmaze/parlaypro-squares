@@ -1554,6 +1554,7 @@
       </div>
       <div class="modal-input-label">Your Initials (3 letters)</div>
       <input type="text" maxlength="3" placeholder="ABC" class="modal-input" id="initialsInput" oninput="checkInitials()" />
+
         <div class="modal-pay-grid" style="grid-template-columns:1fr 1fr 1fr;">
         <div class="modal-pay-option selected" id="payOpt-cashapp" onclick="selectPay(this,'cashapp')">
           <div class="modal-pay-icon" style="background:#00D632;">$</div>
@@ -1884,7 +1885,20 @@ async function buildGrid(game) {
       } else {
         cellClass = 'cell-open';
       }
-      html += `<div class="cell ${cellClass}" data-idx="${idx}" style="${cellStyle}">${displayText}</div>`;
+      if (displayText) {
+        const _awayDigit = leftNums[i] !== undefined ? leftNums[i] : '';
+        const _homeDigit = topNums[j] !== undefined ? topNums[j] : '';
+        // Use real ESPN team colors if available, fallback to defaults
+        const _awayColor = (game.awayColor && game.awayColor.length > 2) ? game.awayColor : '#860038';
+        const _homeColor = (game.homeColor && game.homeColor.length > 2) ? game.homeColor : '#E03A3E';
+        // ATL digit top-center with glow, CLE digit left of initials with glow
+        const _homeDigitSpan = `<span style="font-size:9px;font-weight:800;color:${_homeColor};text-shadow:0 0 6px ${_homeColor},0 0 10px ${_homeColor}88;line-height:1;display:block;text-align:center;margin-bottom:1px;">${_homeDigit}</span>`;
+        const _awayDigitSpan = `<span style="font-size:9px;font-weight:800;color:${_awayColor};text-shadow:0 0 6px ${_awayColor},0 0 10px ${_awayColor}88;line-height:1;margin-right:2px;">${_awayDigit}</span>`;
+        const _inner = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;">${_homeDigitSpan}<div style="display:flex;align-items:center;">${_awayDigitSpan}<span>${displayText}</span></div></div>`;
+        html += `<div class="cell ${cellClass}" data-idx="${idx}" style="position:relative;padding:2px;${cellStyle}">${_inner}</div>`;
+      } else {
+        html += `<div class="cell ${cellClass}" data-idx="${idx}" style="${cellStyle}">${displayText}</div>`;
+      }
     }
   }
 

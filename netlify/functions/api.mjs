@@ -69,7 +69,7 @@ export default async function handler(req,context) {
         var away=c&&c.competitors&&c.competitors.find(function(t){return t.homeAway==="away";});
         var s=c&&c.status&&c.status.type;
         var odds=c&&c.odds&&c.odds[0];
-        return{id:e.id,name:e.name,home:home&&home.team&&home.team.abbreviation||"",homeFull:home&&home.team&&home.team.displayName||"",homeLogo:home&&home.team&&home.team.logo||"",homeScore:home&&home.score||"0",away:away&&away.team&&away.team.abbreviation||"",awayFull:away&&away.team&&away.team.displayName||"",awayLogo:away&&away.team&&away.team.logo||"",awayScore:away&&away.score||"0",status:s&&s.completed?"FINAL":s&&s.inProgress?"LIVE":"SCHEDULED",clock:c&&c.status&&c.status.displayClock||"",period:c&&c.status&&c.status.period||0,time:e.date?new Date(e.date).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/New_York"})+" ET":"",date:e.date?new Date(e.date).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric",timeZone:"America/New_York"}):"",spread:odds&&odds.spread||null,total:odds&&odds.overUnder||null,awayML:odds&&odds.awayTeamOdds&&odds.awayTeamOdds.moneyLine||null,homeML:odds&&odds.homeTeamOdds&&odds.homeTeamOdds.moneyLine||null,spreadFav:odds&&odds.homeTeamOdds&&odds.homeTeamOdds.favorite?"home":"away"};
+        return{id:e.id,name:e.name,home:home&&home.team&&home.team.abbreviation||"",homeFull:home&&home.team&&home.team.displayName||"",homeLogo:home&&home.team&&home.team.logo||"",homeColor:"#"+(home&&home.team&&home.team.color||"22c55e"),homeAltColor:"#"+(home&&home.team&&home.team.alternateColor||"16a34a"),homeScore:home&&home.score||"0",away:away&&away.team&&away.team.abbreviation||"",awayFull:away&&away.team&&away.team.displayName||"",awayLogo:away&&away.team&&away.team.logo||"",awayColor:"#"+(away&&away.team&&away.team.color||"60a5fa"),awayAltColor:"#"+(away&&away.team&&away.team.alternateColor||"3b82f6"),awayScore:away&&away.score||"0",status:s&&s.completed?"FINAL":s&&s.inProgress?"LIVE":"SCHEDULED",clock:c&&c.status&&c.status.displayClock||"",period:c&&c.status&&c.status.period||0,time:e.date?new Date(e.date).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:"America/New_York"})+" ET":"",date:e.date?new Date(e.date).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric",timeZone:"America/New_York"}):"",spread:odds&&odds.spread||null,total:odds&&odds.overUnder||null,awayML:odds&&odds.awayTeamOdds&&odds.awayTeamOdds.moneyLine||null,homeML:odds&&odds.homeTeamOdds&&odds.homeTeamOdds.moneyLine||null,spreadFav:odds&&odds.homeTeamOdds&&odds.homeTeamOdds.favorite?"home":"away"};
       });
       return json(req,{sport:sport,games:games});
     }catch(e){return json(req,{error:"Server error"},500);}
@@ -100,7 +100,8 @@ export default async function handler(req,context) {
       if(!open.length) return json(req,{error:"No open squares"},409);
       for(var i=open.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var tmp=open[i];open[i]=open[j];open[j]=tmp;}
       var assigned=open.slice(0,Math.min(qty,open.length));
-      if(isPending){assigned.forEach(function(idx){pending[idx]={initials:initials,payMethod:payMethod,amount:amount};});data.pending=pending;}
+      var phone=typeof body.phone==="string"?body.phone.replace(/[^0-9]/g,"").slice(0,4):"";
+      if(isPending){assigned.forEach(function(idx){pending[idx]={initials:initials,payMethod:payMethod,amount:amount,phone:phone};});data.pending=pending;}
       else{assigned.forEach(function(idx){owners[idx]=initials;});data.owners=owners;}
       await blobSet(token,gameId,data);
       return json(req,{ok:true,indices:assigned,initials:initials});
@@ -173,8 +174,9 @@ export default async function handler(req,context) {
       var data=await blobGet(token,gameId)||empty();
       var owners=data.owners||{};var pending=data.pending||{};var confirmed=[];
       var indices=Array.isArray(body.indices)?body.indices:Object.keys(pending).map(Number);
-      indices.forEach(function(i){var p=pending[i];if(p){owners[i]=p.initials;delete pending[i];confirmed.push(i);}});
-      data.owners=owners;data.pending=pending;await blobSet(token,gameId,data);
+      var ownerPhones=data.ownerPhones||{};
+      indices.forEach(function(i){var p=pending[i];if(p){owners[i]=p.initials;if(p.phone)ownerPhones[i]=p.phone;delete pending[i];confirmed.push(i);}});
+      data.owners=owners;data.pending=pending;data.ownerPhones=ownerPhones;await blobSet(token,gameId,data);
       return json(req,{ok:true,confirmed:confirmed});
     }catch(e){return json(req,{error:"Server error"},500);}
   }
