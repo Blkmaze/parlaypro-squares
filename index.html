@@ -2353,83 +2353,71 @@ async function lockNumbers(game) {
 async function printBoard() {
   if (!currentGame) { alert('Please load a game first.'); return; }
 
-  // Always fetch fresh data from server before printing
+  // Fetch fresh data
   var freshData = {};
   try {
     var r = await fetch('/api/squares?gameId=' + encodeURIComponent(currentGame.id));
     freshData = await r.json();
-    window._lastSquaresData = freshData;
-  } catch(e) {
-    freshData = window._lastSquaresData || {};
-  }
+  } catch(e) { freshData = window._lastSquaresData || {}; }
 
   var owners = freshData.owners || {};
   var pending = freshData.pending || {};
-  // Get numbers - use locked nums, or seededShuffle (same as board), or DOM fallback
-  var topNums = freshData.rowNums && freshData.rowNums.length === 10 ? freshData.rowNums :
-    (typeof seededShuffle === 'function' ? seededShuffle([0,1,2,3,4,5,6,7,8,9], 'top-' + currentGame.id) :
-    Array.from(document.querySelectorAll('.axis-header.axis-top')).map(function(el){ return el.textContent.trim(); }));
-  var leftNums = freshData.colNums && freshData.colNums.length === 10 ? freshData.colNums :
-    (typeof seededShuffle === 'function' ? seededShuffle([0,1,2,3,4,5,6,7,8,9], 'left-' + currentGame.id) :
-    Array.from(document.querySelectorAll('.axis-header.axis-left')).map(function(el){ return el.textContent.trim(); }));
+  var topNums = (freshData.rowNums && freshData.rowNums.length===10) ? freshData.rowNums :
+    (typeof seededShuffle==='function' ? seededShuffle([0,1,2,3,4,5,6,7,8,9],'top-'+currentGame.id) : [0,1,2,3,4,5,6,7,8,9]);
+  var leftNums = (freshData.colNums && freshData.colNums.length===10) ? freshData.colNums :
+    (typeof seededShuffle==='function' ? seededShuffle([0,1,2,3,4,5,6,7,8,9],'left-'+currentGame.id) : [0,1,2,3,4,5,6,7,8,9]);
 
   var away = currentGame.awayFull || currentGame.away || 'AWAY';
   var home = currentGame.homeFull || currentGame.home || 'HOME';
   var lockLabel = document.getElementById('lockBannerGame');
-  if (lockLabel && lockLabel.textContent && (away === 'AWAY' || home === 'HOME' || away === '')) {
-    var parts = lockLabel.textContent.replace(/^[^\w]*/, '').split(' @ ');
-    if (parts.length === 2) { away = parts[0].trim(); home = parts[1].trim(); }
+  if (lockLabel && lockLabel.textContent && (away==='AWAY'||home==='HOME'||!away)) {
+    var parts = lockLabel.textContent.replace(/^[^A-Z]*/,'').split(' @ ');
+    if (parts.length===2){away=parts[0].trim();home=parts[1].trim();}
   }
   var dateEl = document.getElementById('live-date');
-  var price = (document.getElementById('squarePrice') || {}).value || '10';
+  var price = (document.getElementById('squarePrice')||{}).value||'10';
 
-  // Build table rows
-  var rows = '<tr>';
-  rows += '<th style="background:#111;color:#aaa;font-size:9px;padding:4px;border:1.5px solid #555;">' + away + ' &darr;<br>' + home + ' &rarr;</th>';
-  for (var c = 0; c < 10; c++) rows += '<th style="background:#1a1a3e;color:#7dd3fc;border:1.5px solid #555;">' + (topNums[c] !== undefined ? topNums[c] : c) + '</th>';
+  // Build rows
+  var rows = '';
+  // Header
+  rows += '<tr><th style="background:#111;color:#aaa;font-size:8px;padding:2px;border:1px solid #555;width:60px;">'
+    + away + '<br>&#8595;&nbsp;&nbsp;' + home + '&nbsp;&#8594;</th>';
+  for(var c=0;c<10;c++) rows += '<th style="background:#1a1a3e;color:#7dd3fc;border:1px solid #555;font-size:12px;">' + topNums[c] + '</th>';
   rows += '</tr>';
-
-  for (var r = 0; r < 10; r++) {
-    rows += '<tr><th style="background:#1a1a3e;color:#86efac;border:1.5px solid #555;">' + (leftNums[r] !== undefined ? leftNums[r] : r) + '</th>';
-    for (var c = 0; c < 10; c++) {
-      var idx = r * 10 + c;
-      var o = owners[idx]; var p = pending[idx];
-      if (o) rows += '<td style="background:#dcfce7;color:#166534;font-weight:800;font-size:12px;border:1.5px solid #999;">' + o + '</td>';
-      else if (p) rows += '<td style="background:#fef9c3;color:#854d0e;font-weight:800;font-size:12px;border:1.5px solid #999;">' + (p.initials||'?') + '</td>';
-      else rows += '<td style="background:#fafafa;border:1.5px solid #ccc;"></td>';
+  // Data rows
+  for(var row=0;row<10;row++){
+    rows += '<tr><th style="background:#1a1a3e;color:#86efac;border:1px solid #555;font-size:12px;">' + leftNums[row] + '</th>';
+    for(var col=0;col<10;col++){
+      var idx = row*10+col;
+      var o=owners[idx]; var p=pending[idx];
+      if(o) rows += '<td style="background:#dcfce7;color:#166534;font-weight:800;font-size:11px;border:1px solid #bbb;">' + o + '</td>';
+      else if(p) rows += '<td style="background:#fef9c3;color:#854d0e;font-weight:800;font-size:11px;border:1px solid #bbb;">' + (p.initials||'?') + '</td>';
+      else rows += '<td style="background:#f9f9f9;border:1px solid #ddd;"></td>';
     }
     rows += '</tr>';
   }
 
-  // Remove old print div
-  var old = document.getElementById('_printDiv');
-  if (old) old.remove();
-
-  var div = document.createElement('div');
-  div.id = '_printDiv';
-  div.innerHTML = '<h2 style="text-align:center;font-size:20px;font-weight:900;margin:0 0 4px;font-family:Arial,sans-serif;">SUPER SQUARES &mdash; ' + away + ' @ ' + home + '</h2>'
-    + '<p style="text-align:center;font-size:11px;color:#666;margin:0 0 10px;font-family:Arial,sans-serif;">' + (dateEl ? dateEl.textContent : '') + ' &bull; $' + price + '/sq &bull; parlaypro-squares.netlify.app</p>'
-    + '<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-family:Arial,sans-serif;">' + rows + '</table>';
-  // Insert print div at TOP of body so it's first element
-  document.body.insertBefore(div, document.body.firstChild);
-
-  var style = document.getElementById('_printStyle') || document.createElement('style');
-  style.id = '_printStyle';
-  style.textContent = '@media print {'
+  var html = '<!DOCTYPE html><html><head><title>' + away + ' @ ' + home + '</title>'
+    + '<style>'
     + '@page{size:landscape;margin:0.3in}'
-    + 'html,body{height:auto!important;overflow:visible!important}'
-    + 'body *{visibility:hidden!important}'
-    + '#_printDiv,#_printDiv *{visibility:visible!important}'
-    + '#_printDiv{position:absolute!important;top:0!important;left:0!important;width:100%!important}'
-    + '#_printDiv h2{font-size:15px!important;margin:0 0 3px!important;text-align:center}'
-    + '#_printDiv p{font-size:10px!important;margin:0 0 5px!important;text-align:center;color:#666}'
-    + '#_printDiv table{width:100%!important;border-collapse:collapse!important;table-layout:fixed!important}'
-    + '#_printDiv td,#_printDiv th{height:36px!important;text-align:center!important;vertical-align:middle!important;font-size:10px!important;padding:1px!important;border:1px solid #888!important}'
-    + '}';
-  document.head.appendChild(style);
+    + '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}'
+    + 'body{font-family:Arial,sans-serif;background:white;padding:0}'
+    + 'h2{text-align:center;font-size:18px;font-weight:900;margin-bottom:3px}'
+    + 'p{text-align:center;font-size:10px;color:#666;margin-bottom:8px}'
+    + 'table{width:100%;border-collapse:collapse;table-layout:fixed}'
+    + 'td,th{height:44px;text-align:center;vertical-align:middle}'
+    + '</style>'
+    + '<script>window.onload=function(){window.print();}<\/script>'
+    + '</head><body>'
+    + '<h2>SUPER SQUARES &mdash; ' + away + ' @ ' + home + '</h2>'
+    + '<p>' + (dateEl?dateEl.textContent:'') + ' &bull; $' + price + '/sq &bull; parlaypro-squares.netlify.app</p>'
+    + '<table>' + rows + '</table>'
+    + '</body></html>';
 
-  window.print();
-  setTimeout(function() { var d = document.getElementById('_printDiv'); if (d) d.remove(); }, 3000);
+  var win = window.open('','_blank');
+  if(!win){alert('Allow popups for parlaypro-squares.netlify.app to print.');return;}
+  win.document.write(html);
+  win.document.close();
 }
 
 async function releasePendingPayments() {
