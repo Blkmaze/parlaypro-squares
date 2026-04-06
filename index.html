@@ -1814,6 +1814,34 @@ async function buildGrid(game) {
   const serverOwners = serverData.owners || {};
   const serverSold = new Set(Object.keys(serverOwners).map(Number));
 
+  // ── Lock price once first square is confirmed ──────────────
+  const _hasOwners = Object.keys(serverOwners).length > 0;
+  const _hasPending = Object.keys(serverData.pending || {}).length > 0;
+  const _priceEl = document.getElementById('squarePrice');
+  if (_priceEl && (_hasOwners || _hasPending) && !window._boardIsLocked) {
+    // Freeze price dropdown — first square sets the price for this board
+    _priceEl.disabled = true;
+    _priceEl.style.opacity = '0.6';
+    _priceEl.style.cursor = 'not-allowed';
+    _priceEl.title = 'Price locked — squares already purchased on this board';
+    // Show a small lock indicator next to the price
+    if (!document.getElementById('_priceLockBadge')) {
+      const _badge = document.createElement('span');
+      _badge.id = '_priceLockBadge';
+      _badge.style.cssText = 'font-size:10px;color:#ca8a04;margin-left:4px;';
+      _badge.textContent = '🔒 locked';
+      _priceEl.parentNode.insertBefore(_badge, _priceEl.nextSibling);
+    }
+  } else if (_priceEl && !_hasOwners && !_hasPending && !window._boardIsLocked) {
+    // No squares yet — unlock price dropdown
+    _priceEl.disabled = false;
+    _priceEl.style.opacity = '';
+    _priceEl.style.cursor = '';
+    _priceEl.title = '';
+    const _badge = document.getElementById('_priceLockBadge');
+    if (_badge) _badge.remove();
+  }
+
   const _locked = serverData && serverData.numbersLocked && serverData.rowNums && serverData.rowNums.length===10;
   const topNums = _locked ? serverData.rowNums : seededShuffle([0,1,2,3,4,5,6,7,8,9], 'top-' + game.id);
   const leftNums = _locked ? serverData.colNums : seededShuffle([0,1,2,3,4,5,6,7,8,9], 'left-' + game.id);
