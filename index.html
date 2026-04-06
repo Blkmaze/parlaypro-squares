@@ -2410,19 +2410,21 @@ async function printBoard() {
   div.innerHTML = '<h2 style="text-align:center;font-size:20px;font-weight:900;margin:0 0 4px;font-family:Arial,sans-serif;">SUPER SQUARES &mdash; ' + away + ' @ ' + home + '</h2>'
     + '<p style="text-align:center;font-size:11px;color:#666;margin:0 0 10px;font-family:Arial,sans-serif;">' + (dateEl ? dateEl.textContent : '') + ' &bull; $' + price + '/sq &bull; parlaypro-squares.netlify.app</p>'
     + '<table style="width:100%;border-collapse:collapse;table-layout:fixed;font-family:Arial,sans-serif;">' + rows + '</table>';
-  document.body.appendChild(div);
+  // Insert print div at TOP of body so it's first element
+  document.body.insertBefore(div, document.body.firstChild);
 
   var style = document.getElementById('_printStyle') || document.createElement('style');
   style.id = '_printStyle';
   style.textContent = '@media print {'
     + '@page{size:landscape;margin:0.3in}'
-    + 'body > *:not(#_printDiv){display:none!important}'
-    + '#_printDiv{display:block!important;padding-top:4px}'
-    + '#_printDiv h2{font-size:16px!important;margin-bottom:2px!important}'
-    + '#_printDiv p{font-size:10px!important;margin-bottom:6px!important}'
-    + '#_printDiv table{width:100%!important}'
-    + '#_printDiv td,#_printDiv th{height:34px!important;text-align:center;vertical-align:middle;font-size:10px!important;padding:2px!important}'
-    + '#_printDiv .corner{font-size:8px!important}'
+    + 'html,body{height:auto!important;overflow:visible!important}'
+    + 'body *{visibility:hidden!important}'
+    + '#_printDiv,#_printDiv *{visibility:visible!important}'
+    + '#_printDiv{position:absolute!important;top:0!important;left:0!important;width:100%!important}'
+    + '#_printDiv h2{font-size:15px!important;margin:0 0 3px!important;text-align:center}'
+    + '#_printDiv p{font-size:10px!important;margin:0 0 5px!important;text-align:center;color:#666}'
+    + '#_printDiv table{width:100%!important;border-collapse:collapse!important;table-layout:fixed!important}'
+    + '#_printDiv td,#_printDiv th{height:36px!important;text-align:center!important;vertical-align:middle!important;font-size:10px!important;padding:1px!important;border:1px solid #888!important}'
     + '}';
   document.head.appendChild(style);
 
