@@ -1,3110 +1,2088 @@
 <!DOCTYPE html>
-<!-- v20260316_cleaned -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ParlayPro — Super Squares</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<title>Lucky Maze — Spin. Scratch. Win.</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #0a0a0a;
-    --surface: #111111;
-    --surface2: #1a1a1a;
-    --surface3: #222222;
-    --border: #2a2a2a;
-    --border2: #333333;
-    --green: #16a34a;
-    --green-light: #22c55e;
-    --green-dim: rgba(22,163,74,0.15);
-    --green-glow: rgba(34,197,94,0.08);
-    --yellow: #eab308;
-    --red: #dc2626;
-    --blue: #3b82f6;
-    --text: #f5f5f5;
-    --text2: #a3a3a3;
-    --text3: #525252;
-    --cashapp: #00D632;
-    --paypal: #0070ba;
-  }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    padding: 0;
-    margin: 0;
-  }
-
-  .page-wrap {
-    padding: 24px 16px;
-    margin-top: 38px;
-  }
-
-  /* SCORE TICKER */
-  .ticker-wrap {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    background: #000;
-    border-bottom: 1px solid var(--border2);
-    overflow: hidden;
-    height: 38px;
-    z-index: 100;
-  }
-  .ticker-inner {
-    display: inline-flex;
-    align-items: center;
-    height: 38px;
-    white-space: nowrap;
-    animation: scroll 80s linear infinite;
-  }
-  .ticker-inner:hover { animation-play-state: paused; }
-  .ticker-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-right: 40px;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .ticker-item:hover { background: #1a1a1a; }
-  .ticker-score { color: var(--yellow); font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
-  .ticker-badge { font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .badge-live { background: var(--red); color: white; animation: pulse 1.5s ease-in-out infinite; }
-  .badge-final { background: #3f3f3f; color: #aaa; }
-  .badge-upcoming { background: #713f12; color: #fde68a; }
-
-  @keyframes scroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-  }
-
-  /* LAYOUT */
-  .layout {
-    display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: 16px;
-    width: 100%;
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 0 8px;
-  }
-
-  /* GRID BOARD */
-  .board-panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    min-width: 0;
-  }
-
-  .board-header {
-    background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    border-radius: 16px 16px 0 0;
-    overflow: visible;
-    position: relative;
-    z-index: 10;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .board-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 1px;
-    color: var(--text);
-  }
-
-  .board-subtitle { font-size: 12px; color: var(--text2); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
-
-  .sport-controls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex: 1;
-    min-width: 0;
-    flex-wrap: wrap;
-  }
-
-  .sport-select, .game-select {
-    background: #1a1a1a;
-    border: 1px solid var(--border2);
-    color: #ffffff;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-family: 'Inter', sans-serif;
-    cursor: pointer;
-    outline: none;
-    transition: border-color 0.15s;
-    min-width: 0;
-    flex: 1;
-  }
-  .sport-select { max-width: 200px; min-width: 140px; }
-  .game-select  { max-width: 240px; min-width: 140px; }
-  .sport-select option, .game-select option { background: #1a1a1a; color: #ffffff; }
-  .sport-select:focus, .game-select:focus { border-color: var(--green); }
-
-  .grid-wrap {
-    padding: 20px;
-    overflow-x: auto;
-  }
-
-  .grid-container {
-    display: grid;
-    grid-template-columns: 44px repeat(10, 1fr);
-    gap: 3px;
-    min-width: 560px;
-  }
-
-  .axis-header {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
-    font-weight: 700;
-    aspect-ratio: 1;
-  }
-
-  .axis-top { color: var(--green-light); }
-  .axis-left { color: #60a5fa; }
-  .axis-corner { background: transparent; border: none; }
-
-  .team-banner {
-    grid-column: 2 / 12;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 6px;
-    letter-spacing: 0.05em;
-    color: var(--text);
-    text-transform: uppercase;
-  }
-
-  .cell {
-    aspect-ratio: 1;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.12s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .cell-open {
-    background: var(--surface2);
-    color: var(--text3);
-  }
-  .cell-open:hover {
-    background: var(--surface3);
-    border-color: var(--green);
-    color: var(--green-light);
-  }
-
-  .cell-sold {
-    background: var(--surface3);
-    border-color: #2a2a2a;
-    color: var(--text2);
-    cursor: default;
-  }
-
-  .cell-mine {
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    border-color: var(--green-light);
-    color: white;
-    box-shadow: 0 0 8px rgba(34,197,94,0.25);
-  }
-
-  /* Board selector tabs */
-  .board-tabs {
-    display: flex;
-    gap: 6px;
-    padding: 0 20px 12px;
-  }
-
-  .board-tab {
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 700;
-    border: 1px solid var(--border2);
-    cursor: pointer;
-    transition: all 0.15s;
-    background: transparent;
-    color: var(--text2);
-  }
-
-  .board-tab.active {
-    background: var(--green);
-    border-color: var(--green);
-    color: white;
-  }
-
-  /* ===================== SIDEBAR ===================== */
-  .sidebar { display: flex; flex-direction: column; gap: 12px; }
-
-  /* MAIN CARD */
-  .main-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-  }
-
-  .card-header {
-    background: linear-gradient(135deg, #15803d 0%, #16a34a 50%, #14532d 100%);
-    padding: 16px 18px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-  }
-
-  .card-header::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 10px,
-      rgba(255,255,255,0.02) 10px,
-      rgba(255,255,255,0.02) 11px
-    );
-  }
-
-  .card-header-text { position: relative; }
-  .card-header-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 2px;
-    color: white;
-    line-height: 1;
-  }
-  .card-header-sub { font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 3px; }
-
-  .available-badge {
-    position: relative;
-    background: rgba(255,255,255,0.12);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 10px;
-    padding: 8px 14px;
-    text-align: center;
-  }
-  .available-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 26px;
-    color: white;
-    line-height: 1;
-  }
-  .available-label { font-size: 9px; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.1em; }
-
-  /* PARLAY BOARD SECTION */
-  .parlay-section {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .section-label {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .status-dot {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 9px;
-    font-weight: 800;
-    padding: 2px 7px;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .status-live { background: rgba(220,38,38,0.2); color: #f87171; border: 1px solid rgba(220,38,38,0.3); }
-  .status-live::before { content: '●'; margin-right: 3px; animation: pulse 1s infinite; }
-  .status-scheduled { background: rgba(234,179,8,0.15); color: #fbbf24; border: 1px solid rgba(234,179,8,0.25); }
-
-  /* Odds grid */
-  .odds-header-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
-    margin-bottom: 4px;
-  }
-  .odds-col-label {
-    text-align: center;
-    font-size: 9px;
-    font-weight: 600;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  .odds-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 6px;
-  }
-
-  .odds-col { display: flex; flex-direction: column; gap: 4px; }
-
-  .odds-btn {
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 8px 6px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.15s;
-    gap: 2px;
-  }
-
-  .odds-btn:hover {
-    background: var(--surface3);
-    border-color: #404040;
-  }
-
-  .odds-btn.selected {
-    background: rgba(22,163,74,0.2);
-    border-color: var(--green);
-    box-shadow: 0 0 0 1px rgba(34,197,94,0.15);
-  }
-
-  .odds-btn-label {
-    font-size: 9px;
-    color: var(--text3);
-    font-weight: 600;
-    text-transform: uppercase;
-    text-align: center;
-    line-height: 1.2;
-    letter-spacing: 0.03em;
-  }
-
-  .odds-btn.selected .odds-btn-label { color: rgba(134,239,172,0.7); }
-
-  .odds-value {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--green-light);
-  }
-
-  .odds-btn.selected .odds-value { color: #86efac; }
-
-  /* Selected Legs */
-  .legs-section {
-    padding: 10px 16px;
-    background: rgba(22,163,74,0.06);
-    border-bottom: 1px solid rgba(22,163,74,0.15);
-  }
-
-  .legs-title {
-    font-size: 9px;
-    font-weight: 800;
-    color: var(--green-light);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: 6px;
-  }
-
-  .leg-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 0;
-    border-bottom: 1px solid rgba(22,163,74,0.1);
-    font-size: 11px;
-  }
-  .leg-row:last-child { border-bottom: none; }
-  .leg-label { color: var(--text2); }
-  .leg-odds { font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--green-light); font-size: 12px; }
-
-  /* Buy section */
-  .buy-section { padding: 14px 16px; }
-
-  .buy-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .buy-meta-label { font-size: 12px; color: var(--text2); }
-  .buy-meta-value { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 700; color: var(--text); }
-
-  /* Quantity buttons */
-  .qty-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 5px;
-    margin-bottom: 12px;
-  }
-
-  .qty-btn {
-    padding: 8px 0;
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    color: var(--text2);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-align: center;
-  }
-
-  .qty-btn:hover { border-color: #404040; color: var(--text); background: var(--surface3); }
-
-  .qty-btn.active {
-    background: var(--green);
-    border-color: var(--green-light);
-    color: white;
-    box-shadow: 0 2px 10px rgba(22,163,74,0.3);
-  }
-
-  /* Total row */
-  .total-row {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-
-  .total-left {}
-  .total-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
-  .total-amount { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: var(--text); letter-spacing: 1px; line-height: 1; }
-  .total-right { text-align: right; }
-  .total-squares { font-size: 11px; color: var(--text2); }
-  .total-legs { font-size: 11px; color: var(--green-light); margin-top: 2px; }
-
-  /* Payment methods */
-  .pay-label {
-    font-size: 9px;
-    font-weight: 800;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    text-align: center;
-    margin-bottom: 7px;
-  }
-
-  .pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 12px; }
-
-  .pay-card {
-    border-radius: 10px;
-    padding: 9px 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid transparent;
-    transition: all 0.15s;
-    cursor: pointer;
-  }
-
-  .pay-card:hover { filter: brightness(1.1); }
-
-  .pay-cashapp {
-    background: rgba(0,214,50,0.08);
-    border-color: rgba(0,214,50,0.25);
-  }
-
-  .pay-paypal {
-    background: rgba(0,112,186,0.08);
-    border-color: rgba(0,112,186,0.25);
-  }
-
-  .pay-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 900;
-    font-size: 14px;
-    flex-shrink: 0;
-  }
-
-  .pay-icon-cashapp { background: var(--cashapp); color: white; }
-  .pay-icon-paypal { background: var(--paypal); color: white; font-style: italic; font-size: 13px; }
-
-  .pay-info {}
-  .pay-name { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-  .pay-cashapp .pay-name { color: var(--cashapp); }
-  .pay-paypal .pay-name { color: #60a5fa; }
-  .pay-handle { font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--text); }
-
-  /* CTA */
-  .cta-btn {
-    width: 100%;
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    border: 1px solid var(--green-light);
-    border-radius: 12px;
-    color: white;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    letter-spacing: 2px;
-    padding: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.15s;
-    box-shadow: 0 4px 20px rgba(22,163,74,0.25);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .cta-btn::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%;
-    width: 60%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
-    transition: left 0.5s;
-  }
-
-  .cta-btn:hover::before { left: 150%; }
-  .cta-btn:hover { background: linear-gradient(135deg, #15803d, #166534); box-shadow: 0 4px 24px rgba(22,163,74,0.4); transform: translateY(-1px); }
-  .cta-btn:active { transform: translateY(0) scale(0.98); }
-
-  .cta-sub { font-size: 10px; color: var(--text3); text-align: center; margin-top: 6px; }
-
-  /* LEGEND CARD */
-  .legend-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 14px;
-  }
-
-  .legend-title { font-size: 9px; font-weight: 800; color: var(--text3); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; }
-  .legend-items { display: flex; gap: 12px; }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
-  .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
-
-  /* TODAY'S GAMES CARD */
-  .games-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  .games-card-header {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text);
-  }
-
-  .games-card-header svg { color: #60a5fa; }
-
-  .games-list { padding: 8px; max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-
-  .game-row {
-    padding: 9px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    transition: all 0.12s;
-    background: rgba(255,255,255,0.01);
-  }
-
-  .game-row:hover { background: var(--surface2); border-color: var(--border2); }
-  .game-row.active { background: var(--surface3); border-color: var(--green); }
-
-  .game-row-top { display: flex; justify-content: space-between; align-items: center; }
-  .game-teams { font-size: 12px; font-weight: 600; color: var(--text2); }
-  .game-row.active .game-teams { color: var(--text); }
-
-  .game-score { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; color: var(--yellow); }
-
-  /* ADMIN CARD */
-  .admin-card {
-    background: rgba(220,38,38,0.05);
-    border: 1px solid rgba(220,38,38,0.2);
-    border-radius: 12px;
-    padding: 12px 14px;
-  }
-
-  .admin-title { font-size: 9px; font-weight: 800; color: #f87171; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
-
-  .admin-btns { display: flex; flex-direction: column; gap: 5px; }
-
-  .admin-btn {
-    width: 100%;
-    padding: 7px 10px;
-    border-radius: 7px;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-align: center;
-    border: 1px solid transparent;
-  }
-
-  .admin-btn-blue { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25); color: #93c5fd; }
-  .admin-btn-blue:hover { background: rgba(59,130,246,0.2); }
-  .admin-btn-green { background: rgba(22,163,74,0.1); border-color: rgba(22,163,74,0.25); color: #86efac; }
-  .admin-btn-green:hover { background: rgba(22,163,74,0.2); }
-  .admin-btn-red { background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.25); color: #fca5a5; }
-  .admin-btn-red:hover { background: rgba(220,38,38,0.2); }
-
-  /* MODAL */
-  .modal-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    backdrop-filter: blur(4px);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    animation: fadeIn 0.2s ease;
-  }
-  .modal-overlay.open { display: flex; }
-
-  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 20px;
-    max-width: 400px;
-    width: 100%;
-    overflow: hidden;
-    animation: slideUp 0.25s ease;
-  }
-
-  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-  .modal-header {
-    padding: 24px 24px 16px;
-    text-align: center;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .modal-icon {
-    width: 56px; height: 56px;
-    background: var(--green-dim);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 12px;
-    font-size: 24px;
-  }
-
-  .modal-title { font-size: 20px; font-weight: 800; color: var(--text); }
-  .modal-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
-
-  .modal-body { padding: 16px 24px 24px; }
-
-  .modal-total {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-  }
-
-  .modal-total-label { font-size: 12px; color: var(--text2); }
-  .modal-total-amount { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--green-light); letter-spacing: 1px; }
-
-  .modal-input-label { font-size: 11px; font-weight: 600; color: var(--text2); margin-bottom: 5px; }
-  .modal-input {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    padding: 10px 14px;
-    color: var(--text);
-    font-size: 18px;
-    font-family: 'IBM Plex Mono', monospace;
-    text-align: center;
-    font-weight: 700;
-    letter-spacing: 6px;
-    text-transform: uppercase;
-    outline: none;
-    transition: border-color 0.15s;
-    margin-bottom: 14px;
-  }
-  .modal-input:focus { border-color: var(--green); }
-
-  .modal-pay-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-
-  .modal-pay-option {
-    background: var(--surface2);
-    border: 1px solid var(--border2);
-    border-radius: 10px;
-    padding: 10px 6px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.15s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-  .modal-pay-option:hover { border-color: #404040; background: var(--surface3); }
-  .modal-pay-option.selected { border-color: var(--green); background: var(--green-dim); }
-
-  .modal-pay-icon {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 900;
-    font-size: 16px;
-    color: white;
-  }
-
-  .modal-pay-name { font-size: 10px; font-weight: 700; color: var(--text); }
-
-  .modal-cta {
-    width: 100%;
-    background: var(--green);
-    border: none;
-    border-radius: 10px;
-    color: white;
-    font-size: 15px;
-    font-weight: 800;
-    padding: 13px;
-    cursor: pointer;
-    transition: all 0.15s;
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-  }
-  .modal-cta:hover { background: #15803d; }
-  .modal-cta:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .modal-close {
-    position: absolute;
-    top: 16px; right: 16px;
-    background: var(--surface3);
-    border: 1px solid var(--border2);
-    border-radius: 50%;
-    width: 28px; height: 28px;
-    color: var(--text2);
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px;
-    transition: all 0.15s;
-  }
-  .modal-close:hover { background: var(--border2); color: var(--text); }
-
-  /* CONFIRM MODAL */
-  .confirm-modal {
-    text-align: center;
-    padding: 32px 24px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .confirm-icon {
-    width: 72px; height: 72px;
-    background: var(--green-dim);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 36px;
-    border: 2px solid rgba(34,197,94,0.3);
-  }
-
-  .confirm-title { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 2px; color: var(--text); }
-  .confirm-msg { font-size: 16px; color: var(--text2); }
-  .confirm-badge { background: var(--green-dim); border: 1px solid rgba(34,197,94,0.3); border-radius: 10px; padding: 10px 20px; }
-  .confirm-badge-text { font-size: 13px; font-weight: 700; color: var(--green-light); }
-  .confirm-badge-sub { font-size: 10px; color: rgba(134,239,172,0.6); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 3px; }
-
-  .confirm-btn {
-    width: 100%;
-    background: var(--green);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    letter-spacing: 2px;
-    padding: 14px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .confirm-btn:hover { background: #15803d; }
-
-  /* scrollbar */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-
-  /* ── BOARD LOCK ───────────────────────────────────────── */
-  #lockBanner {
-    display: none;
-    position: sticky;
-    top: 38px;
-    z-index: 90;
-    background: #991b1b;
-    border-bottom: 2px solid #ef4444;
-    padding: 7px 16px;
-    text-align: center;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 17px;
-    letter-spacing: 2px;
-    color: #fff;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-  }
-  #lockBanner.on { display: flex; }
-  #lockBannerGame {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    font-weight: 700;
-    color: #fca5a5;
-    letter-spacing: 0;
-    background: rgba(0,0,0,0.3);
-    padding: 2px 10px;
-    border-radius: 4px;
-  }
-
-  /* Viewer instructions bar — only shows on shared locked links */
-  #viewerInstructions {
-    display: none;
-    background: linear-gradient(135deg, #0f2a1a, #1a3a28);
-    border-bottom: 1px solid rgba(34,197,94,0.25);
-    padding: 10px 16px;
-    gap: 16px;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-  #viewerInstructions.on { display: flex; }
-  .vi-steps {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .vi-step {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: rgba(255,255,255,0.75);
-  }
-  .vi-step-num {
-    width: 20px; height: 20px;
-    background: #16a34a;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10px;
-    font-weight: 800;
-    color: white;
-    flex-shrink: 0;
-  }
-  .vi-divider {
-    color: rgba(255,255,255,0.2);
-    font-size: 16px;
-  }
-  .vi-title {
-    font-size: 11px;
-    font-weight: 800;
-    color: #22c55e;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    white-space: nowrap;
-  }
-  /* Only dim the nav controls — NOT the grid, sidebar, or buy flow */
-  .board-locked .sport-select,
-  .board-locked .game-select,
-  .board-locked input[type="date"] {
-    pointer-events: none;
-    opacity: 0.35;
-    filter: grayscale(1);
-  }
-  .board-locked .board-header button { pointer-events: none; opacity: 0.35; filter: grayscale(1); }
-
-  #ppLockBtn {
-    width: 100%;
-    padding: 7px 10px;
-    border-radius: 7px;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    border: 1px solid rgba(234,179,8,0.35);
-    background: rgba(234,179,8,0.1);
-    color: #fbbf24;
-    transition: all .15s;
-  }
-  #ppLockBtn:hover { background: rgba(234,179,8,0.2); }
-  #ppLockBtn.locked { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); color: #f87171; }
-
-  /* Unlock PIN prompt */
-  #unlockPrompt {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.88);
-    backdrop-filter: blur(6px);
-    z-index: 300;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-  }
-  #unlockPrompt.open { display: flex; }
-  .unlock-box {
-    background: #111;
-    border: 1px solid #333;
-    border-radius: 16px;
-    padding: 28px 24px;
-    max-width: 320px;
-    width: 100%;
-    text-align: center;
-  }
-  .unlock-box h3 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    letter-spacing: 2px;
-    color: #f5f5f5;
-    margin-bottom: 6px;
-  }
-  .unlock-box p { font-size: 12px; color: #a3a3a3; margin-bottom: 16px; }
-  .unlock-pin {
-    width: 100%;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 8px;
-    padding: 10px;
-    color: #f5f5f5;
-    font-size: 22px;
-    font-family: 'IBM Plex Mono', monospace;
-    text-align: center;
-    font-weight: 700;
-    letter-spacing: 8px;
-    outline: none;
-    margin-bottom: 8px;
-  }
-  .unlock-pin:focus { border-color: #eab308; }
-  .unlock-err { font-size: 11px; color: #f87171; min-height: 16px; margin-bottom: 10px; }
-  .unlock-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .unlock-cancel { padding: 10px; border-radius: 8px; background: #1a1a1a; border: 1px solid #333; color: #a3a3a3; font-size: 13px; font-weight: 700; cursor: pointer; }
-  .unlock-go { padding: 10px; border-radius: 8px; background: #16a34a; border: 1px solid #22c55e; color: white; font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1px; cursor: pointer; }
-
-  @media print {
-    @page { size: landscape; margin: 0.25in; }
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    
-    /* Hide EVERYTHING first */
-    body > * { display: none !important; }
-    
-    /* Show only the board panel */
-    body > .ticker-wrap,
-    body > #lockBanner,
-    body > #viewerInstructions,
-    body > #unlockPrompt,
-    body > #_gameChangedBanner { display: none !important; }
-    
-    /* Show the main layout */
-    body > div:not(#lockBanner):not(#viewerInstructions):not(#unlockPrompt) { display: block !important; }
-    
-    .layout { display: block !important; }
-    
-    /* Hide sidebar and non-board elements */
-    .sidebar,
-    .board-tabs,
-    .sport-controls,
-    .game-date-nav,
-    .board-subtitle,
-    .quarter-tracker,
-    .player-props-section,
-    .ticker-wrap,
-    #lockBanner,
-    #viewerInstructions { display: none !important; }
-    
-    /* Board fills page */
-    .board-panel {
-      width: 100vw !important;
-      max-width: 100% !important;
-      border: 1px solid #333 !important;
-      border-radius: 0 !important;
-      break-inside: avoid !important;
-      page-break-inside: avoid !important;
-    }
-    
-    .board-header { padding: 8px 12px !important; }
-    
-    .grid-wrap {
-      overflow: visible !important;
-      break-inside: avoid !important;
-    }
-    
-    #squaresGrid {
-      break-inside: avoid !important;
-      page-break-inside: avoid !important;
-    }
-    
-    /* Shrink cells to fit */
-    .sq-cell {
-      height: 42px !important;
-      font-size: 9px !important;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .layout { grid-template-columns: 1fr; }
-    .page-wrap { padding: 8px; }
-  }
-
-  @media (max-width: 600px) {
-    .board-header {
-      flex-direction: column !important;
-      align-items: flex-start !important;
-      padding: 12px 14px !important;
-      gap: 10px !important;
-    }
-    .board-title {
-      font-size: 17px !important;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
-    }
-    .board-subtitle {
-      font-size: 11px !important;
-    }
-    .sport-controls {
-      width: 100% !important;
-      flex-wrap: nowrap !important;
-      gap: 6px !important;
-    }
-    .sport-select,
-    .game-select {
-      flex: 1 1 0 !important;
-      min-width: 0 !important;
-      font-size: 12px !important;
-      padding: 6px 6px !important;
-      max-width: 50% !important;
-    }
-    .board-tabs {
-      width: 100% !important;
-      gap: 6px !important;
-    }
-    .board-tab {
-      font-size: 11px !important;
-      padding: 6px 10px !important;
-    }
-    .ticker-wrap {
-      font-size: 11px !important;
-    }
-    .layout{flex-direction:column!important;}
-    .sidebar{width:100%!important;max-width:100%!important;}
-    .board-panel{width:100%!important;}
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --bg: #0d0a14;
+  --bg2: #130f1e;
+  --surface: #1a1428;
+  --surface2: #221a35;
+  --surface3: #2d2445;
+  --border: #3d2f5c;
+  --border2: #4f3d75;
+  --purple: #7c3aed;
+  --purple2: #9d5cf6;
+  --purple3: #b87eff;
+  --purple-dim: rgba(124,58,237,0.15);
+  --gold: #f5c842;
+  --gold2: #ffd700;
+  --gold3: #ffe566;
+  --gold-dim: rgba(245,200,66,0.12);
+  --gold-glow: rgba(255,215,0,0.2);
+  --text: #f0eaff;
+  --text2: #a89ac5;
+  --text3: #6b5a8a;
+  --green: #22c55e;
+  --red: #ef4444;
+  --cashapp: #00D632;
+  --paypal: #0070ba;
+  --coin-color: #f5c842;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── BACKGROUND EFFECTS ─────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 10%, rgba(124,58,237,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 35% at 80% 90%, rgba(245,200,66,0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 30% at 60% 40%, rgba(157,92,246,0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Maze grid overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER ─────────────────────────────────────────── */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(13,10,20,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 20px;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold3) 50%, var(--purple3) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 1px;
+}
+
+.logo span {
+  font-size: 12px;
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-weight: 400;
+  background: linear-gradient(90deg, var(--text2), var(--purple3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: -4px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.coin-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 6px 14px 6px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.coin-display:hover { border-color: var(--gold); }
+
+.coin-icon {
+  width: 26px; height: 26px;
+  background: radial-gradient(circle at 35% 35%, var(--gold3), var(--gold));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  box-shadow: 0 0 8px var(--gold-glow);
+  font-weight: 900;
+  color: #7a5900;
+  flex-shrink: 0;
+}
+
+.coin-amount {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.sc-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--purple-dim);
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 24px;
+  padding: 6px 14px 6px 8px;
+}
+
+.sc-icon {
+  width: 26px; height: 26px;
+  background: linear-gradient(135deg, var(--purple), var(--purple2));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: white;
+  flex-shrink: 0;
+}
+
+.sc-amount {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--purple3);
+}
+
+.get-coins-btn {
+  background: linear-gradient(135deg, var(--gold), #d4a017);
+  border: none;
+  border-radius: 20px;
+  color: #1a0e00;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.get-coins-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px var(--gold-glow); }
+
+/* ── NAV TABS ─────────────────────────────────────────── */
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 20px;
+  overflow-x: auto;
+  position: relative;
+  z-index: 1;
+  scrollbar-width: none;
+}
+.nav-tabs::-webkit-scrollbar { display: none; }
+
+.nav-tab {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+  color: var(--text2);
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+}
+.nav-tab:hover { border-color: var(--border2); color: var(--text); }
+.nav-tab.active {
+  background: linear-gradient(135deg, var(--purple), var(--purple2));
+  border-color: var(--purple2);
+  color: white;
+  box-shadow: 0 0 16px rgba(124,58,237,0.4);
+}
+
+/* ── MAIN CONTENT ─────────────────────────────────────── */
+.main {
+  padding: 0 20px 80px;
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ── HERO BANNER ─────────────────────────────────────── */
+.hero {
+  background: linear-gradient(135deg, #1a0e35 0%, #2d1a50 50%, #1a1428 100%);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 28px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg, transparent, transparent 20px,
+    rgba(245,200,66,0.02) 20px, rgba(245,200,66,0.02) 21px
+  );
+}
+
+.hero-text { position: relative; }
+.hero-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(20px, 4vw, 32px);
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--gold3), var(--gold), var(--purple3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.hero-sub { font-size: 14px; color: var(--text2); margin-bottom: 16px; }
+
+.hero-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.hero-btn-primary {
+  background: linear-gradient(135deg, var(--gold), #d4a017);
+  border: none;
+  border-radius: 24px;
+  color: #1a0e00;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.hero-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--gold-glow); }
+
+.hero-btn-secondary {
+  background: rgba(124,58,237,0.2);
+  border: 1px solid var(--purple);
+  border-radius: 24px;
+  color: var(--purple3);
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.hero-btn-secondary:hover { background: rgba(124,58,237,0.3); }
+
+.hero-prizes {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.jackpot-display {
+  text-align: center;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 10px 20px;
+  box-shadow: 0 0 20px rgba(245,200,66,0.15);
+}
+.jackpot-label { font-size: 9px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
+.jackpot-amount {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(20px, 4vw, 32px);
+  font-weight: 900;
+  color: var(--gold2);
+  text-shadow: 0 0 20px var(--gold-glow);
+  line-height: 1.1;
+}
+
+/* ── SLOT MACHINE ─────────────────────────────────────── */
+.section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border2), transparent);
+}
+
+.slot-machine {
+  background: linear-gradient(135deg, #1a1428, #221a35);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.slot-machine::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--purple), var(--gold), var(--purple));
+}
+
+.slot-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.slot-game-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 12px var(--gold-glow);
+}
+
+.slot-bet-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bet-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+
+.bet-btns { display: flex; gap: 4px; }
+.bet-btn {
+  padding: 4px 10px;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: 'Cinzel', serif;
+}
+.bet-btn:hover { border-color: var(--gold); color: var(--gold); }
+.bet-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+/* ── SLOT MACHINE — LAVISH LUCK STYLE ───────────────── */
+.slot-reels {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+/* Outer frame — the machine body */
+.reels-frame {
+  position: relative;
+  background: #060410;
+  border: 3px solid #3d2f5c;
+  border-radius: 16px;
+  overflow: hidden;
+  width: 100%;
+  box-shadow:
+    inset 0 0 40px rgba(0,0,0,0.8),
+    0 0 30px rgba(124,58,237,0.2);
+}
+
+/* Gradient overlays top/bottom — dim the outer rows */
+.reels-frame::before,
+.reels-frame::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 80px;
+  z-index: 10;
+  pointer-events: none;
+}
+.reels-frame::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(6,4,16,0.92) 0%, rgba(6,4,16,0.5) 60%, transparent 100%);
+}
+.reels-frame::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(6,4,16,0.92) 0%, rgba(6,4,16,0.5) 60%, transparent 100%);
+}
+
+/* Gold win line across all reels */
+.win-line-bar {
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  transform: translateY(-50%);
+  height: 90px;
+  z-index: 9;
+  pointer-events: none;
+  border-top: 2px solid rgba(245,200,66,0.5);
+  border-bottom: 2px solid rgba(245,200,66,0.5);
+  background: rgba(245,200,66,0.04);
+  box-shadow:
+    0 0 12px rgba(245,200,66,0.2),
+    inset 0 0 20px rgba(245,200,66,0.05);
+}
+
+.win-line-bar.winning {
+  border-color: var(--gold);
+  background: rgba(245,200,66,0.1);
+  box-shadow: 0 0 24px rgba(245,200,66,0.5), inset 0 0 30px rgba(245,200,66,0.1);
+  animation: winFlash 0.4s ease infinite alternate;
+}
+@keyframes winFlash {
+  from { box-shadow: 0 0 20px rgba(245,200,66,0.4); }
+  to   { box-shadow: 0 0 40px rgba(245,200,66,0.8), 0 0 60px rgba(245,200,66,0.3); }
+}
+
+/* Reels strip container */
+.reels-inner {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+}
+
+.reel-container {
+  flex: 1;
+  height: 270px; /* 3 rows × 90px */
+  overflow: hidden;
+  position: relative;
+  background: transparent;
+}
+
+/* Dividers between reels */
+.reel-container + .reel-container {
+  border-left: 1px solid rgba(61,47,92,0.5);
+}
+
+.reel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  will-change: transform;
+}
+
+.reel-symbol {
+  width: 100%;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(36px, 7vw, 56px);
+  flex-shrink: 0;
+  user-select: none;
+  position: relative;
+}
+
+/* Subtle glow on center row symbols when winning */
+.reel-symbol.winning-sym {
+  filter: drop-shadow(0 0 12px var(--gold)) brightness(1.3);
+  animation: symBounce 0.3s ease infinite alternate;
+}
+@keyframes symBounce {
+  from { transform: scale(1); }
+  to   { transform: scale(1.1); }
+}
+
+/* Spin controls */
+.slot-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.spin-btn {
+  background: linear-gradient(135deg, var(--purple), var(--purple2));
+  border: 1px solid var(--purple3);
+  border-radius: 50px;
+  color: white;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 14px 48px;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 1px;
+}
+
+.spin-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left 0.5s;
+}
+.spin-btn:hover::before { left: 150%; }
+.spin-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(124,58,237,0.6); }
+.spin-btn:active { transform: scale(0.97); }
+.spin-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.spin-cost {
+  font-size: 11px;
+  color: var(--text3);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* Win message */
+#slotWinMsg {
+  min-height: 28px;
+  text-align: center;
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 12px var(--gold-glow);
+  margin-bottom: 8px;
+  transition: all 0.3s;
+}
+
+/* ── SCRATCH CARDS ────────────────────────────────────── */
+.scratch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.scratch-card {
+  background: linear-gradient(135deg, #1a1428, #221a35);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.scratch-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,200,66,0.15); }
+.scratch-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--purple), var(--gold));
+}
+
+.scratch-card-name {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  text-align: center;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+
+.scratch-canvas-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0a0614;
+  height: 100px;
+}
+
+canvas.scratch {
+  position: absolute;
+  top: 0; left: 0;
+  border-radius: 10px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.scratch-reveal {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.scratch-reveal-emoji { font-size: 32px; }
+.scratch-reveal-amount {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.scratch-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+.scratch-cost { font-size: 11px; color: var(--text3); }
+.scratch-play-btn {
+  background: var(--gold-dim);
+  border: 1px solid rgba(245,200,66,0.3);
+  border-radius: 8px;
+  color: var(--gold);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Cinzel', serif;
+}
+.scratch-play-btn:hover { background: rgba(245,200,66,0.25); }
+
+/* ── DAILY BONUS ──────────────────────────────────────── */
+.daily-bonus-card {
+  background: linear-gradient(135deg, #1a1428, #2d1a50);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.daily-bonus-info { flex: 1; }
+.daily-bonus-title {
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 2px;
+}
+.daily-bonus-sub { font-size: 12px; color: var(--text2); }
+
+.daily-claim-btn {
+  background: linear-gradient(135deg, var(--gold), #d4a017);
+  border: none;
+  border-radius: 20px;
+  color: #1a0e00;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 9px 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.daily-claim-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px var(--gold-glow); }
+.daily-claim-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; background: #555; color: #aaa; }
+
+/* ── GET COINS MODAL ─────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(6px);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+.modal-overlay.open { display: flex; }
+
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes slideUp { from { transform:translateY(24px);opacity:0; } to { transform:translateY(0);opacity:1; } }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
+  max-width: 420px;
+  width: 100%;
+  overflow: hidden;
+  animation: slideUp 0.25s ease;
+  position: relative;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #1a0e35, #2d1a50);
+  padding: 24px 24px 16px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.modal-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--purple), var(--gold), var(--purple));
+}
+
+.modal-icon { font-size: 40px; margin-bottom: 8px; }
+.modal-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+}
+.modal-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+.modal-body { padding: 20px 24px 24px; }
+
+.modal-overlay { cursor: default; }
+
+.modal-close {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  color: #fff;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  transition: all 0.15s;
+  z-index: 10;
+  line-height: 1;
+}
+.modal-close:hover { background: rgba(255,255,255,0.28); transform: scale(1.1); }
+
+/* Coin packages */
+.coin-packages { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+
+.coin-pkg {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.coin-pkg:hover { border-color: var(--gold); background: var(--gold-dim); }
+.coin-pkg.featured { border-color: var(--purple2); background: var(--purple-dim); }
+
+.coin-pkg-left { display: flex; align-items: center; gap: 10px; }
+.coin-pkg-emoji { font-size: 24px; }
+.coin-pkg-info {}
+.coin-pkg-coins { font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: var(--gold); }
+.coin-pkg-bonus { font-size: 11px; color: var(--purple3); }
+.coin-pkg-badge {
+  font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 4px;
+  background: var(--purple); color: white; text-transform: uppercase; letter-spacing: 0.05em;
+}
+
+.coin-pkg-price {
+  font-family: 'Cinzel', serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Free coins section */
+.free-coins-section {
+  background: var(--gold-dim);
+  border: 1px solid rgba(245,200,66,0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.free-coins-title { font-size: 11px; font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+.free-option {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 0;
+  font-size: 12px; color: var(--text2);
+  border-bottom: 1px solid rgba(245,200,66,0.1);
+}
+.free-option:last-child { border-bottom: none; }
+.free-option-btn {
+  background: rgba(245,200,66,0.15); border: 1px solid rgba(245,200,66,0.3);
+  border-radius: 6px; color: var(--gold); font-size: 11px; font-weight: 700;
+  padding: 3px 10px; cursor: pointer; transition: all 0.15s;
+}
+.free-option-btn:hover { background: rgba(245,200,66,0.25); }
+
+/* Payment options */
+.pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.pay-option {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 10px; text-align: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.pay-option:hover { border-color: var(--border2); background: var(--surface3); }
+.pay-option.selected { border-color: var(--gold); background: var(--gold-dim); }
+.pay-option-icon { font-size: 20px; margin-bottom: 4px; }
+.pay-option-name { font-size: 11px; font-weight: 700; color: var(--text2); }
+
+.buy-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--gold), #d4a017);
+  border: none; border-radius: 12px;
+  color: #1a0e00;
+  font-family: 'Cinzel', serif;
+  font-size: 15px; font-weight: 700;
+  padding: 13px; cursor: pointer;
+  transition: all 0.15s;
+}
+.buy-btn:hover { box-shadow: 0 4px 20px var(--gold-glow); transform: translateY(-1px); }
+
+/* ── REDEEM MODAL ─────────────────────────────────────── */
+.redeem-form { display: flex; flex-direction: column; gap: 12px; }
+.form-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.form-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.form-input:focus { border-color: var(--purple2); }
+.redeem-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--purple), var(--purple2));
+  border: 1px solid var(--purple3);
+  border-radius: 12px;
+  color: white;
+  font-family: 'Cinzel', serif;
+  font-size: 15px; font-weight: 700;
+  padding: 13px; cursor: pointer;
+  transition: all 0.15s;
+}
+.redeem-btn:hover { box-shadow: 0 4px 20px rgba(124,58,237,0.5); }
+
+/* ── WIN CELEBRATION ─────────────────────────────────── */
+.win-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(4px);
+  z-index: 600;
+  align-items: center;
+  justify-content: center;
+}
+.win-overlay.open { display: flex; }
+
+.win-box {
+  background: linear-gradient(135deg, #1a0e35, #2d1a50);
+  border: 2px solid var(--gold);
+  border-radius: 24px;
+  padding: 40px 32px;
+  text-align: center;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 0 60px rgba(245,200,66,0.3);
+  max-width: 320px;
+  width: 100%;
+}
+
+.win-emoji { font-size: 60px; margin-bottom: 12px; animation: bounce 0.5s ease infinite alternate; }
+@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+
+.win-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 20px var(--gold-glow);
+  margin-bottom: 8px;
+}
+.win-amount {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--purple3);
+  margin-bottom: 20px;
+}
+.win-close-btn {
+  background: linear-gradient(135deg, var(--gold), #d4a017);
+  border: none; border-radius: 20px;
+  color: #1a0e00; font-family: 'Cinzel', serif;
+  font-size: 14px; font-weight: 700;
+  padding: 11px 28px; cursor: pointer;
+  transition: all 0.15s;
+}
+.win-close-btn:hover { transform: translateY(-1px); }
+
+/* Confetti particles */
+.confetti-piece {
+  position: fixed;
+  width: 8px; height: 8px;
+  pointer-events: none;
+  z-index: 700;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* ── SC INFO ─────────────────────────────────────────── */
+.sc-info-row {
+  background: var(--purple-dim);
+  border: 1px solid rgba(124,58,237,0.25);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 10px;
+}
+.sc-info-left { font-size: 13px; color: var(--text2); }
+.sc-info-left strong { color: var(--purple3); }
+.redeem-sc-btn {
+  background: linear-gradient(135deg, var(--purple), var(--purple2));
+  border: none; border-radius: 16px;
+  color: white; font-family: 'Cinzel', serif;
+  font-size: 12px; font-weight: 700;
+  padding: 8px 18px; cursor: pointer;
+  white-space: nowrap; transition: all 0.15s;
+}
+.redeem-sc-btn:hover { box-shadow: 0 4px 16px rgba(124,58,237,0.5); }
+
+/* ── BOTTOM NAV (mobile) ─────────────────────────────── */
+@media (max-width: 600px) {
+  .header { padding: 0 12px; height: 56px; }
+  .logo { font-size: 16px; }
+  .logo span { display: none; }
+  .coin-display, .sc-display { padding: 5px 10px 5px 6px; }
+  .coin-amount, .sc-amount { font-size: 12px; }
+  .get-coins-btn { font-size: 11px; padding: 6px 12px; }
+  .main { padding: 0 12px 80px; }
+  .hero { flex-direction: column; gap: 16px; }
+  .spin-btn { padding: 12px 36px; font-size: 16px; }
+  .scratch-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── TOAST ───────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 800;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── MISSIONS BAR ─────────────────────────────────────── */
+.missions-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.mission-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  transition: all 0.15s;
+}
+.mission-card:hover { border-color: var(--border2); }
+.mission-card.done { border-color: var(--green); background: rgba(34,197,94,0.06); }
+
+.mission-icon { font-size: 20px; margin-bottom: 4px; }
+.mission-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+.mission-progress-bar {
+  height: 4px;
+  background: var(--surface3);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.mission-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--gold));
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.mission-reward { font-size: 10px; color: var(--gold); font-weight: 700; }
 </style>
 </head>
 <body>
 
-<!-- STATUS BAR (debug) -->
-<div id="statusBar" style="position:fixed;bottom:0;left:0;right:0;background:#111;border-top:1px solid #333;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#22c55e;z-index:9999;">Loading...</div>
-
-<!-- SCORE TICKER -->
-<div class="ticker-wrap">
-  <div class="ticker-inner" id="ticker">
-    <!-- populated by JS -->
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    Lucky Maze
+    <span>Spin · Scratch · Win</span>
   </div>
-</div>
-
-<!-- LAYOUT -->
-<div class="page-wrap">
-
-<!-- BOARD LOCK BANNER -->
-<div id="lockBanner">
-  🔒 BOARD LOCKED &nbsp;
-  <span id="lockBannerGame"></span>
-  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.4);letter-spacing:0;">VIEW ONLY — buying squares still open</span>
-</div>
-
-<!-- VIEWER INSTRUCTIONS — shown to people who open a shared locked link -->
-<div id="viewerInstructions">
-  <div class="vi-title">How to Buy Squares</div>
-  <div class="vi-steps">
-    <div class="vi-step">
-      <div class="vi-step-num">1</div>
-      <span>Pick quantity on the <strong style="color:#22c55e;">right side</strong> (1, 2, 5, 10, 20)</span>
+  <div class="header-right">
+    <div class="coin-display" onclick="openCoinsModal()">
+      <div class="coin-icon">🪙</div>
+      <div class="coin-amount" id="gcDisplay">25,000</div>
     </div>
-    <div class="vi-divider">›</div>
-    <div class="vi-step">
-      <div class="vi-step-num">2</div>
-      <span>Click <strong style="color:#22c55e;">BUY SQUARES NOW</strong></span>
+    <div class="sc-display">
+      <div class="sc-icon">SC</div>
+      <div class="sc-amount" id="scDisplay">0.30</div>
     </div>
-    <div class="vi-divider">›</div>
-    <div class="vi-step">
-      <div class="vi-step-num">3</div>
-      <span>Enter your <strong style="color:#22c55e;">initials</strong> & pay via <strong style="color:#00D632;">Cash App</strong> or <strong style="color:#60a5fa;">PayPal</strong></span>
-    </div>
-    <div class="vi-divider">›</div>
-    <div class="vi-step">
-      <div class="vi-step-num">4</div>
-      <span>Squares <strong style="color:#22c55e;">auto-assigned</strong> randomly after payment verified</span>
-    </div>
+    <button class="get-coins-btn" onclick="openCoinsModal()">+ Get Coins</button>
   </div>
-  <div style="font-size:11px;color:rgba(255,255,255,0.35);white-space:nowrap;">Board locked by admin · game & date cannot be changed</div>
+</header>
+
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showTab('slots', this)">🎰 Slots</button>
+  <button class="nav-tab" onclick="showTab('scratch', this)">🎟️ Scratch</button>
+  <button class="nav-tab" onclick="showTab('missions', this)">🎯 Missions</button>
+  <button class="nav-tab" onclick="openRedeemModal()">💰 Redeem SC</button>
 </div>
 
-<div class="layout">
+<!-- MAIN -->
+<div class="main">
 
-  <!-- BOARD PANEL -->
-  <div class="board-panel">
-    <div class="board-header">
-      <div>
-        <div class="board-title">Super Squares</div>
-        <div class="board-subtitle">
-          <span style="display:flex;align-items:center;gap:4px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span id="live-date">Loading...</span>
-          </span>
-        </div>
-      </div>
-      <div class="sport-controls">
-        <select class="sport-select" onchange="pinUpdateSport(this.value)">
-          <option value="NBA">🏀 NBA</option>
-          <option value="NHL">🏒 NHL</option>
-          <option value="MLB">⚾ MLB</option>
-          <option value="NFL">🏈 NFL</option>
-          <option value="MLS">⚽ MLS</option>
-          <option value="WNBA">🏀 WNBA</option>
-          <option value="MM_MEN">🏀 March Madness (Men)</option>
-          <option value="MM_WOMEN">🏀 March Madness (Women)</option>
-        </select>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <button onclick="pinChangeDate(-1)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1;">◀</button>
-          <input type="date" id="gameDate" class="game-select" onchange="pinUpdateDateFromPicker(this.value)" style="min-width:130px;color-scheme:dark;" />
-          <button onclick="pinChangeDate(1)" style="background:var(--surface3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:6px 8px;cursor:pointer;font-size:14px;line-height:1;">▶</button>
-        </div>
-        <select class="game-select" id="gameSelect" onchange="pinSelectGame(this.value)">
-          <!-- populated by JS -->
-        </select>
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-text">
+      <div class="hero-title">Welcome to<br>Lucky Maze</div>
+      <div class="hero-sub">Free to play · Real cash prizes · Daily bonuses</div>
+      <div class="hero-btns">
+        <button class="hero-btn-primary" onclick="claimDaily()">🎁 Claim Daily Bonus</button>
+        <button class="hero-btn-secondary" onclick="openCoinsModal()">Get More Coins</button>
       </div>
     </div>
-
-    <!-- Board Tabs -->
-    <div class="board-tabs" style="padding-top:16px;">
-      <button class="board-tab active" onclick="requireAdminPin(function(){ document.querySelectorAll('.board-tab').forEach(function(b){b.classList.remove('active');}); this.classList.add('active'); }.bind(this))">Board #1</button>
-      <button class="board-tab" onclick="requireAdminPin(function(){ alert('New board version coming soon!'); })">Board #2 (FULL)</button>
-    </div>
-
-    <!-- Grid -->
-    <div class="grid-wrap">
-      <div class="grid-container" id="squaresGrid">
-        <!-- populated by JS -->
+    <div class="hero-prizes">
+      <div class="jackpot-display">
+        <div class="jackpot-label">🏆 Jackpot Prize</div>
+        <div class="jackpot-amount" id="jackpotAmt">$500</div>
       </div>
     </div>
-
-    <!-- QUARTER TRACKER -->
-    <div id="qtrTracker" style="margin:12px 8px 0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;display:none;">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
-        QUARTER TRACKER
-        <span id="qtrLiveScore" style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--yellow);letter-spacing:0;"></span>
-      </div>
-      <div style="overflow-x:auto;">
-        <table id="qtrTable" style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead>
-            <tr style="color:var(--text3);font-size:10px;font-weight:700;letter-spacing:.06em;">
-              <td style="padding:4px 6px;">QTR</td>
-              <td style="padding:4px 6px;text-align:center;" id="qtrAwayLabel">AWAY</td>
-              <td style="padding:4px 6px;text-align:center;" id="qtrHomeLabel">HOME</td>
-              <td style="padding:4px 6px;text-align:center;">WINNER</td>
-              <td style="padding:4px 6px;text-align:right;">PAYOUT</td>
-            </tr>
-          </thead>
-          <tbody id="qtrBody">
-            <tr><td colspan="5" style="color:var(--text3);padding:8px 6px;font-size:11px;">Waiting for game to start...</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="qtrHouseSummary" style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:11px;color:var(--text3);display:none;"></div>
-    </div>
-
   </div>
 
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-
-    <!-- MAIN COMBINED CARD -->
-    <div class="main-card">
-
-      <!-- Header -->
-      <div class="card-header">
-        <div class="card-header-text">
-          <div class="card-header-title">PARLAY + SQUARES</div>
-          <div class="card-header-sub">Buy squares &amp; build your parlay</div>
-        </div>
-        <div class="available-badge">
-          <div class="available-num" id="availableCount">67</div>
-          <div class="available-label">Available</div>
-        </div>
-      </div>
-
-      <!-- Parlay Board -->
-      <div class="parlay-section">
-        <div class="section-label">
-          Parlay Board
-          <span class="status-dot status-live">Live · Q3 4:22</span>
-        </div>
-
-        <div class="odds-header-row">
-          <div class="odds-col-label">Spread</div>
-          <div class="odds-col-label">Total</div>
-          <div class="odds-col-label">Moneyline</div>
-        </div>
-
-        <div class="odds-grid">
-          <!-- Spread -->
-          <div class="odds-col">
-            <div class="odds-btn" onclick="toggleOdds(this, 'spread-away')">
-              <div class="odds-btn-label">Away +3.5</div>
-              <div class="odds-value">-110</div>
-            </div>
-            <div class="odds-btn selected" onclick="toggleOdds(this, 'spread-home')">
-              <div class="odds-btn-label">Home -3.5</div>
-              <div class="odds-value">-110</div>
-            </div>
-          </div>
-          <!-- Total -->
-          <div class="odds-col">
-            <div class="odds-btn" onclick="toggleOdds(this, 'total-over')">
-              <div class="odds-btn-label">Over 228.5</div>
-              <div class="odds-value">-110</div>
-            </div>
-            <div class="odds-btn" onclick="toggleOdds(this, 'total-under')">
-              <div class="odds-btn-label">Under 228.5</div>
-              <div class="odds-value">-110</div>
-            </div>
-          </div>
-          <!-- Moneyline -->
-          <div class="odds-col">
-            <div class="odds-btn selected" onclick="toggleOdds(this, 'ml-away')">
-              <div class="odds-btn-label">Away ML</div>
-              <div class="odds-value">-160</div>
-            </div>
-            <div class="odds-btn" onclick="toggleOdds(this, 'ml-home')">
-              <div class="odds-btn-label">Home ML</div>
-              <div class="odds-value">+140</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Build Parlay Button -->
-        <button style="width:100%;margin-top:10px;padding:8px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);border-radius:8px;color:#86efac;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s;letter-spacing:0.05em;text-transform:uppercase;"
-          onmouseover="this.style.background='rgba(22,163,74,0.25)'"
-          onmouseout="this.style.background='rgba(22,163,74,0.15)'"
-        >Build Custom Parlay</button>
-      </div>
-
-      <!-- Selected Legs -->
-      <div class="legs-section">
-        <div class="legs-title">Selected Legs (2)</div>
-        <div class="leg-row">
-          <span class="leg-label">Spread · Home -3.5</span>
-          <span class="leg-odds">-110</span>
-        </div>
-        <div class="leg-row">
-          <span class="leg-label">Moneyline · Away ML</span>
-          <span class="leg-odds">-160</span>
-        </div>
-      </div>
-
-      <!-- Buy Squares -->
-      <div class="buy-section">
-        <div class="buy-meta">
-          <span class="buy-meta-label">Price per Square</span>
-          <select id="squarePrice" class="buy-meta-value" onchange="updatePriceDisplay(this.value)" style="background:#1a1a1a;border:1px solid #333;color:#22c55e;font-size:inherit;font-weight:700;padding:2px 8px;border-radius:6px;cursor:pointer;outline:none;"><option value="5">$5</option><option value="10" selected>$10</option><option value="15">$15</option><option value="20">$20</option><option value="25">$25</option><option value="30">$30</option><option value="40">$40</option><option value="50">$50</option><option value="75">$75</option><option value="100">$100</option><option value="150">$150</option><option value="200">$200</option></select>
-        </div>
-
-        <!-- Qty -->
-        <div class="qty-grid">
-          <button class="qty-btn" onclick="setQty(1, this)">1</button>
-          <button class="qty-btn" onclick="setQty(2, this)">2</button>
-          <button class="qty-btn active" onclick="setQty(5, this)">5</button>
-          <button class="qty-btn" onclick="setQty(10, this)">10</button>
-          <button class="qty-btn" onclick="setQty(20, this)">20</button>
-        </div>
-
-        <!-- Total -->
-        <div class="total-row">
-          <div class="total-left">
-            <div class="total-label">Total Due</div>
-            <div class="total-amount" id="totalAmount">$50.00</div>
-          </div>
-          <div class="total-right">
-            <div class="total-squares" id="totalSquares">5 Squares</div>
-            <div class="total-legs">+ 2 Parlay Legs</div>
-          </div>
-        </div>
-
-        <!-- Pay Willie -->
-        <div class="pay-label">Pay Willie</div>
-        <div class="pay-grid">
-          <div class="pay-card pay-cashapp">
-            <div class="pay-icon pay-icon-cashapp">$</div>
-            <div class="pay-info">
-              <div class="pay-name">Cash App</div>
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=https://cash.app/%247707438091" alt="Cash App QR" style="width:70px;height:70px;border-radius:6px;margin-top:4px;display:block;" />
-            </div>
-          </div>
-          <div class="pay-card pay-paypal">
-            <div class="pay-icon pay-icon-paypal">P</div>
-            <div class="pay-info">
-              <div class="pay-name">PayPal</div>
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=https://paypal.me/williemayes" alt="PayPal QR" style="width:70px;height:70px;border-radius:6px;margin-top:4px;display:block;" />
-            </div>
-          </div>
-        </div>
-
-        <!-- CTA -->
-        <button class="cta-btn" onclick="openPayModal()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          BUY 5 SQUARES NOW
-        </button>
-        <div class="cta-sub">Squares assigned randomly after payment verified</div>
-      </div>
+  <!-- DAILY BONUS -->
+  <div class="daily-bonus-card" id="dailyBonusCard">
+    <div style="font-size:28px;">🎁</div>
+    <div class="daily-bonus-info">
+      <div class="daily-bonus-title">Daily Login Bonus</div>
+      <div class="daily-bonus-sub">+20,000 Gold Coins & +0.10 SC — comes back every 24 hours</div>
     </div>
-
-    <!-- LEGEND -->
-    <div class="legend-card">
-      <div class="legend-title" style="display:flex;justify-content:space-between;align-items:center;">
-        Legend
-        <button onclick="localStorage.clear();_cache={};alert('Local data cleared! Refreshing...');location.reload();" style="background:transparent;border:1px solid var(--border2);color:var(--text3);font-size:9px;padding:3px 8px;border-radius:4px;cursor:pointer;">Clear My Data</button>
-      </div>
-      <div class="legend-items">
-        <div class="legend-item">
-          <div class="legend-dot" style="background:#16a34a;border:1px solid #22c55e;"></div>
-          Yours
-        </div>
-        <div class="legend-item">
-          <div class="legend-dot" style="background:#222;border:1px solid #333;"></div>
-          Sold
-        </div>
-        <div class="legend-item">
-          <div class="legend-dot" style="background:#3f3200;border:1px solid #ca8a04;"></div>
-          Pending
-        </div>
-        <div class="legend-item">
-          <div class="legend-dot" style="background:#111;border:1px solid #2a2a2a;"></div>
-          Open
-        </div>
-      </div>
-    </div>
-
-    <!-- TODAY'S GAMES -->
-    <div class="games-card">
-      <div class="games-card-header">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Today's Games
-      </div>
-      <div class="games-list" id="gamesList">
-        <!-- populated by JS -->
-      </div>
-    </div>
-
-    <!-- ADMIN ZONE -->
-    <div class="admin-card">
-      <div class="admin-title">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Admin Zone
-      </div>
-      <div class="admin-btns">
-        <button id="ppLockBtn" onclick="ppToggleLock()">🔒 Lock Board</button>
-        <button class="admin-btn" onclick="printBoard()" style="background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.3);color:#a5b4fc;">🖨️ Print Board</button>
-        <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
-        <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
-        <button class="admin-btn admin-btn-green" onclick="confirmPendingPayments()">✅ Confirm Pending Payments</button>
-        <button class="admin-btn admin-btn-red" onclick="releasePendingPayments()" style="background:rgba(234,179,8,0.1);border-color:rgba(234,179,8,0.3);color:#fbbf24;">🔓 Release Pending Squares</button>
-        <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
-        <button class="admin-btn admin-btn-red" onclick="adminReset();">⨂ Reset Board</button>
-      </div>
-    </div>
-
-    <!-- PLAYER PROPS -->
-    <div class="admin-card" style="margin-top:12px;">
-      <div class="admin-title" style="display:flex;justify-content:space-between;align-items:center;">
-        <span>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          Player Props — Over/Under
-        </span>
-        <div style="display:flex;gap:4px;">
-          <button class="admin-btn admin-btn-green" style="margin:0;padding:4px 10px;font-size:10px;" onclick="togglePropsSetup()">+ Add Player</button>
-          <button class="admin-btn admin-btn-red" style="margin:0;padding:4px 10px;font-size:10px;" onclick="resetProps()">Reset Props</button>
-        </div>
-      </div>
-
-      <!-- Props Setup Form (hidden by default) -->
-      <div id="propsSetupForm" style="display:none;padding:12px;background:var(--surface2);border-radius:8px;margin:10px 12px;">
-        <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;">Add Player Props Board</div>
-        <input id="propsPlayerName" type="text" placeholder="Player Name (e.g. LeBron James)" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;margin-bottom:6px;outline:none;" />
-        <select id="propsPlayerSide" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;margin-bottom:6px;outline:none;cursor:pointer;">
-          <option value="home">Home Team Player</option>
-          <option value="away">Away Team Player</option>
-          <option value="player3">Player 3</option>
-          <option value="player4">Player 4</option>
-          <option value="player5">Player 5</option>
-          <option value="player6">Player 6</option>
-        </select>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
-          <select id="propsPrice" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;outline:none;cursor:pointer;">
-            <option value="5">$5 per square</option>
-            <option value="10">$10 per square</option>
-            <option value="15">$15 per square</option>
-            <option value="20">$20 per square</option>
-            <option value="25">$25 per square</option>
-            <option value="50">$50 per square</option>
-            <option value="100">$100 per square</option>
-          </select>
-          <input id="propsPin" type="password" placeholder="Admin PIN" style="background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px;color:var(--text);font-size:12px;outline:none;" />
-        </div>
-        <button onclick="addPlayerProp()" style="width:100%;background:var(--green);border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;padding:10px;cursor:pointer;">Create Props Board for This Player</button>
-      </div>
-
-      <!-- Props Boards Container -->
-      <div id="propsBoardsContainer" style="padding:8px 12px;">
-        <div style="text-align:center;color:#444;font-size:12px;padding:20px 0">No props set up yet.<br>Click + Add Player to create a board.</div>
-      </div>
-    </div>
-
+    <button class="daily-claim-btn" id="dailyClaimBtn" onclick="claimDaily()">Claim Now</button>
   </div>
-</div>
-</div>
 
-<!-- PAYMENT MODAL -->
-<div class="modal-overlay" id="payModal">
+  <!-- SC INFO ROW -->
+  <div class="sc-info-row">
+    <div class="sc-info-left">
+      You have <strong id="scInfoDisplay">0.30 SC</strong> · Min 100 SC to redeem for cash via Cash App or PayPal
+    </div>
+    <button class="redeem-sc-btn" onclick="openRedeemModal()">Redeem SC</button>
+  </div>
+
+  <!-- SLOTS TAB -->
+  <div id="tab-slots">
+    <div class="section-title">🎰 Slot Machines</div>
+
+    <!-- SLOT MACHINE -->
+    <div class="slot-machine">
+      <div class="slot-top">
+        <div class="slot-game-title">🌀 Maze Spinner</div>
+        <div class="slot-bet-row">
+          <span class="bet-label">Bet</span>
+          <div class="bet-btns">
+            <button class="bet-btn active" onclick="setBet(10, this)">10</button>
+            <button class="bet-btn" onclick="setBet(20, this)">20</button>
+            <button class="bet-btn" onclick="setBet(50, this)">50</button>
+            <button class="bet-btn" onclick="setBet(100, this)">100</button>
+            <button class="bet-btn" onclick="setBet(500, this)">500</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="slotWinMsg"></div>
+
+      <!-- REELS FRAME -->
+      <div class="reels-frame" style="margin-bottom:20px;">
+        <div class="win-line-bar" id="winLineBar"></div>
+        <div class="reels-inner" id="slotReels">
+          <div class="reel-container"><div class="reel" id="reel0"></div></div>
+          <div class="reel-container"><div class="reel" id="reel1"></div></div>
+          <div class="reel-container"><div class="reel" id="reel2"></div></div>
+          <div class="reel-container"><div class="reel" id="reel3"></div></div>
+          <div class="reel-container"><div class="reel" id="reel4"></div></div>
+        </div>
+      </div>
+
+      <div style="text-align:center;">
+        <button class="spin-btn" id="spinBtn" onclick="spin()">SPIN</button>
+        <div class="spin-cost" id="spinCost">Cost: 10 GC per spin</div>
+      </div>
+    </div>
+
+    <!-- PAYTABLE -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:24px;">
+      <div style="font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">Paytable</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">💎💎💎💎💎 <span style="color:var(--gold);font-weight:700;">JACKPOT!</span></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">⭐⭐⭐⭐⭐ <span style="color:var(--gold);font-weight:700;">500× bet</span></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">🔔🔔🔔🔔🔔 <span style="color:var(--text);font-weight:700;">200× bet</span></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">5× match <span style="color:var(--text);font-weight:700;">100× bet</span></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">4× match <span style="color:var(--text);font-weight:700;">10× bet</span></div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">3× match <span style="color:var(--text);font-weight:700;">3× bet</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRATCH TAB -->
+  <div id="tab-scratch" style="display:none;">
+    <div class="section-title">🎟️ Scratch Cards</div>
+    <div class="scratch-grid" id="scratchGrid"></div>
+  </div>
+
+  <!-- MISSIONS TAB -->
+  <div id="tab-missions" style="display:none;">
+    <div class="section-title">🎯 Daily Missions</div>
+    <div class="missions-row" id="missionsGrid"></div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+      <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--gold);margin-bottom:6px;">How to Earn Free SC</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7;">
+        ✦ Complete all 3 daily missions — earn free SC<br>
+        ✦ Login every day for your daily bonus<br>
+        ✦ Purchase optional Gold Coin packages to receive bonus SC<br>
+        ✦ Accumulate 100 SC minimum to redeem for real cash
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- GET COINS MODAL -->
+<div class="modal-overlay" id="coinsModal">
   <div class="modal" style="position:relative;">
-    <button class="modal-close" onclick="document.getElementById('payModal').classList.remove('open')">✕</button>
+    <button class="modal-close" onclick="closeModal('coinsModal')">✕</button>
     <div class="modal-header">
-      <div class="modal-icon">💵</div>
-      <div class="modal-title">Payment Method</div>
-      <div class="modal-sub">Select how you want to pay for your squares.</div>
+      <div class="modal-icon">🪙</div>
+      <div class="modal-title">Get Coins</div>
+      <div class="modal-sub">Purchase Gold Coins or claim free ones</div>
     </div>
     <div class="modal-body">
-      <div class="modal-total">
-        <span class="modal-total-label" id="modalSquaresLabel">5 Squares × $10</span>
-        <span class="modal-total-amount" id="modalTotal">$50.00</span>
-      </div>
-      <div class="modal-input-label">Your Initials (3 letters)</div>
-      <input type="text" maxlength="3" placeholder="ABC" class="modal-input" id="initialsInput" oninput="checkInitials()" />
-        <div class="modal-pay-grid" style="grid-template-columns:1fr 1fr 1fr;">
-        <div class="modal-pay-option selected" id="payOpt-cashapp" onclick="selectPay(this,'cashapp')">
-          <div class="modal-pay-icon" style="background:#00D632;">$</div>
-          <div class="modal-pay-name">Cash App</div>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=https://cash.app/%247707438091" alt="QR" style="width:50px;height:50px;border-radius:4px;margin-top:4px;" />
+
+      <!-- Free options -->
+      <div class="free-coins-section">
+        <div class="free-coins-title">🎁 Free Coins</div>
+        <div class="free-option">
+          <span>Daily Login Bonus</span>
+          <span style="color:var(--gold);font-weight:700;font-size:12px;">20K GC + 0.10 SC</span>
+          <button class="free-option-btn" id="modalDailyBtn" onclick="claimDaily(); closeModal('coinsModal')">Claim</button>
         </div>
-        <div class="modal-pay-option" id="payOpt-paypal" onclick="selectPay(this,'paypal')">
-          <div class="modal-pay-icon" style="background:#0070ba;font-style:italic;font-size:13px;">P</div>
-          <div class="modal-pay-name">PayPal</div>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=60x60&data=https://paypal.me/williemayes" alt="QR" style="width:50px;height:50px;border-radius:4px;margin-top:4px;" />
-        </div>
-        <div class="modal-pay-option" id="payOpt-cash" onclick="selectPay(this,'cash')">
-          <div class="modal-pay-icon" style="background:#15803d;">💵</div>
-          <div class="modal-pay-name">Cash</div>
-          <div style="font-size:9px;color:#aaa;margin-top:4px;">Pay in person</div>
+        <div class="free-option">
+          <span>Complete Daily Missions</span>
+          <span style="color:var(--gold);font-weight:700;font-size:12px;">5K GC + 0.05 SC</span>
+          <button class="free-option-btn" onclick="showTab('missions', null); closeModal('coinsModal')">View</button>
         </div>
       </div>
-      <div id="payInstructions" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12px;color:var(--text2);"></div>
-      <button class="modal-cta" id="confirmBtn" disabled onclick="confirmPurchase()">
-        📲 Reserve My Squares
-      </button>
+
+      <!-- Packages -->
+      <div class="coin-packages">
+        <div class="coin-pkg" onclick="buyPackage(2.99, 22000, 2)">
+          <div class="coin-pkg-left">
+            <div class="coin-pkg-emoji">🪙</div>
+            <div class="coin-pkg-info">
+              <div class="coin-pkg-coins">22,000 Gold Coins</div>
+              <div class="coin-pkg-bonus">+ 2 Bonus SC</div>
+            </div>
+          </div>
+          <div class="coin-pkg-price">$2.99</div>
+        </div>
+        <div class="coin-pkg featured" onclick="buyPackage(9.99, 130000, 10)">
+          <div class="coin-pkg-left">
+            <div class="coin-pkg-emoji">💰</div>
+            <div class="coin-pkg-info">
+              <div class="coin-pkg-coins">130,000 Gold Coins</div>
+              <div class="coin-pkg-bonus">+ 10 Bonus SC</div>
+            </div>
+            <span class="coin-pkg-badge">Popular</span>
+          </div>
+          <div class="coin-pkg-price">$9.99</div>
+        </div>
+        <div class="coin-pkg" onclick="buyPackage(19.99, 300000, 25)">
+          <div class="coin-pkg-left">
+            <div class="coin-pkg-emoji">💎</div>
+            <div class="coin-pkg-info">
+              <div class="coin-pkg-coins">300,000 Gold Coins</div>
+              <div class="coin-pkg-bonus">+ 25 Bonus SC</div>
+            </div>
+          </div>
+          <div class="coin-pkg-price">$19.99</div>
+        </div>
+        <div class="coin-pkg" onclick="buyPackage(49.99, 850000, 50)">
+          <div class="coin-pkg-left">
+            <div class="coin-pkg-emoji">🏆</div>
+            <div class="coin-pkg-info">
+              <div class="coin-pkg-coins">850,000 Gold Coins</div>
+              <div class="coin-pkg-bonus">+ 50 Bonus SC</div>
+            </div>
+            <span class="coin-pkg-badge" style="background:var(--gold);color:#1a0e00;">Best Value</span>
+          </div>
+          <div class="coin-pkg-price">$49.99</div>
+        </div>
+      </div>
+
+      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:4px;">
+        Gold Coins are for entertainment only. SC can be redeemed for real prizes. No purchase required to play.
+      </div>
     </div>
   </div>
 </div>
 
-<!-- CONFIRM MODAL -->
-<div class="modal-overlay" id="confirmModal">
-  <div class="modal">
-    <div class="confirm-modal">
-      <div class="confirm-icon">✓</div>
-      <div class="confirm-title">SQUARES SECURED!</div>
-      <div class="confirm-msg" id="confirmMsg">1 square × $10 = <strong style="color:white;">$10.00</strong></div>
-      <div class="confirm-badge">
-        <div class="confirm-badge-text">Your squares are locked in!</div>
-        <div class="confirm-badge-sub">Please pay Willie in cash or via app</div>
+<!-- BUY PACKAGE MODAL -->
+<div class="modal-overlay" id="buyModal">
+  <div class="modal" style="position:relative;">
+    <button class="modal-close" onclick="closeModal('buyModal')">✕</button>
+    <div class="modal-header">
+      <div class="modal-icon">💳</div>
+      <div class="modal-title">Complete Purchase</div>
+      <div class="modal-sub" id="buyModalSub">130,000 GC + 10 SC — $9.99</div>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:14px;">
+        <div class="form-label">Pay via</div>
+        <div class="pay-grid">
+          <div class="pay-option selected" id="payOpt-cashapp" onclick="selectPayOpt(this,'cashapp')">
+            <div class="pay-option-icon">💚</div>
+            <div class="pay-option-name">Cash App</div>
+          </div>
+          <div class="pay-option" id="payOpt-paypal" onclick="selectPayOpt(this,'paypal')">
+            <div class="pay-option-icon">💙</div>
+            <div class="pay-option-name">PayPal</div>
+          </div>
+        </div>
       </div>
-      <button class="confirm-btn" onclick="closeConfirm()">Got it!</button>
+      <div id="payInstructions" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6;"></div>
+      <button class="buy-btn" onclick="confirmBuyPackage()">Complete Purchase</button>
+      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:8px;">
+        After payment, message Willie on Cash App/PayPal with your username to receive coins.
+      </div>
     </div>
   </div>
 </div>
+
+<!-- REDEEM MODAL -->
+<div class="modal-overlay" id="redeemModal">
+  <div class="modal" style="position:relative;">
+    <button class="modal-close" onclick="closeModal('redeemModal')">✕</button>
+    <div class="modal-header">
+      <div class="modal-icon">💰</div>
+      <div class="modal-title">Redeem SC</div>
+      <div class="modal-sub">Min 100 SC required · Paid via Cash App or PayPal</div>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--purple-dim);border:1px solid rgba(124,58,237,0.25);border-radius:10px;padding:12px;margin-bottom:14px;">
+        <div style="font-size:12px;color:var(--text2);">Your SC Balance: <strong style="color:var(--purple3);font-size:16px;" id="redeemScBalance">0.30 SC</strong></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">1 SC = $1.00 USD</div>
+      </div>
+      <div class="redeem-form">
+        <div>
+          <div class="form-label">Amount to Redeem (SC)</div>
+          <input class="form-input" id="redeemAmount" type="number" min="100" placeholder="Minimum 100 SC" />
+        </div>
+        <div>
+          <div class="form-label">Pay to (Cash App $tag or PayPal email)</div>
+          <input class="form-input" id="redeemHandle" type="text" placeholder="$cashtag or email@example.com" />
+        </div>
+        <button class="redeem-btn" onclick="submitRedeem()">Request Redemption</button>
+        <div style="font-size:10px;color:var(--text3);text-align:center;">
+          SC redemptions are reviewed within 24–48 hours. KYC verification required for first redemption.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WIN CELEBRATION -->
+<div class="win-overlay" id="winOverlay">
+  <div class="win-box">
+    <div class="win-emoji">🏆</div>
+    <div class="win-title">YOU WON!</div>
+    <div class="win-amount" id="winAmount">+5,000 GC</div>
+    <button class="win-close-btn" onclick="playCoinSound(); closeWin();">Collect Winnings</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
 
 <script>
-// ── ERROR HANDLING ──────────────────────────────────────────────
-function logStatus(msg, isError) {
-  const el = document.getElementById('statusBar');
-  if (el) {
-    el.textContent = (new Date()).toLocaleTimeString() + ' | ' + msg;
-    el.style.color = isError ? '#ef4444' : '#22c55e';
-  }
-  if (isError) console.error('[ParlayPro]', msg);
-  else console.log('[ParlayPro]', msg);
+// ── STATE ────────────────────────────────────────────────
+let gc = 25000;
+let sc = 0.30;
+let currentBet = 10;
+let spinning = false;
+let selectedPay = 'cashapp';
+let pendingPkg = null;
+
+// ── HELPERS ──────────────────────────────────────────────
+function updateDisplays() {
+  document.getElementById('gcDisplay').textContent = gc.toLocaleString();
+  document.getElementById('scDisplay').textContent = sc.toFixed(2);
+  document.getElementById('scInfoDisplay').textContent = sc.toFixed(2) + ' SC';
+  document.getElementById('redeemScBalance').textContent = sc.toFixed(2) + ' SC';
 }
 
-window.onerror = function(msg, src, line, col, err) {
-  logStatus('JS Error: ' + msg + ' (line ' + line + ')', true);
-  return false;
-};
-
-window.addEventListener('unhandledrejection', function(e) {
-  logStatus('Async Error: ' + (e.reason?.message || e.reason || 'Unknown'), true);
-});
-
-// ── STATE ────────────────────────────────────────────────────────
-const SPORT_MAP = {
-  'NBA': 'nba', 'NHL': 'nhl', 'MLB': 'mlb', 'NFL': 'nfl',
-  'MLS': 'mls', 'WNBA': 'wnba',
-  'MM_MEN': 'ncaam', 'MM_WOMEN': 'ncaaw'
-};
-
-let currentSport = 'NBA';
-let currentGame = null;
-let currentDate = (function() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + d;
-})(); // YYYY-MM-DD local time
-let currentQty = 5;
-let currentBoardVersion = null;
-let espnGames = {}; // { sport: [games...] }
-let _cache = {}; // { gameId: serverData }
-
-const INITIALS = ['WM','KJ','DT','AA','RB','LM','CP','JS','MB','TW','GH','PD','NT','BK','SC','FO','YI','QV','ZX','ER'];
-
-// ── DATE HELPERS ──────────────────────────────────────────────
-function initDatePicker() {
-  const picker = document.getElementById('gameDate');
-  if (!picker) return;
-  const today = new Date();
-  const maxDate = new Date(today);
-  maxDate.setDate(maxDate.getDate() + 14); // 2 weeks out
-  picker.value = currentDate;
-  // Allow up to 30 days back so admin can review past boards
-  const minDate = new Date(today);
-  minDate.setDate(minDate.getDate() - 30);
-  picker.min = minDate.toISOString().slice(0, 10);
-  picker.max = maxDate.toISOString().slice(0, 10);
+function toast(msg, duration=2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
 }
 
-function changeDate(offset) {
-  const d = new Date(currentDate + 'T12:00:00');
-  d.setDate(d.getDate() + offset);
-  const minDate = new Date();
-  minDate.setDate(minDate.getDate() - 30);
-  const maxDate = new Date();
-  maxDate.setDate(maxDate.getDate() + 14);
-  minDate.setHours(0,0,0,0);
-  maxDate.setHours(23,59,59,999);
-  if (d < minDate || d > maxDate) return;
-  currentDate = d.toISOString().slice(0, 10);
-  document.getElementById('gameDate').value = currentDate;
-  updateSport(currentSport);
+function openCoinsModal() {
+  document.getElementById('coinsModal').classList.add('open');
+}
+function openRedeemModal() {
+  document.getElementById('redeemModal').classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
 }
 
-function updateDateFromPicker(val) {
-  currentDate = val;
-  updateSport(currentSport);
-}
-
-function getEspnDateParam() {
-  return currentDate.replace(/-/g, ''); // YYYYMMDD format for ESPN
-}
-
-// ── ESPN API: Fetch real live data ────────────────────────────
-async function fetchEspnScores(sport) {
-  try {
-    const dateStr = getEspnDateParam();
-    logStatus('Fetching ' + sport + ' for ' + currentDate + '...', false);
-    const apiSport = SPORT_MAP[sport] || sport.toLowerCase();
-
-    // Try Netlify function first
-    try {
-      const res = await fetch(`/api/scores?sport=${encodeURIComponent(apiSport)}&date=${dateStr}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.games && data.games.length > 0) {
-          logStatus(sport + ': ' + data.games.length + ' games loaded', false);
-          espnGames[sport] = data.games;
-          return data;
-        }
-      }
-      logStatus('Netlify /api/scores failed (HTTP ' + (res.status || '?') + '), trying ESPN direct...', true);
-    } catch(e1) {
-      logStatus('Netlify function error: ' + e1.message + ', trying ESPN direct...', true);
-    }
-
-    // Fallback: call ESPN API directly from browser
-    const espnLeagueMap = {
-      'nba': 'basketball/nba', 'nhl': 'hockey/nhl', 'mlb': 'baseball/mlb',
-      'nfl': 'football/nfl', 'mls': 'soccer/usa.1', 'wnba': 'basketball/wnba',
-      'ncaam': 'basketball/mens-college-basketball', 'ncaaw': 'basketball/womens-college-basketball'
-    };
-    const league = espnLeagueMap[apiSport] || ('basketball/nba');
-    const espnUrl = `https://site.api.espn.com/apis/site/v2/sports/${league}/scoreboard?dates=${dateStr}`;
-    const espnRes = await fetch(espnUrl);
-    if (!espnRes.ok) {
-      logStatus('ESPN direct API also failed: HTTP ' + espnRes.status, true);
-      return null;
-    }
-    const espnData = await espnRes.json();
-    const events = espnData.events || [];
-    const games = events.map(ev => {
-      const comp = ev.competitions && ev.competitions[0];
-      const comps = comp && comp.competitors;
-      const away = comps && comps.find(c => c.homeAway === 'away');
-      const home = comps && comps.find(c => c.homeAway === 'home');
-      const status = ev.status && ev.status.type;
-      const isLive = status && status.state === 'in';
-      const isFinal = status && status.completed;
-      return {
-        id: ev.id,
-        away: (away && away.team && away.team.abbreviation) || 'AWAY',
-        home: (home && home.team && home.team.abbreviation) || 'HOME',
-        awayScore: away && parseInt(away.score) || 0,
-        homeScore: home && parseInt(home.score) || 0,
-        status: isFinal ? 'FINAL' : isLive ? 'LIVE' : 'UPCOMING',
-        time: (status && status.shortDetail) || 'TBD',
-        period: (comp && comp.period) || 0
-      };
+function showTab(name, btn) {
+  ['slots','scratch','missions'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  else {
+    // find matching tab button
+    document.querySelectorAll('.nav-tab').forEach(b => {
+      if (b.textContent.toLowerCase().includes(name)) b.classList.add('active');
     });
-    if (games.length > 0) {
-      logStatus(sport + ': ' + games.length + ' games (ESPN direct)', false);
-      espnGames[sport] = games;
-      return { games };
-    }
-    logStatus('No games found via ESPN direct for ' + sport, true);
-    return null;
-  } catch (e) {
-    logStatus('ESPN fetch failed for ' + sport + ': ' + e.message, true);
-    return null;
+  }
+  if (name === 'scratch') buildScratchCards();
+  if (name === 'missions') buildMissions();
+}
+
+// ── DAILY BONUS ───────────────────────────────────────────
+const DAILY_KEY = 'lm_daily_claimed';
+function checkDailyBonus() {
+  const last = localStorage.getItem(DAILY_KEY);
+  const now = Date.now();
+  const btn = document.getElementById('dailyClaimBtn');
+  const mBtn = document.getElementById('modalDailyBtn');
+  if (last && now - parseInt(last) < 24*60*60*1000) {
+    btn.disabled = true;
+    btn.textContent = 'Come back tomorrow!';
+    if (mBtn) { mBtn.disabled = true; mBtn.textContent = 'Claimed'; }
   }
 }
 
-// ── TICKER ───────────────────────────────────────────────────────
-async function buildTicker() {
-  // Don't run ticker if board is locked — it calls updateSport for each sport
-  // which would override the locked game
-  if (window._boardIsLocked) return;
-  const allSports = ['NBA', 'NHL', 'MLB', 'NFL', 'MLS'];
-  let allGames = [];
-  for (const sport of allSports) {
-    const data = await fetchEspnScores(sport);
-    if (data && data.games) allGames = allGames.concat(data.games);
-  }
-
-  if (!allGames.length) {
-    const wrap = document.querySelector('.ticker-inner');
-    if (wrap) wrap.innerHTML = '<div class="ticker-item">Loading live scores...</div>';
+function claimDaily() {
+  const last = localStorage.getItem(DAILY_KEY);
+  if (last && Date.now() - parseInt(last) < 24*60*60*1000) {
+    toast('Already claimed today! Come back in 24 hours.');
     return;
   }
+  gc += 20000;
+  sc = parseFloat((sc + 0.10).toFixed(2));
+  localStorage.setItem(DAILY_KEY, Date.now().toString());
+  updateDisplays();
+  const btn = document.getElementById('dailyClaimBtn');
+  btn.disabled = true;
+  btn.textContent = 'Claimed! ✓';
+  checkDailyBonus();
+  showWin('🎁 Daily Bonus!', '+20,000 GC & +0.10 SC');
+}
 
-  const wrap = document.querySelector('.ticker-inner');
-  if (!wrap) return;
+// ── SLOT MACHINE ──────────────────────────────────────────
+const SYMBOLS = ['🍒','🍋','🍊','🍇','🔔','⭐','💎','🎰','🌀','💫'];
+const WEIGHTS  = [20,  18,  15,  12,  10,  8,   5,   4,   3,   5  ];
 
-  wrap.innerHTML = allGames.map(g => {
-    const isLive = g.status === 'LIVE';
-    const scorePart = isLive ? `${g.awayScore} – ${g.homeScore}` : g.time;
-    const badge = isLive ? '<span class="ticker-badge badge-live">LIVE</span>' :
-                  g.status === 'FINAL' ? '<span class="ticker-badge badge-final">FINAL</span>' :
-                  '<span class="ticker-badge badge-upcoming">TODAY</span>';
-    return `<div class="ticker-item">
-      ${badge}
-      <span style="color:var(--text2);">${g.away}</span>
-      <span class="ticker-score">${scorePart}</span>
-      <span style="color:var(--text2);">${g.home}</span>
-      ${isLive ? '<span class="status-dot status-live" style="font-size:8px;margin-left:4px;">●</span>' : ''}
+// Build a full reel strip (many symbols for smooth scrolling)
+const STRIP_SIZE = 40;
+function buildStrip() {
+  const strip = [];
+  const total = WEIGHTS.reduce((a,b)=>a+b,0);
+  for (let i=0; i<STRIP_SIZE; i++) {
+    let r = Math.random() * total;
+    for (let j=0; j<SYMBOLS.length; j++) {
+      r -= WEIGHTS[j];
+      if (r <= 0) { strip.push(SYMBOLS[j]); break; }
+    }
+  }
+  return strip;
+}
+
+// Reel strips (persistent per session for smooth stop)
+const reelStrips = Array.from({length:5}, () => buildStrip());
+let reelOffsets = [0,0,0,0,0]; // current top position in strip index
+
+const SYM_H = 90; // px per symbol row
+
+function initReels() {
+  for (let r=0; r<5; r++) {
+    const reel = document.getElementById('reel'+r);
+    // Show 5 symbols (2 above + center + 2 below)
+    renderReel(r, reelOffsets[r]);
+  }
+}
+
+function renderReel(r, offset) {
+  const reel = document.getElementById('reel'+r);
+  const strip = reelStrips[r];
+  const n = strip.length;
+  let html = '';
+  for (let i=-1; i<=3; i++) {
+    const idx = ((offset + i) % n + n) % n;
+    html += `<div class="reel-symbol" data-row="${i+1}">${strip[idx]}</div>`;
+  }
+  reel.innerHTML = html;
+  reel.style.transform = 'translateY(0)';
+}
+
+function getCenter(r, offset) {
+  const n = reelStrips[r].length;
+  return reelStrips[r][((offset + 1) % n + n) % n];
+}
+
+async function animateReelSpin(r, targetOffset, duration) {
+  return new Promise(resolve => {
+    const reel = document.getElementById('reel'+r);
+    const strip = reelStrips[r];
+    const n = strip.length;
+    const start = performance.now();
+    const startOffset = reelOffsets[r];
+    const distance = ((targetOffset - startOffset) % n + n) % n;
+    const totalSymbols = distance + STRIP_SIZE * 2; // spin a few full loops
+
+    let lastRendered = -1;
+
+    function tick(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Ease out: fast then slow at end
+      const eased = progress < 0.75
+        ? progress / 0.75  // linear for 75%
+        : 1 - Math.pow((progress - 0.75) / 0.25, 2) * 0.15; // slow landing
+
+      const symsMoved = Math.floor(eased * totalSymbols);
+      const currentOffset = (startOffset + symsMoved) % n;
+
+      // Sub-symbol pixel offset for smooth scroll
+      const subPx = (eased * totalSymbols - Math.floor(eased * totalSymbols)) * SYM_H;
+
+      if (symsMoved !== lastRendered) {
+        lastRendered = symsMoved;
+        // Rebuild visible strip
+        let html = '';
+        for (let i=-1; i<=3; i++) {
+          const idx = ((currentOffset + i) % n + n) % n;
+          html += `<div class="reel-symbol">${strip[idx]}</div>`;
+        }
+        reel.innerHTML = html;
+      }
+
+      reel.style.transform = `translateY(${-subPx}px)`;
+
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        reelOffsets[r] = targetOffset;
+        renderReel(r, targetOffset);
+        resolve();
+      }
+    }
+
+    requestAnimationFrame(tick);
+  });
+}
+
+function weightedRandom() {
+  const total = WEIGHTS.reduce((a,b) => a+b, 0);
+  let r = Math.random() * total;
+  for (let i=0; i<SYMBOLS.length; i++) {
+    r -= WEIGHTS[i];
+    if (r <= 0) return i; // return index
+  }
+  return 0;
+}
+
+async function spin() {
+  if (spinning) return;
+  if (gc < currentBet) {
+    toast('Not enough Gold Coins! Get more coins first.');
+    openCoinsModal();
+    return;
+  }
+  spinning = true;
+  gc -= currentBet;
+  updateDisplays();
+
+  const btn = document.getElementById('spinBtn');
+  btn.disabled = true;
+  btn.textContent = 'SPINNING...';
+  playSpinSound();
+  document.getElementById('slotWinMsg').textContent = '';
+  document.getElementById('winLineBar').classList.remove('winning');
+
+  // Pick final center symbol for each reel
+  const n = reelStrips[0].length;
+  const targetOffsets = reelOffsets.map((off, r) => {
+    const symIdx = weightedRandom();
+    // Find next occurrence of that symbol in strip
+    let target = (off + 3) % n;
+    for (let i=0; i<n; i++) {
+      const pos = (off + 3 + i) % n;
+      if (reelStrips[r][pos] === SYMBOLS[symIdx]) { target = pos; break; }
+    }
+    return (target - 1 + n) % n; // offset so this symbol lands in center (row index 1)
+  });
+
+  // Get what will show in center row
+  const results = targetOffsets.map((tgt, r) => {
+    const pos = (tgt + 1) % n;
+    return reelStrips[r][pos];
+  });
+
+  // Spin reels with staggered stops
+  const durations = [1200, 1500, 1800, 2100, 2400];
+  await Promise.all(targetOffsets.map((tgt, r) => animateReelSpin(r, tgt, durations[r])));
+
+  // Check wins
+  const counts = {};
+  results.forEach(s => counts[s] = (counts[s]||0)+1);
+  const maxMatch = Math.max(...Object.values(counts));
+  const matchSym = Object.keys(counts).find(k => counts[k] === maxMatch);
+
+  let winGC = 0, winSC = 0, winMsg = '';
+
+  if (maxMatch === 5) {
+    if (matchSym === '💎') {
+      winGC = currentBet * 1000; winSC = 5; winMsg = '💎 JACKPOT!! 💎'; spawnConfetti();
+    } else if (matchSym === '⭐') {
+      winGC = currentBet * 500; winMsg = '⭐ MEGA WIN! ⭐'; spawnConfetti();
+    } else if (matchSym === '🔔') {
+      winGC = currentBet * 200; winMsg = '🔔 BIG WIN! 🔔';
+    } else {
+      winGC = currentBet * 100; winMsg = `${matchSym}${matchSym}${matchSym} 5 OF A KIND!`;
+    }
+  } else if (maxMatch === 4) {
+    winGC = currentBet * 10; winMsg = `4× ${matchSym} — Big Win!`;
+  } else if (maxMatch === 3) {
+    winGC = currentBet * 3; winMsg = `3× ${matchSym} — You Win!`;
+  }
+
+  if (winGC > 0) {
+    if (maxMatch >= 5) { playBigWinSound(); } else { playWinSound(); }
+    gc += winGC; sc = parseFloat((sc + winSC).toFixed(2));
+    updateDisplays();
+    document.getElementById('slotWinMsg').textContent = winMsg;
+    document.getElementById('slotWinMsg').style.color = winSC > 0 ? 'var(--purple3)' : 'var(--gold)';
+    document.getElementById('winLineBar').classList.add('winning');
+    // Highlight winning symbols
+    document.querySelectorAll('.reel-symbol').forEach((el, i) => {
+      if (Math.floor(i / 5) === 1 && results[i % 5] === matchSym && maxMatch >= 3) {
+        el.classList.add('winning-sym');
+      }
+    });
+    if (maxMatch >= 4) showWin(winMsg, `+${winGC.toLocaleString()} GC${winSC>0?' & +'+winSC+' SC':''}`);
+    updateMissionProgress('win', 1);
+  } else {
+    document.getElementById('slotWinMsg').textContent = 'No match — spin again!';
+    document.getElementById('slotWinMsg').style.color = 'var(--text3)';
+  }
+
+  updateMissionProgress('spin', 1);
+  btn.disabled = false;
+  btn.textContent = 'SPIN';
+  spinning = false;
+}
+
+function setBet(amount, btn) {
+  currentBet = amount;
+  document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('spinCost').textContent = `Cost: ${amount.toLocaleString()} GC per spin`;
+}
+
+// ── SCRATCH CARDS ─────────────────────────────────────────
+const SCRATCH_CARDS_DEF = [
+  { name: 'GOLD RUSH', cost: 500, theme: ['var(--gold)','#7a5900'], prizes: [0,0,0,0,500,1000,2000,5000], emoji: '🥇' },
+  { name: 'LUCKY 7s', cost: 1000, theme: ['var(--purple3)','#3b1d8a'], prizes: [0,0,0,1000,2000,5000,10000,25000], emoji: '7️⃣' },
+  { name: 'DIAMOND HUNT', cost: 2500, theme: ['#7af3ff','#0a4a5c'], prizes: [0,0,2500,5000,10000,25000,50000,100000], emoji: '💎' },
+  { name: 'MAZE MYSTERY', cost: 5000, theme: ['var(--green)','#0a3a1a'], prizes: [0,0,0,5000,10000,25000,100000,500000], emoji: '🌀' },
+];
+
+let scratchBuilt = false;
+function buildScratchCards() {
+  if (scratchBuilt) return;
+  scratchBuilt = true;
+  const grid = document.getElementById('scratchGrid');
+  grid.innerHTML = '';
+  SCRATCH_CARDS_DEF.forEach((card, i) => {
+    const div = document.createElement('div');
+    div.className = 'scratch-card';
+    div.innerHTML = `
+      <div class="scratch-card-name" style="color:${card.theme[0]}">${card.emoji} ${card.name}</div>
+      <div class="scratch-canvas-wrap" id="scratchWrap${i}">
+        <div class="scratch-reveal" id="scratchReveal${i}">
+          <div class="scratch-reveal-emoji" id="scratchEmoji${i}">❓</div>
+          <div class="scratch-reveal-amount" id="scratchAmt${i}" style="color:${card.theme[0]}">Scratch!</div>
+        </div>
+        <canvas class="scratch" id="scratchCanvas${i}" width="160" height="100"></canvas>
+      </div>
+      <div class="scratch-footer">
+        <span class="scratch-cost">${card.cost.toLocaleString()} GC</span>
+        <button class="scratch-play-btn" style="color:${card.theme[0]};border-color:${card.theme[0]}30;background:${card.theme[0]}15" onclick="playScratch(${i})">New Card</button>
+      </div>`;
+    grid.appendChild(div);
+    initScratchCanvas(i, card);
+  });
+}
+
+function initScratchCanvas(idx, card) {
+  const canvas = document.getElementById('scratchCanvas' + idx);
+  const ctx = canvas.getContext('2d');
+
+  // Size canvas to wrapper
+  const wrap = document.getElementById('scratchWrap' + idx);
+  canvas.width = wrap.offsetWidth || 160;
+  canvas.height = 100;
+
+  // Draw scratchable overlay
+  const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  grad.addColorStop(0, '#2d2445');
+  grad.addColorStop(1, '#1a1428');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Pattern text
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  ctx.font = '11px sans-serif';
+  for (let y=14; y<canvas.height; y+=18) {
+    for (let x=8; x<canvas.width; x+=40) {
+      ctx.fillText('SCRATCH', x, y);
+    }
+  }
+
+  // Store prize
+  const prize = card.prizes[Math.floor(Math.random() * card.prizes.length)];
+  canvas.dataset.prize = prize;
+  canvas.dataset.cardIdx = idx;
+  canvas.dataset.scratched = '0';
+  canvas.dataset.played = '0';
+
+  // Scratch interaction
+  let drawing = false;
+  const scratch = (x, y) => {
+    if (Math.random() < 0.25) playScratchSound();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(x, y, 18, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Check coverage
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let transparent = 0;
+    for (let i=3; i<pixels.length; i+=4) { if (pixels[i] < 128) transparent++; }
+    const pct = transparent / (pixels.length/4);
+    if (pct > 0.5 && canvas.dataset.scratched === '0') {
+      canvas.dataset.scratched = '1';
+      revealScratch(idx, parseInt(canvas.dataset.prize), card);
+    }
+  };
+
+  const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    return { x: (touch.clientX - rect.left) * (canvas.width / rect.width), y: (touch.clientY - rect.top) * (canvas.height / rect.height) };
+  };
+
+  canvas.addEventListener('mousedown', (e) => { drawing = true; scratch(...Object.values(getPos(e))); });
+  canvas.addEventListener('mousemove', (e) => { if (drawing) scratch(...Object.values(getPos(e))); });
+  canvas.addEventListener('mouseup', () => drawing = false);
+  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); drawing = true; scratch(...Object.values(getPos(e))); });
+  canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (drawing) scratch(...Object.values(getPos(e))); });
+  canvas.addEventListener('touchend', () => drawing = false);
+}
+
+function playScratch(idx) {
+  const card = SCRATCH_CARDS_DEF[idx];
+  if (gc < card.cost) { toast('Not enough coins!'); openCoinsModal(); return; }
+  gc -= card.cost;
+  updateDisplays();
+  // Reset reveal
+  document.getElementById('scratchEmoji' + idx).textContent = '❓';
+  document.getElementById('scratchAmt' + idx).textContent = 'Scratch!';
+  initScratchCanvas(idx, card);
+  updateMissionProgress('scratch', 1);
+  toast(`New ${card.name} card ready — scratch to reveal!`);
+}
+
+function revealScratch(idx, prize, card) {
+  const emojiEl = document.getElementById('scratchEmoji' + idx);
+  const amtEl = document.getElementById('scratchAmt' + idx);
+  if (prize > 0) {
+    gc += prize;
+    updateDisplays();
+    emojiEl.textContent = '🏆';
+    if (prize >= 10000) playBigWinSound(); else playWinSound();
+    amtEl.textContent = '+' + prize.toLocaleString() + ' GC';
+    amtEl.style.color = 'var(--gold)';
+    if (prize >= 10000) showWin('🎟️ Scratch Winner!', '+' + prize.toLocaleString() + ' GC');
+    else toast(`🎉 You won ${prize.toLocaleString()} GC!`);
+    updateMissionProgress('win', 1);
+  } else {
+    emojiEl.textContent = '😔';
+    amtEl.textContent = 'No win';
+    amtEl.style.color = 'var(--text3)';
+  }
+}
+
+// ── MISSIONS ──────────────────────────────────────────────
+const MISSIONS = [
+  { id: 'spin', icon: '🎰', label: 'Spin 10x', goal: 10, reward: '5,000 GC + 0.05 SC' },
+  { id: 'scratch', icon: '🎟️', label: 'Scratch 3 cards', goal: 3, reward: '3,000 GC + 0.03 SC' },
+  { id: 'win', icon: '🏆', label: 'Win 5 times', goal: 5, reward: '10,000 GC + 0.10 SC' },
+];
+
+const MISSION_PROGRESS_KEY = 'lm_missions';
+const MISSION_DATE_KEY = 'lm_mission_date';
+
+function getMissionProgress() {
+  const today = new Date().toDateString();
+  const savedDate = localStorage.getItem(MISSION_DATE_KEY);
+  if (savedDate !== today) {
+    localStorage.setItem(MISSION_DATE_KEY, today);
+    localStorage.removeItem(MISSION_PROGRESS_KEY);
+    return {};
+  }
+  try { return JSON.parse(localStorage.getItem(MISSION_PROGRESS_KEY) || '{}'); } catch(e) { return {}; }
+}
+
+function saveMissionProgress(p) {
+  localStorage.setItem(MISSION_PROGRESS_KEY, JSON.stringify(p));
+}
+
+function updateMissionProgress(id, delta) {
+  const p = getMissionProgress();
+  const mission = MISSIONS.find(m => m.id === id);
+  if (!mission) return;
+  if (p[id + '_done']) return;
+  p[id] = Math.min((p[id]||0) + delta, mission.goal);
+  if (p[id] >= mission.goal && !p[id + '_done']) {
+    p[id + '_done'] = true;
+    // Grant reward
+    if (id === 'spin') { gc += 5000; sc = parseFloat((sc+0.05).toFixed(2)); }
+    if (id === 'scratch') { gc += 3000; sc = parseFloat((sc+0.03).toFixed(2)); }
+    if (id === 'win') { gc += 10000; sc = parseFloat((sc+0.10).toFixed(2)); }
+    updateDisplays();
+    toast(`✅ Mission complete! ${mission.reward} earned!`);
+  }
+  saveMissionProgress(p);
+  buildMissions();
+}
+
+function buildMissions() {
+  const p = getMissionProgress();
+  const grid = document.getElementById('missionsGrid');
+  if (!grid) return;
+  grid.innerHTML = MISSIONS.map(m => {
+    const cur = p[m.id] || 0;
+    const done = !!p[m.id+'_done'];
+    const pct = Math.min(100, (cur / m.goal) * 100);
+    return `<div class="mission-card ${done?'done':''}">
+      <div class="mission-icon">${m.icon}</div>
+      <div class="mission-label">${m.label}</div>
+      <div class="mission-progress-bar"><div class="mission-progress-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;">${cur}/${m.goal}</div>
+      <div class="mission-reward">${done ? '✅ Claimed' : m.reward}</div>
     </div>`;
   }).join('');
-  wrap.innerHTML += wrap.innerHTML;
 }
 
-// ── GRID ─────────────────────────────────────────────────────
-// Seeded shuffle — same game ID always produces same number order on every device
-function seededShuffle(arr, seed) {
-  const a = [...arr];
-  // Simple hash from string to number
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) {
-    h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
-  }
-  function nextRand() {
-    h = (h * 1664525 + 1013904223) | 0;
-    return (h >>> 0) / 4294967296;
-  }
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(nextRand() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
+// ── BUY PACKAGE ───────────────────────────────────────────
+function buyPackage(price, coins, bonusSc) {
+  pendingPkg = { price, coins, bonusSc };
+  document.getElementById('buyModalSub').textContent = `${coins.toLocaleString()} GC + ${bonusSc} SC — $${price.toFixed(2)}`;
+  updatePayInstructions();
+  closeModal('coinsModal');
+  document.getElementById('buyModal').classList.add('open');
 }
 
-async function buildGrid(game) {
-  if (!game) return;
-
-  const serverData = await fetchSquares(game.id);
-  const serverOwners = serverData.owners || {};
-  const serverSold = new Set(Object.keys(serverOwners).map(Number));
-
-  const _locked = serverData && serverData.numbersLocked && serverData.rowNums && serverData.rowNums.length===10;
-  const topNums = _locked ? serverData.rowNums : seededShuffle([0,1,2,3,4,5,6,7,8,9], 'top-' + game.id);
-  const leftNums = _locked ? serverData.colNums : seededShuffle([0,1,2,3,4,5,6,7,8,9], 'left-' + game.id);
-
-  // Self-heal: remove local squares that aren't on the server anymore (board was reset)
-  const mine = getMySquares(game.id);
-  if (mine.size > 0 && Object.keys(serverOwners).length === 0) {
-    // Server is empty but local thinks we have squares — board was reset
-    localStorage.removeItem('my_' + game.id);
-    localStorage.removeItem('initials_' + game.id);
-    mine.clear();
-  } else if (mine.size > 0) {
-    // Remove any local squares not on server
-    const myInitials = getInitialsForGame(game.id);
-    let changed = false;
-    mine.forEach(idx => {
-      if (!serverOwners[idx] || (myInitials && serverOwners[idx] !== myInitials.toUpperCase())) {
-        mine.delete(idx);
-        changed = true;
-      }
-    });
-    if (changed) {
-      localStorage.setItem('my_' + game.id, JSON.stringify([...mine]));
-    }
-  }
-
-  const serverPending = serverData.pending || {};
-
-  (game.mine || []).forEach(i => mine.add(i));
-  const myInitials = getInitialsForGame(game.id) || 'YOU';
-  const sold = new Set([...(game.sold || []), ...serverSold]);
-  const available = Math.max(0, 100 - sold.size - Object.keys(serverPending).length);
-
-  document.getElementById('availableCount').textContent = available;
-
-  let html = '';
-  html += `<div class="axis-header axis-corner" style="font-size:9px;color:var(--text3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;">
-    <span style="font-weight:700;color:var(--text2);">${game.away}</span>
-    ${game.status==='LIVE'?`<span style="color:var(--yellow);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;">${game.awayScore||0}</span>`:''}
-  </div>`;
-
-  html += `<div class="team-banner">${game.home}${game.status==='LIVE'?` &nbsp; <span style="color:var(--yellow)">${game.homeScore||0}</span>`:''}</div>`;
-
-  html += `<div class="axis-header axis-corner" style="font-size:9px;color:var(--text3);"></div>`;
-  topNums.forEach(num => {
-    html += `<div class="axis-header axis-top">${num}</div>`;
-  });
-
-  for (let i = 0; i < 10; i++) {
-    html += `<div class="axis-header axis-left">${leftNums[i]}</div>`;
-    for (let j = 0; j < 10; j++) {
-      const idx = i * 10 + j;
-      const isMine = mine.has(idx);
-      const isSold = sold.has(idx);
-      const isPending = serverPending[idx] !== undefined;
-      const pendingInitials = isPending ? serverPending[idx].initials : null;
-      const owner = serverOwners[idx] || (isMine ? myInitials : null);
-      let cellClass, cellStyle = '', displayText = '';
-      if (isMine) {
-        cellClass = 'cell-mine';
-        displayText = owner || myInitials;
-      } else if (isSold) {
-        cellClass = 'cell-sold';
-        displayText = owner || '';
-      } else if (isPending) {
-        cellClass = 'cell-sold';
-        cellStyle = 'background:#3f3200;border-color:#ca8a04;color:#fbbf24;';
-        displayText = (pendingInitials || '⏳');
-      } else {
-        cellClass = 'cell-open';
-      }
-      html += `<div class="cell ${cellClass}" data-idx="${idx}" style="${cellStyle}">${displayText}</div>`;
-    }
-  }
-
-  document.getElementById('squaresGrid').innerHTML = html;
-
-  // Update quarter tracker
-  updateQtrTracker(game, serverData).catch(function(){});
-}
-
-// ── ODDS BUILDER ─────────────────────────────────────────────
-function buildOdds(game) {
-  if (!game) return;
-}
-
-// ── BOARD HEADER ─────────────────────────────────────────────
-function updateBoardHeader(game) {
-  if (!game) return;
-  const d = new Date(currentDate + 'T12:00:00');
-  document.getElementById('live-date').textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-}
-
-// ── SERVER SYNC ──────────────────────────────────────────────
-async function fetchSquares(gameId) {
-  try {
-    logStatus('Loading squares for game ' + gameId + '...', false);
-    const res = await fetch(`/api/squares?gameId=${encodeURIComponent(gameId)}`);
-    if (!res.ok) {
-      logStatus('Squares API error: HTTP ' + res.status + ' for game ' + gameId, true);
-      return _cache[gameId] || { owners: {} };
-    }
-    const data = await res.json();
-    _cache[gameId] = data || { owners: {} };
-    const ownCount = Object.keys((_cache[gameId].owners || {})).length;
-    logStatus('Game ' + gameId + ': ' + ownCount + ' squares claimed', false);
-    return _cache[gameId];
-  } catch (e) {
-    logStatus('Fetch squares failed: ' + e.message, true);
-    return _cache[gameId] || { owners: {} };
-  }
-}
-
-function getMySquares(gameId) {
-  const key = `my_${gameId}`;
-  const stored = localStorage.getItem(key);
-  return new Set(stored ? JSON.parse(stored) : []);
-}
-
-function getInitialsForGame(gameId) {
-  return localStorage.getItem(`initials_${gameId}`);
-}
-
-async function persistSquares(gameId, indices, initials) {
-  logStatus('Claiming ' + indices.length + ' squares as ' + initials + '...', false);
-  const res = await fetch('/api/claim-square', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ gameId, indices, initials })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    logStatus('Claim failed: ' + (err.error || 'HTTP ' + res.status), true);
-    throw new Error(err.error || 'Failed to persist squares');
-  }
-  logStatus('Claimed ' + indices.length + ' squares as ' + initials + ' ✓', false);
-  localStorage.setItem(`my_${gameId}`, JSON.stringify(indices));
-  localStorage.setItem(`initials_${gameId}`, initials);
-  _cache[gameId] = null;
-}
-
-// ── SIDEBAR GAMES LIST ───────────────────────────────────────
-function buildGamesList(sport) {
-  const games = espnGames[sport] || [];
-  const list = document.querySelector('.games-list');
-  if (!list) return;
-
-  list.innerHTML = games.map(g => `
-    <div class="game-row${g.id === (currentGame?.id) ? ' active' : ''}" data-id="${g.id}" onclick="pinSelectGameById('${g.id}')">
-      <div class="game-row-top">
-        <span class="game-teams">${g.away} @ ${g.home}</span>
-        ${g.status==='LIVE'
-          ? `<span class="status-dot status-live" style="font-size:8px;">Live</span>`
-          : `<span class="status-dot status-scheduled" style="font-size:8px;">${g.time || g.period || ''}</span>`}
-      </div>
-      ${g.status==='LIVE' ? `<div class="game-score" style="margin-top:4px;">${g.awayScore||0} – ${g.homeScore||0}</div>` : ''}
-    </div>`).join('');
-}
-
-// ── GAME SELECT DROPDOWN ─────────────────────────────────────
-function populateGameDropdown(sport) {
-  const games = espnGames[sport] || [];
-  const sel = document.getElementById('gameSelect');
-  sel.innerHTML = games.map(g =>
-    `<option value="${g.id}">${g.status==='LIVE'?'● ':''}${g.away} @ ${g.home}</option>`
-  ).join('');
-}
-
-// ── LOAD GAME ────────────────────────────────────────────────
-async function loadGame(game) {
-  if (!game) { logStatus('loadGame called with no game', true); return; }
-  // If board is locked, only allow loading the locked game itself
-  if (window._boardIsLocked && window._lockedGameId && game.id !== window._lockedGameId) {
-    logStatus('Board locked — ignoring loadGame for ' + (game.away||'') + ' @ ' + (game.home||''), false);
-    return;
-  }
-  logStatus('Loading game: ' + game.away + ' @ ' + game.home + ' (ID: ' + game.id + ')', false);
-  currentGame = game;
-  try {
-    await buildGrid(game);
-  } catch (e) {
-    logStatus('buildGrid error: ' + e.message, true);
-  }
-
-  if (window._pollTimer) clearInterval(window._pollTimer);
-  window._pollTimer = setInterval(async function() {
-    if (currentGame && currentGame.id === game.id) {
-      try { await buildGrid(currentGame); } catch (e) { logStatus('Poll error: ' + e.message, true); }
-    }
-    // ── Check if admin switched to a new locked game ──────────────
-    try {
-      const _lr = await fetch('/api/board-lock');
-      if (_lr.ok) {
-        const _ld = await _lr.json();
-        if (_ld && _ld.locked && _ld.lockedAt && _ld.lockedAt !== window._currentLockTime) {
-          // Lock state changed — show refresh notification
-          window._currentLockTime = _ld.lockedAt;
-          // Only show to viewers, not to the admin who just locked it
-          if (!document.getElementById('_gameChangedBanner') && !window._ppIsAdmin) {
-            const _b = document.createElement('div');
-            _b.id = '_gameChangedBanner';
-            _b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#7c3aed;color:white;text-align:center;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,0.4);';
-            _b.innerHTML = '🔄 New game locked by admin — <u>tap here to refresh</u>';
-            _b.onclick = function() { window.location.reload(); };
-            document.body.prepend(_b);
-          }
-        }
-        // If unlocked, remove any stale banner
-        if (_ld && !_ld.locked && document.getElementById('_gameChangedBanner')) {
-          document.getElementById('_gameChangedBanner').remove();
-        }
-      }
-    } catch(e) {}
-  }, 15000);
-
-  buildOdds(game);
-  updateBoardHeader(game);
-  updateCTA();
-
-  document.getElementById('gameSelect').value = game.id;
-
-  document.querySelectorAll('.game-row').forEach(row => {
-    row.classList.toggle('active', row.dataset.id === game.id);
-  });
-}
-
-// ── EVENT HANDLERS ───────────────────────────────────────────
-// Fallback dummy game so grid always renders even when ESPN API is down
-function getFallbackGame(sport) {
-  const fallbacks = {
-    'NBA': { id: 'fallback-nba-' + currentDate, away: 'AWAY', home: 'HOME', awayScore: 0, homeScore: 0, status: 'UPCOMING', time: 'TBD', period: 0 },
-    'NHL': { id: 'fallback-nhl-' + currentDate, away: 'AWAY', home: 'HOME', awayScore: 0, homeScore: 0, status: 'UPCOMING', time: 'TBD', period: 0 },
-    'MLB': { id: 'fallback-mlb-' + currentDate, away: 'AWAY', home: 'HOME', awayScore: 0, homeScore: 0, status: 'UPCOMING', time: 'TBD', period: 0 },
-    'NFL': { id: 'fallback-nfl-' + currentDate, away: 'AWAY', home: 'HOME', awayScore: 0, homeScore: 0, status: 'UPCOMING', time: 'TBD', period: 0 },
-  };
-  return fallbacks[sport] || fallbacks['NBA'];
-}
-
-async function updateSport(sport) {
-  // Block ALL sport switches while board is locked
-  // _ppLockScoreFetch is the only exception (background score enrichment)
-  if (window._boardIsLocked && !window._ppLockScoreFetch) {
-    logStatus('Board locked — blocked updateSport(' + sport + ')', false);
-    return;
-  }
-  logStatus('Switching to ' + sport + '...', false);
-  currentSport = sport;
-
-  // Show loading state in grid immediately
-  const grid = document.getElementById('squaresGrid');
-  if (grid) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--text3);font-size:13px;">Loading games...</div>';
-  }
-
-  const data = await fetchEspnScores(sport);
-  if (!data || !data.games || !data.games.length) {
-    logStatus('No games found for ' + sport + ' — using fallback board', true);
-    // Still render the grid with a fallback game so board is usable
-    const fallback = getFallbackGame(sport);
-    espnGames[sport] = [fallback];
-    populateGameDropdown(sport);
-    buildGamesList(sport);
-    await loadGame(fallback);
-    return;
-  }
-  populateGameDropdown(sport);
-  buildGamesList(sport);
-  logStatus('Auto-selecting first game: ' + data.games[0].away + ' @ ' + data.games[0].home, false);
-  await loadGame(data.games[0]);
-}
-
-function selectGame(gameId) {
-  const games = espnGames[currentSport] || [];
-  const game = games.find(g => g.id === gameId);
-  if (game) loadGame(game);
-}
-
-function selectGameById(gameId) {
-  for (const sport of Object.keys(espnGames)) {
-    const game = espnGames[sport].find(g => g.id === gameId);
-    if (game) {
-      currentSport = sport;
-      loadGame(game);
-      return;
-    }
-  }
-}
-
-// ── ADMIN PIN GATE ───────────────────────────────────────────
-var _adminUnlocked = false;
-var _adminUnlockTimer = null;
-
-function requireAdminPin(callback) {
-  // Already unlocked in this session (5 min window)
-  if (_adminUnlocked) { callback(); return; }
-  var pin = prompt('Enter admin PIN to change the board:');
-  if (!pin) return;
-  if (pin === '2826' || pin === '0614') {
-    _adminUnlocked = true;
-    // Auto-lock after 5 minutes of no use
-    clearTimeout(_adminUnlockTimer);
-    _adminUnlockTimer = setTimeout(function() { _adminUnlocked = false; }, 5 * 60 * 1000);
-    callback();
-  } else {
-    alert('Incorrect PIN.');
-  }
-}
-
-function pinUpdateSport(val) {
-  requireAdminPin(function() { updateSport(val); });
-}
-
-function pinChangeDate(offset) {
-  requireAdminPin(function() { changeDate(offset); });
-}
-
-function pinUpdateDateFromPicker(val) {
-  requireAdminPin(function() { updateDateFromPicker(val); });
-}
-
-function pinSelectGame(val) {
-  requireAdminPin(function() { selectGame(val); });
-}
-
-function pinSelectGameById(gameId) {
-  requireAdminPin(function() { selectGameById(gameId); });
-}
-function toggleOdds(btn) {
-  btn.classList.toggle('selected');
-  const selected = document.querySelectorAll('.odds-btn.selected');
-  const legsSection = document.querySelector('.legs-section');
-
-  if (selected.length === 0) {
-    legsSection.innerHTML = `
-      <div class="legs-title">Selected Legs (0)</div>
-      <div style="font-size:11px;color:var(--text3);padding:4px 0;">Click odds above to add legs</div>`;
-    return;
-  }
-
-  let html = `<div class="legs-title">Selected Legs (${selected.length})</div>`;
-  selected.forEach(b => {
-    const label = b.querySelector('.odds-btn-label').textContent;
-    const odds = b.querySelector('.odds-value').textContent;
-    html += `<div class="leg-row"><span class="leg-label">${label}</span><span class="leg-odds">${odds}</span></div>`;
-  });
-  legsSection.innerHTML = html;
-}
-
-function setQty(n, btn) {
-  currentQty = n;
-  document.querySelectorAll('.qty-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
-  document.getElementById('totalAmount').textContent = `$${(n * price).toFixed(2)}`;
-  document.getElementById('totalSquares').textContent = `${n} Square${n > 1 ? 's' : ''}`;
-  updateCTA();
-}
-
-function updateCTA() {
-  document.querySelector('.cta-btn').innerHTML = `
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    BUY ${currentQty} SQUARE${currentQty > 1 ? 'S' : ''} NOW`;
-}
-
-function updatePriceDisplay(val) {
-  const p = parseFloat(val);
-  window._squarePrice = p;
-  const qty = currentQty || 5;
-  const lbl = document.getElementById('modalSquaresLabel');
-  const tot = document.getElementById('modalTotal');
-  if (lbl) lbl.textContent = qty + ' Square' + (qty > 1 ? 's' : '') + ' × $' + p;
-  if (tot) tot.textContent = '$' + (qty * p).toFixed(2);
-  document.getElementById('totalAmount').textContent = `$${(qty * p).toFixed(2)}`;
-}
-
-function openPayModal() {
-  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
-  document.getElementById('modalSquaresLabel').textContent = `${currentQty} Square${currentQty > 1 ? 's' : ''} × $${price}`;
-  document.getElementById('modalTotal').textContent = `$${(currentQty * price).toFixed(2)}`;
-  document.getElementById('initialsInput').value = '';
-  document.getElementById('confirmBtn').disabled = true;
-  document.getElementById('payModal').classList.add('open');
-}
-
-let _selectedPayMethod = 'cashapp';
-
-function selectPay(el, method) {
-  document.querySelectorAll('.modal-pay-option').forEach(o => o.classList.remove('selected'));
+function selectPayOpt(el, method) {
+  document.querySelectorAll('.pay-option').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
-  _selectedPayMethod = method || 'cashapp';
+  selectedPay = method;
   updatePayInstructions();
 }
 
 function updatePayInstructions() {
   const el = document.getElementById('payInstructions');
-  if (!el) return;
-  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
-  const qty = currentQty || 5;
-  const total = (qty * price).toFixed(2);
-  if (_selectedPayMethod === 'card') {
-    el.innerHTML = '💳 Pay securely by card via <strong style="color:#818cf8;">Stripe</strong><br><span style="font-size:10px;color:var(--text3);">You will be redirected to checkout — squares locked after payment</span>';
-  } else if (_selectedPayMethod === 'cashapp') {
-    el.innerHTML = '💚 Send <strong style="color:#22c55e;">$' + total + '</strong> to <strong style="color:#22c55e;">$7707438091</strong> on Cash App<br><span style="font-size:10px;color:var(--text3);">Scan QR or tap Pay button — include your initials in the note</span>';
-  } else if (_selectedPayMethod === 'paypal') {
-    el.innerHTML = '💙 Send <strong style="color:#60a5fa;">$' + total + '</strong> to <strong style="color:#60a5fa;">willie.mayes@gmail.com</strong> on PayPal<br><span style="font-size:10px;color:var(--text3);">Friends & Family — include your initials in the note</span>';
-  } else if (_selectedPayMethod === 'cash') {
-    el.innerHTML = '💵 Pay <strong style="color:#86efac;">$' + total + '</strong> cash in person to Willie<br><span style="font-size:10px;color:var(--text3);">Squares reserved — admin will confirm after receiving cash</span>';
+  if (!el || !pendingPkg) return;
+  const total = pendingPkg.price.toFixed(2);
+  if (selectedPay === 'cashapp') {
+    el.innerHTML = `💚 Send <strong style="color:var(--green);">$${total}</strong> to <strong style="color:var(--green);">" + CASHAPP_HANDLE + "</strong> on Cash App<br><span style="font-size:11px;color:var(--text3);">Include "Lucky Maze coins" in the note</span>`;
+  } else {
+    el.innerHTML = `💙 Send <strong style="color:#60a5fa;">$${total}</strong> to <strong style="color:#60a5fa;">" + PAYPAL_HANDLE + "</strong> on PayPal<br><span style="font-size:11px;color:var(--text3);">Friends & Family — include "Lucky Maze coins" in the note</span>`;
   }
 }
 
-function checkInitials() {
-  document.getElementById('confirmBtn').disabled = document.getElementById('initialsInput').value.trim().length < 3;
+function confirmBuyPackage() {
+  if (!pendingPkg) return;
+  const url = selectedPay === 'cashapp'
+    ? `https://cash.app/${CASHAPP_HANDLE}/${pendingPkg.price.toFixed(2)}?note=${encodeURIComponent('Lucky Maze Coins')}`
+    : `https://paypal.me/${PAYPAL_HANDLE.includes('@') ? PAYPAL_HANDLE.split('@')[0] : PAYPAL_HANDLE}/${pendingPkg.price.toFixed(2)}USD`;
+  window.open(url, '_blank');
+  closeModal('buyModal');
+  toast('✅ Payment opened! Coins will be added after confirmation.');
+}
+
+// ── REDEEM ─────────────────────────────────────────────────
+function submitRedeem() {
+  const amount = parseFloat(document.getElementById('redeemAmount').value);
+  const handle = document.getElementById('redeemHandle').value.trim();
+  if (!amount || amount < 100) { toast('Minimum 100 SC to redeem.'); return; }
+  if (amount > sc) { toast('Not enough SC.'); return; }
+  if (!handle) { toast('Enter your Cash App or PayPal.'); return; }
+  toast(`✅ Redemption request submitted! $${amount.toFixed(2)} will be sent to ${handle} within 24–48 hrs.`);
+  closeModal('redeemModal');
+}
+
+// ── WIN OVERLAY ────────────────────────────────────────────
+function showWin(title, amount) {
+  document.getElementById('winAmount').textContent = amount;
+  document.querySelector('.win-title').textContent = title;
+  document.getElementById('winOverlay').classList.add('open');
+}
+
+function closeWin() {
+  document.getElementById('winOverlay').classList.remove('open');
+}
+
+// ── CONFETTI ───────────────────────────────────────────────
+function spawnConfetti() {
+  const colors = ['var(--gold)','var(--purple3)','#fff','#ff6b9d','#00ff9d'];
+  for (let i=0; i<60; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `
+      left: ${Math.random()*100}vw;
+      top: -10px;
+      background: ${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration: ${1.5 + Math.random()*2}s;
+      animation-delay: ${Math.random()*0.8}s;
+      transform: rotate(${Math.random()*360}deg);
+      width: ${4+Math.random()*8}px;
+      height: ${4+Math.random()*8}px;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+}
+
+// ── PAYMENT HANDLES (from Netlify env via /api/config) ──────
+let CASHAPP_HANDLE = '$7707438091';
+let PAYPAL_HANDLE  = 'willie.mayes@gmail.com';
+
+async function loadConfig() {
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) {
+      const cfg = await res.json();
+      if (cfg.cashapp) CASHAPP_HANDLE = cfg.cashapp;
+      if (cfg.paypal)  PAYPAL_HANDLE  = cfg.paypal;
+    }
+  } catch(e) { /* use defaults */ }
+}
+
+// ── INIT ───────────────────────────────────────────────────
+(async () => {
+  await loadConfig();
+  checkDailyBonus();
+  updateDisplays();
   updatePayInstructions();
-}
+  buildMissions();
+  initReels();
+})();
 
-async function confirmPurchase() {
-  const initials = document.getElementById('initialsInput').value.trim().toUpperCase();
-  if (initials.length < 3) { alert('Enter at least 3 initials.'); return; }
-  const btn = document.getElementById('confirmBtn');
-  btn.disabled = true;
-  const game = currentGame;
-  if (!game || !game.id) {
-    btn.disabled = false;
-    alert('No game loaded. Select a sport and game first.'); return;
-  }
-  const price = parseFloat(document.getElementById('squarePrice').value) || 10;
-  const qty = currentQty || 5;
-  const total = (qty * price).toFixed(2);
-
-  // ── Card → Stripe checkout ──────────────────────────────
-  if (_selectedPayMethod === 'card') {
-    btn.textContent = '💳 Opening Checkout...';
-    try {
-      const r = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ gameId: game.id, initials, qty, priceEach: Math.round(price * 100) })
-      });
-      const text = await r.text();
-      let resp = {};
-      try { resp = JSON.parse(text); } catch(_) {}
-      if (resp.url) {
-        window.location.href = resp.url;
-      } else {
-        throw new Error(resp.error || 'Could not create checkout session');
-      }
-    } catch(e) {
-      btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
-      if (e.message && e.message.includes('fetch')) {
-        alert('Card checkout is not yet available. Please use Cash App or PayPal to pay Willie directly.');
-      } else {
-        alert('Stripe error: ' + e.message);
-      }
-    }
-    return;
-  }
-
-  // ── CashApp / PayPal → reserve pending + show pay button ──
-  btn.textContent = '⏳ Reserving...';
-  try {
-    const r = await fetch('/api/auto-assign', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ gameId: game.id, qty, initials, pending: true, payMethod: _selectedPayMethod, amount: total })
-    });
-    const text = await r.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch(_) {}
-    if (!r.ok || !data.ok) throw new Error(data.error || 'Reserve failed');
-
-    localStorage.setItem('my_' + game.id, JSON.stringify(data.indices));
-    localStorage.setItem('initials_' + game.id, initials);
-    _cache[game.id] = null;
-
-    document.getElementById('payModal').classList.remove('open');
-
-    // Build pay button
-    var payBtnHtml = '';
-    if (_selectedPayMethod === 'cashapp') {
-      var caNote = encodeURIComponent('ParlayPro Squares - ' + initials);
-      var caUrl = 'https://cash.app/$7707438091/' + total + '?note=' + caNote;
-      payBtnHtml = '<a href="' + caUrl + '" target="_blank" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#00D632;color:white;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">💚 Pay $' + total + ' on Cash App</a>';
-    } else if (_selectedPayMethod === 'paypal') {
-      var ppUrl = 'https://paypal.me/williemayes/' + total + 'USD';
-      payBtnHtml = '<a href="' + ppUrl + '" target="_blank" style="display:inline-block;margin-top:12px;padding:12px 24px;background:#0070ba;color:white;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">💙 Pay $' + total + ' on PayPal</a>';
-    } else if (_selectedPayMethod === 'cash') {
-      payBtnHtml = '<div style="margin-top:12px;padding:12px 16px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);border-radius:10px;color:#86efac;font-size:13px;font-weight:700;">💵 Pay $' + total + ' cash to Willie — squares held pending confirmation</div>';
-    }
-
-    document.getElementById('confirmMsg').innerHTML =
-      data.indices.length + ' square' + (data.indices.length > 1 ? 's' : '') + ' x $' + price + ' = <strong style="color:white;">$' + total + '</strong>' +
-      '<br><span style="color:#22c55e;font-size:13px;margin-top:6px;display:block;">Reserved as <strong>' + initials + '</strong></span>' +
-      '<br><span style="color:var(--text3);font-size:11px;">Tap below to complete payment — squares lock automatically</span>' +
-      payBtnHtml;
-
-    setTimeout(() => {
-      document.getElementById('confirmModal').classList.add('open');
-      buildGrid(game);
-    }, 150);
-  } catch(e) {
-    btn.disabled = false; btn.textContent = '📲 Reserve My Squares';
-    alert(e.message);
-  }
-}
-
-function closeConfirm() {
-  document.getElementById('confirmModal').classList.remove('open');
-}
-
-// ── ADMIN ────────────────────────────────────────────────────
-async function confirmPendingPayments() {
-  var game = currentGame;
-  if (!game) { alert('No game loaded.'); return; }
-  var pin = prompt('Enter admin PIN to confirm all pending payments:');
-  if (!pin) return;
-  try {
-    var r = await fetch('/api/confirm-pending', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ gameId: game.id, pin: pin })
-    });
-    var d = await r.json();
-    if (d.ok) {
-      alert('Confirmed ' + (d.confirmed ? d.confirmed.length : 0) + ' pending squares!');
-      _cache[game.id] = null;
-      buildGrid(game);
-    } else {
-      alert('Error: ' + (d.error || 'Failed'));
-    }
-  } catch(e) {
-    alert('Network error: ' + e.message);
-  }
-}
-
-async function lockNumbers(game) {
-  if (!game) { location.reload(); return; }
-  var topCells = document.querySelectorAll('.axis-header.axis-top');
-  var leftCells = document.querySelectorAll('.axis-header.axis-left');
-  var rowNums = Array.from(topCells).map(function(el){ return parseInt(el.textContent.trim()); });
-  var colNums = Array.from(leftCells).map(function(el){ return parseInt(el.textContent.trim()); });
-  if (rowNums.length !== 10 || colNums.length !== 10) { alert('Open a game board first (found ' + rowNums.length + ' top, ' + colNums.length + ' left)'); return; }
-  var pin = prompt('Enter admin PIN to lock numbers:');
-  if (!pin) return;
-  fetch('/api/lock-numbers', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({gameId: game.id, pin: pin, rowNums: rowNums, colNums: colNums})
-  }).then(function(r){ return r.json(); }).then(function(d){
-    if (d.ok) { alert('Numbers locked! All boards will now match.'); location.reload(); }
-    else { alert('Error: ' + (d.error || 'Unknown')); }
-  }).catch(function(e){ alert('Error: ' + e.message); });
-}
-
-async function printBoard() {
-  if (!currentGame) { alert('Please load a game first.'); return; }
-
-  // Fetch fresh data
-  var freshData = {};
-  try {
-    var r = await fetch('/api/squares?gameId=' + encodeURIComponent(currentGame.id));
-    freshData = await r.json();
-  } catch(e) { freshData = window._lastSquaresData || {}; }
-
-  var owners = freshData.owners || {};
-  var pending = freshData.pending || {};
-  var topNums = (freshData.rowNums && freshData.rowNums.length===10) ? freshData.rowNums :
-    (typeof seededShuffle==='function' ? seededShuffle([0,1,2,3,4,5,6,7,8,9],'top-'+currentGame.id) : [0,1,2,3,4,5,6,7,8,9]);
-  var leftNums = (freshData.colNums && freshData.colNums.length===10) ? freshData.colNums :
-    (typeof seededShuffle==='function' ? seededShuffle([0,1,2,3,4,5,6,7,8,9],'left-'+currentGame.id) : [0,1,2,3,4,5,6,7,8,9]);
-
-  var away = currentGame.awayFull || currentGame.away || 'AWAY';
-  var home = currentGame.homeFull || currentGame.home || 'HOME';
-  var lockLabel = document.getElementById('lockBannerGame');
-  if (lockLabel && lockLabel.textContent && (away==='AWAY'||home==='HOME'||!away)) {
-    var parts = lockLabel.textContent.replace(/^[^A-Z]*/,'').split(' @ ');
-    if (parts.length===2){away=parts[0].trim();home=parts[1].trim();}
-  }
-  var dateEl = document.getElementById('live-date');
-  var price = (document.getElementById('squarePrice')||{}).value||'10';
-
-  // Build rows
-  var rows = '';
-  // Header
-  rows += '<tr><th style="background:#111;color:#aaa;font-size:8px;padding:2px;border:1px solid #555;width:60px;">'
-    + away + '<br>&#8595;&nbsp;&nbsp;' + home + '&nbsp;&#8594;</th>';
-  for(var c=0;c<10;c++) rows += '<th style="background:#1a1a3e;color:#7dd3fc;border:1px solid #555;font-size:12px;">' + topNums[c] + '</th>';
-  rows += '</tr>';
-  // Data rows
-  for(var row=0;row<10;row++){
-    rows += '<tr><th style="background:#1a1a3e;color:#86efac;border:1px solid #555;font-size:12px;">' + leftNums[row] + '</th>';
-    for(var col=0;col<10;col++){
-      var idx = row*10+col;
-      var o=owners[idx]; var p=pending[idx];
-      if(o) rows += '<td style="background:#dcfce7;color:#166534;font-weight:800;font-size:11px;border:1px solid #bbb;">' + o + '</td>';
-      else if(p) rows += '<td style="background:#fef9c3;color:#854d0e;font-weight:800;font-size:11px;border:1px solid #bbb;">' + (p.initials||'?') + '</td>';
-      else rows += '<td style="background:#f9f9f9;border:1px solid #ddd;"></td>';
-    }
-    rows += '</tr>';
-  }
-
-  var html = '<!DOCTYPE html><html><head><title>' + away + ' @ ' + home + '</title>'
-    + '<style>'
-    + '@page{size:landscape;margin:0.3in}'
-    + '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;padding:0}'
-    + 'body{font-family:Arial,sans-serif;background:white;padding:0}'
-    + 'h2{text-align:center;font-size:18px;font-weight:900;margin-bottom:3px}'
-    + 'p{text-align:center;font-size:10px;color:#666;margin-bottom:8px}'
-    + 'table{width:100%;border-collapse:collapse;table-layout:fixed}'
-    + 'td,th{height:44px;text-align:center;vertical-align:middle}'
-    + '</style>'
-    + '<script>window.onload=function(){window.print();}<\/script>'
-    + '</head><body>'
-    + '<h2>SUPER SQUARES &mdash; ' + away + ' @ ' + home + '</h2>'
-    + '<p>' + (dateEl?dateEl.textContent:'') + ' &bull; $' + price + '/sq &bull; parlaypro-squares.netlify.app</p>'
-    + '<table>' + rows + '</table>'
-    + '</body></html>';
-
-  var win = window.open('','_blank');
-  if(!win){alert('Allow popups for parlaypro-squares.netlify.app to print.');return;}
-  win.document.write(html);
-  win.document.close();
-}
-
-async function releasePendingPayments() {
-  if (!currentGame) { alert('No game loaded.'); return; }
-  var pin = prompt('Enter admin PIN to release pending squares:');
-  if (!pin) return;
-
-  // Show pending squares first
-  var data = _cache[currentGame.id];
-  if (!data) {
-    try {
-      var r = await fetch('/api/squares?gameId=' + encodeURIComponent(currentGame.id));
-      data = await r.json();
-    } catch(e) { alert('Could not load squares data.'); return; }
-  }
-
-  var pending = data.pending || {};
-  var pendingList = Object.entries(pending);
-
-  if (!pendingList.length) {
-    alert('No pending squares to release.');
-    return;
-  }
-
-  // Show who has pending squares
-  var names = {};
-  pendingList.forEach(function(entry) {
-    var initials = entry[1].initials;
-    names[initials] = (names[initials] || 0) + 1;
+// Click outside modal to close
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
   });
+});
 
-    var summary = Object.entries(names).map(function(e) { return e[1] + ' sq - ' + e[0]; }).join('\n');
-  var confirmed = window.confirm('Release these pending squares? ' + summary + ' They will become open for others to buy.');
-  if (!confirmed) return;
-
-  try {
-    var res = await fetch('/api/reject-pending', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId: currentGame.id, pin: pin })
-    });
-    var result = await res.json();
-    if (result.ok) {
-      _cache[currentGame.id] = null;
-      await buildGrid(currentGame);
-      alert('Pending squares released — they are now open for purchase.');
-    } else {
-      alert('Error: ' + (result.error || 'failed'));
-    }
-  } catch(e) {
-    alert('Network error: ' + e.message);
-  }
-}
-
-async function adminReset() {
-  // Try to get game from currentGame or from the dropdown
-  var game = window.currentGame;
-  if (!game) {
-    var sel = document.getElementById('gameSelect');
-    if (sel && sel.value) {
-      for (var sp of Object.keys(espnGames)) {
-        var found = (espnGames[sp] || []).find(function(g) { return g.id === sel.value; });
-        if (found) { game = found; window.currentGame = found; break; }
-      }
-    }
-  }
-  if (!game) {
-    await updateSport(currentSport || 'NBA');
-    game = window.currentGame;
-  }
-  if (!game) { alert('No game loaded. Pick a sport and game first.'); return; }
-
-  var pin = prompt('Enter admin PIN to reset board for ' + game.away + ' @ ' + game.home + ':');
-  if (!pin) return;
-  fetch('/api/reset-squares', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({gameId: game.id, pin: pin})
-  }).then(function(r) {
-    return r.json();
-  }).then(function(d) {
-    if (d.ok) {
-      // Clear server cache AND localStorage for this game
-      _cache = {};
-      localStorage.removeItem('my_' + game.id);
-      localStorage.removeItem('initials_' + game.id);
-      alert('Board cleared for ' + game.away + ' @ ' + game.home + '!');
-      buildGrid(game);
-    } else {
-      alert('Error: ' + (d.error || 'failed'));
-    }
-  }).catch(function(e) {
-    alert('Network error: ' + e.message);
-  });
-}
-
-// ── INIT ─────────────────────────────────────────────────────
-// ── INIT ─────────────────────────────────────────────────────
-// ── QUARTER TRACKER ──────────────────────────────────────────
-var _qtrData = {}; // cached period results per gameId
-
-// Returns sport config: { periods, labels, payouts, housecut }
-// housecut: flat % off top for house (only NCAA Men halves = 0.20)
-function getSportConfig(sport) {
-  if (sport === 'MM_MEN') {
-    // 2 halves: H1=40%, H2=40%, house always gets flat 20%
-    return { periods: 2, labels: ['H1','H2'], payouts: [0.40, 0.40], housecut: 0.20 };
-  } else if (sport === 'MLB') {
-    // 9 innings: house always gets 20%, remaining 80% split equally across 9 innings (~8.89% each)
-    const pct = 0.80 / 9;
-    return { periods: 9, labels: ['I1','I2','I3','I4','I5','I6','I7','I8','I9'], payouts: Array(9).fill(pct), housecut: 0.20 };
-  } else {
-    // NBA/NHL/NFL/MLS/WNBA/MM_WOMEN: 4 quarters, 20% each, house always gets 20% flat
-    return { periods: 4, labels: ['Q1','Q2','Q3','Q4'], payouts: [0.20, 0.20, 0.20, 0.20], housecut: 0.20 };
-  }
-}
-
-async function updateQtrTracker(game, squaresData) {
-  if (!game) return;
-  const tracker = document.getElementById('qtrTracker');
-  const body = document.getElementById('qtrBody');
-  const houseSummary = document.getElementById('qtrHouseSummary');
-  if (!tracker || !body) return;
-
-  const owners = squaresData && squaresData.owners ? squaresData.owners : {};
-  const totalSold = Object.keys(owners).length;
-  const price = parseFloat(document.getElementById('squarePrice') && document.getElementById('squarePrice').value) || 10;
-
-  // Always show tracker when a game is loaded
-  tracker.style.display = 'block';
-
-  // Set team labels
-  const awayEl = document.getElementById('qtrAwayLabel');
-  const homeEl = document.getElementById('qtrHomeLabel');
-  if (awayEl) awayEl.textContent = game.away || 'AWAY';
-  if (homeEl) homeEl.textContent = game.home || 'HOME';
-
-  // Live score in header — always update
-  const scoreEl = document.getElementById('qtrLiveScore');
-  if (scoreEl) {
-    if (game.status === 'LIVE') {
-      scoreEl.textContent = game.away + ' ' + (game.awayScore||0) + ' — ' + (game.homeScore||0) + ' ' + game.home + ' | Q' + (game.period||'');
-      scoreEl.style.color = 'var(--yellow)';
-    } else if (game.status === 'FINAL') {
-      scoreEl.textContent = game.away + ' ' + (game.awayScore||0) + ' — ' + (game.homeScore||0) + ' ' + game.home + ' | FINAL';
-      scoreEl.style.color = 'var(--text2)';
-    } else {
-      scoreEl.textContent = game.away + ' vs ' + game.home + ' | ' + (game.time || 'Upcoming');
-      scoreEl.style.color = 'var(--text3)';
-    }
-  }
-
-  // If no squares sold, just show the score — no payout rows needed
-  if (totalSold === 0) {
-    body.innerHTML = '<tr><td colspan="5" style="color:var(--text3);padding:8px 6px;font-size:11px;text-align:center;">No squares sold yet</td></tr>';
-    if (houseSummary) houseSummary.style.display = 'none';
-    return;
-  }
-
-  const pot = totalSold * price;
-  const cfg = getSportConfig(currentSport);
-  const houseFlatAmt = pot * cfg.housecut;
-  const playablePot = pot - houseFlatAmt;
-
-  const period = parseInt(game.period) || 0;
-  const awayScore = parseInt(game.awayScore) || 0;
-  const homeScore = parseInt(game.homeScore) || 0;
-
-  if (!_qtrData[game.id]) _qtrData[game.id] = {};
-  const stored = _qtrData[game.id];
-
-  if ((game.status === 'LIVE' || game.status === 'FINAL') && period >= 1) {
-    if (game.status === 'FINAL') {
-      for (let p = 1; p <= Math.max(cfg.periods, period); p++) {
-        if (!stored['p' + p] && (p === period || p === cfg.periods)) {
-          stored['p' + p] = { away: awayScore, home: homeScore };
-        }
-      }
-    } else {
-      stored['p' + period] = { away: awayScore, home: homeScore };
-    }
-  }
-
-  let houseWinTotal = houseFlatAmt;
-  let houseUnclaimed = [];
-  let rows = '';
-
-  for (let p = 1; p <= cfg.periods; p++) {
-    const snap = stored['p' + p];
-    const isComplete = snap && (game.status === 'FINAL' || period > p);
-    const isCurrent = period === p && game.status === 'LIVE';
-    const periodPayout = playablePot * cfg.payouts[p - 1];
-    const label = cfg.labels[p - 1];
-
-    if (!snap && !isCurrent) {
-      rows += `<tr style="opacity:0.4;">
-        <td style="padding:5px 6px;font-weight:700;color:var(--text2);">${label}</td>
-        <td style="padding:5px 6px;text-align:center;">—</td>
-        <td style="padding:5px 6px;text-align:center;">—</td>
-        <td style="padding:5px 6px;text-align:center;color:var(--text3);">TBD</td>
-        <td style="padding:5px 6px;text-align:right;color:var(--text3);">$${periodPayout.toFixed(2)}</td>
-      </tr>`;
-      continue;
-    }
-
-    const scoreSnap = snap || { away: awayScore, home: homeScore };
-    const awayDig = scoreSnap.away % 10;
-    const homeDig = scoreSnap.home % 10;
-
-    let winner = null;
-    if (squaresData && squaresData.rowNums && squaresData.colNums) {
-      const rowIdx = squaresData.colNums.indexOf(awayDig);
-      const colIdx = squaresData.rowNums.indexOf(homeDig);
-      if (rowIdx !== -1 && colIdx !== -1) {
-        winner = owners[rowIdx * 10 + colIdx] || null;
-      }
-    }
-
-    const winnerDisplay = winner || (isComplete || isCurrent ? 'House' : 'TBD');
-    const winnerColor = winner ? '#22c55e' : (winnerDisplay === 'House' ? '#f59e0b' : 'var(--text3)');
-
-    if ((isComplete || isCurrent) && !winner) {
-      houseWinTotal += periodPayout;
-      houseUnclaimed.push(label);
-    }
-
-    const rowBg = isCurrent ? 'background:rgba(250,204,21,0.06);' : isComplete ? 'background:rgba(34,197,94,0.04);' : '';
-    rows += `<tr style="${rowBg}border-top:1px solid rgba(255,255,255,0.04);">
-      <td style="padding:5px 6px;font-weight:700;color:var(--text2);">${label}${isCurrent ? ' <span style="color:var(--yellow);font-size:9px;">LIVE</span>' : isComplete ? ' <span style="color:#22c55e;font-size:9px;">FINAL</span>' : ''}</td>
-      <td style="padding:5px 6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;">${scoreSnap.away}</td>
-      <td style="padding:5px 6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;">${scoreSnap.home}</td>
-      <td style="padding:5px 6px;text-align:center;font-weight:700;color:${winnerColor};">${winnerDisplay}</td>
-      <td style="padding:5px 6px;text-align:right;font-weight:700;color:${winner ? '#22c55e' : winnerDisplay === 'House' ? '#f59e0b' : 'var(--text3)'};">$${periodPayout.toFixed(2)}</td>
-    </tr>`;
-  }
-
-  // NCAA Men: always show flat house cut row
-  if (cfg.housecut > 0) {
-    rows += `<tr style="border-top:1px solid rgba(255,255,255,0.06);background:rgba(245,158,11,0.04);">
-      <td colspan="3" style="padding:5px 6px;font-weight:700;color:#f59e0b;font-size:11px;">🏠 HOUSE CUT (20%)</td>
-      <td style="padding:5px 6px;text-align:center;color:#f59e0b;">Always</td>
-      <td style="padding:5px 6px;text-align:right;font-weight:700;color:#f59e0b;">$${houseFlatAmt.toFixed(2)}</td>
-    </tr>`;
-  }
-
-  rows += `<tr style="border-top:2px solid rgba(255,255,255,0.1);">
-    <td colspan="3" style="padding:6px 6px;font-weight:700;color:var(--text2);font-size:11px;">TOTAL POT</td>
-    <td style="padding:6px 6px;text-align:center;font-weight:700;color:var(--text2);">—</td>
-    <td style="padding:6px 6px;text-align:right;font-weight:700;color:white;">$${pot.toFixed(2)}</td>
-  </tr>`;
-
-  body.innerHTML = rows;
-
-  if (houseWinTotal > 0) {
-    houseSummary.style.display = 'block';
-    let msg = '🏠 <strong style="color:#f59e0b;">House</strong> collects <strong style="color:#f59e0b;">$' + houseWinTotal.toFixed(2) + '</strong>';
-    if (cfg.housecut > 0) msg += ' (20% flat cut';
-    if (houseUnclaimed.length > 0) msg += (cfg.housecut > 0 ? ' + ' : ' — ') + houseUnclaimed.join(', ') + ' unclaimed';
-    if (cfg.housecut > 0) msg += ')';
-    houseSummary.innerHTML = msg;
-  } else {
-    houseSummary.style.display = 'none';
-  }
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-  logStatus('Page loading...', false);
-
-  // ── Set date immediately ──────────────────────────────────
-  (function() {
-    const d = new Date(currentDate + 'T12:00:00');
-    const el = document.getElementById('live-date');
-    if (el) el.textContent = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  })();
-
-  // ── Handle Stripe redirect callbacks ─────────────────────
-  var _sp = new URLSearchParams(window.location.search);
-  if (_sp.get('payment') === 'success') {
-    window.history.replaceState({}, '', window.location.pathname);
-    var _msg = document.createElement('div');
-    _msg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#16a34a;color:white;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);';
-    _msg.textContent = '✅ Payment received! Your squares are locked in.';
-    document.body.appendChild(_msg);
-    setTimeout(function() { _msg.remove(); }, 5000);
-  }
-  if (_sp.get('payment') === 'cancelled') {
-    window.history.replaceState({}, '', window.location.pathname);
-    var _msg2 = document.createElement('div');
-    _msg2.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#dc2626;color:white;padding:14px 24px;border-radius:12px;font-weight:700;font-size:15px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);';
-    _msg2.textContent = '❌ Payment cancelled — squares not reserved.';
-    document.body.appendChild(_msg2);
-    setTimeout(function() { _msg2.remove(); }, 4000);
-  }
-
-  try {
-    initDatePicker();
-
-    // ── FETCH LOCK STATE FIRST — await before ANY sport loading ──────
-    // This is the single authoritative check. Nothing loads until this resolves.
-    let _serverLocked = false;
-    try {
-      const _lockRes = await fetch('/api/board-lock');
-      if (_lockRes.ok) {
-        const _lockData = await _lockRes.json();
-        if (_lockData && _lockData.locked) {
-          _serverLocked = true;
-          window._boardIsLocked = true; // block updateSport from this point on
-          window._currentLockTime = _lockData.lockedAt || 0;
-          if (window._ppSetLocked) window._ppSetLocked(true); // sync IIFE locked var
-          const _sport  = _lockData.sport  || 'NBA';
-          const _date   = _lockData.date   || currentDate;
-          const _gameId = _lockData.gameId || '';
-          const _label  = _lockData.label  || 'Locked Board';
-
-          // Set date and sport UI
-          currentDate = _date;
-          const _dp = document.getElementById('gameDate');
-          if (_dp) _dp.value = _date;
-          const _ld = document.getElementById('live-date');
-          if (_ld) {
-            const _d = new Date(_date + 'T12:00:00');
-            _ld.textContent = _d.toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric'});
-          }
-          const _ss = document.querySelector('.sport-select');
-          if (_ss) _ss.value = _sport;
-
-          // Build game from saved label — works for any sport, past/present/future
-          const _clean = _label.replace(/^[^ ]+ /, '').trim(); // strip leading bullet
-          const _sep = _clean.includes(' @ ') ? ' @ ' : ' vs ';
-          const _parts = _clean.split(_sep);
-          const _game = {
-            id: _gameId,
-            away: (_parts[0] || 'AWAY').trim(),
-            home: (_parts[1] || 'HOME').trim(),
-            awayScore: 0, homeScore: 0,
-            status: 'UPCOMING', time: '', period: 0
-          };
-
-          // Set global lock flag BEFORE loadGame so nothing can override it
-          window._boardIsLocked = true;
-          window._lockedGameId  = _gameId;
-
-          // Load the locked game board
-          await loadGame(_game);
-
-          // Show lock UI
-          const _banner = document.getElementById('lockBanner');
-          const _bannerGame = document.getElementById('lockBannerGame');
-          const _lockBtn = document.getElementById('ppLockBtn');
-          const _vi = document.getElementById('viewerInstructions');
-          if (_banner) _banner.classList.add('on');
-          if (_bannerGame) _bannerGame.textContent = _label;
-          if (_lockBtn) { _lockBtn.innerHTML = '🔓 Unlock Board'; _lockBtn.classList.add('locked'); }
-          if (_vi) _vi.classList.add('on');
-          document.querySelector('.board-panel')?.classList.add('board-locked');
-
-          logStatus('Locked board loaded: ' + _game.away + ' @ ' + _game.home, false);
-        }
-      }
-    } catch(_e) {
-      logStatus('Lock check failed: ' + _e.message, true);
-    }
-
-    // Only load default NBA if board is NOT locked
-    if (!_serverLocked) {
-      await updateSport('NBA');
-      logStatus('Page ready ✓ | Game: ' + (currentGame ? currentGame.away + ' @ ' + currentGame.home : 'NONE'), !currentGame);
-    }
-
-    // Load ticker in background (don't block)
-    // When locked, only fetch scores for locked sport — don't load other sports
-    if (_serverLocked) {
-      // Just show a minimal ticker without loading other sports
-      logStatus('Board locked — ticker suppressed to prevent board override', false);
-    } else {
-      buildTicker().catch(e => logStatus('Ticker error: ' + e.message, true));
-    }
-  } catch (e) {
-    logStatus('INIT FAILED: ' + e.message, true);
+// Escape key to close any open modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
   }
 });
 </script>
-
-<!-- UNLOCK PROMPT -->
-<div id="unlockPrompt">
-  <div class="unlock-box">
-    <h3>🔓 Unlock Board</h3>
-    <p>Enter your admin PIN to restore controls</p>
-    <input class="unlock-pin" id="unlockPinInput" type="password"
-      inputmode="numeric" maxlength="6" placeholder="••••"
-      oninput="document.getElementById('unlockErr').textContent=''" />
-    <div class="unlock-err" id="unlockErr"></div>
-    <div class="unlock-btns">
-      <button class="unlock-cancel" onclick="ppCloseUnlock()">Cancel</button>
-      <button class="unlock-go" onclick="ppConfirmUnlock()">UNLOCK</button>
-    </div>
-  </div>
-</div>
-
+<style>
+#soundToggleBtn{background:rgba(255,255,255,0.08)!important;border:1px solid rgba(255,255,255,0.18)!important;border-radius:8px!important;color:#fff!important;cursor:pointer!important;font-size:17px!important;padding:4px 10px!important;margin-left:6px!important;transition:background 0.2s!important;vertical-align:middle!important;}
+#soundToggleBtn:hover{background:rgba(255,255,255,0.22)!important;}
+</style>
 <script>
-// ═══════════════════════════════════════════════════════════════════
-//  BOARD LOCK v3 — Server-side lock via Netlify Blobs
-//  Lock state stored on server → works on ALL devices, no URL params
-//  GET /api/board-lock  → returns { locked, sport, date, gameId, label }
-//  POST /api/board-lock → { pin, action:'lock'|'unlock', sport, date, gameId, label }
-// ═══════════════════════════════════════════════════════════════════
-(function() {
-  const ADMIN_PIN  = '2826';
-  const MASTER_PIN = '0614';
-  let locked = false;
+// SOUND ENGINE
+let audioCtx=null,soundEnabled=true,bgMusicGain=null,bgMusicPlaying=false;
+function getAudioCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx;}
 
-  // Allow external code to sync the locked state
-  window._ppSetLocked = function(val) { locked = val; };
+function playSpinSound(){
+  if(!soundEnabled)return;const ctx=getAudioCtx();
+  const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);
+  o.type='sawtooth';o.frequency.setValueAtTime(80,ctx.currentTime);o.frequency.linearRampToValueAtTime(300,ctx.currentTime+0.3);o.frequency.linearRampToValueAtTime(120,ctx.currentTime+1.0);o.frequency.linearRampToValueAtTime(350,ctx.currentTime+1.5);o.frequency.linearRampToValueAtTime(100,ctx.currentTime+2.0);
+  g.gain.setValueAtTime(0.18,ctx.currentTime);g.gain.linearRampToValueAtTime(0.12,ctx.currentTime+1.8);g.gain.linearRampToValueAtTime(0,ctx.currentTime+2.4);
+  const o2=ctx.createOscillator(),g2=ctx.createGain();o2.connect(g2);g2.connect(ctx.destination);
+  o2.type='square';o2.frequency.setValueAtTime(60,ctx.currentTime);o2.frequency.linearRampToValueAtTime(220,ctx.currentTime+2.4);
+  g2.gain.setValueAtTime(0.06,ctx.currentTime);g2.gain.linearRampToValueAtTime(0,ctx.currentTime+2.4);
+  o.start(ctx.currentTime);o.stop(ctx.currentTime+2.4);o2.start(ctx.currentTime);o2.stop(ctx.currentTime+2.4);
+}
 
-  function getSnapshot() {
-    const sel   = document.getElementById('gameSelect');
-    const sport = document.querySelector('.sport-select');
-    const date  = document.getElementById('gameDate');
-    const price = document.getElementById('squarePrice');
-    return {
-      sport:  sport ? sport.value : 'NBA',
-      date:   date  ? date.value  : currentDate,
-      gameId: sel   ? sel.value   : '',
-      label:  sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '',
-      price:  price ? price.value : '10'
-    };
-  }
-
-  function applyLockUI(label, fromServer) {
-    locked = true;
-    window._boardIsLocked = true;
-    window._lockedGameId = currentGame ? currentGame.id : null;
-    document.querySelector('.board-panel')?.classList.add('board-locked');
-    document.getElementById('lockBannerGame').textContent = label || '';
-    document.getElementById('lockBanner').classList.add('on');
-    document.getElementById('ppLockBtn').innerHTML = '🔓 Unlock Board';
-    document.getElementById('ppLockBtn').classList.add('locked');
-    // Always show instructions when board is locked (admin and viewers)
-    const vi = document.getElementById('viewerInstructions');
-    if (vi) vi.classList.add('on');
-    window._ppOrigSport    = window.pinUpdateSport;
-    window._ppOrigDate     = window.pinUpdateDateFromPicker;
-    window._ppOrigArrow    = window.pinChangeDate;
-    window._ppOrigGame     = window.pinSelectGame;
-    window._ppOrigGameById = window.pinSelectGameById;
-    window.pinUpdateSport          = function() { flashBanner(); };
-    window.pinUpdateDateFromPicker = function() { flashBanner(); };
-    window.pinChangeDate           = function() { flashBanner(); };
-    window.pinSelectGame           = function() { flashBanner(); };
-    window.pinSelectGameById       = function() { flashBanner(); };
-  }
-
-  function releaseLockUI() {
-    locked = false;
-    window._boardIsLocked = false;
-    window._lockedGameId = null;
-    document.querySelector('.board-panel')?.classList.remove('board-locked');
-    document.getElementById('lockBanner').classList.remove('on');
-    document.getElementById('ppLockBtn').innerHTML = '🔒 Lock Board';
-    document.getElementById('ppLockBtn').classList.remove('locked');
-    const vi = document.getElementById('viewerInstructions');
-    if (vi) vi.classList.remove('on');
-    // Unfreeze price dropdown
-    const priceEl = document.getElementById('squarePrice');
-    if (priceEl) { priceEl.disabled = false; priceEl.style.opacity = ''; priceEl.style.pointerEvents = ''; }
-    if (window._ppOrigSport)    window.pinUpdateSport          = window._ppOrigSport;
-    if (window._ppOrigDate)     window.pinUpdateDateFromPicker = window._ppOrigDate;
-    if (window._ppOrigArrow)    window.pinChangeDate           = window._ppOrigArrow;
-    if (window._ppOrigGame)     window.pinSelectGame           = window._ppOrigGame;
-    if (window._ppOrigGameById) window.pinSelectGameById       = window._ppOrigGameById;
-  }
-
-  function flashBanner() {
-    const b = document.getElementById('lockBanner');
-    if (!b) return;
-    b.style.background = '#dc2626';
-    setTimeout(() => { b.style.background = '#991b1b'; }, 400);
-  }
-
-  function showToast(msg, color) {
-    const t = document.createElement('div');
-    t.style.cssText = 'position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:' + (color||'#16a34a') + ';color:white;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:700;z-index:9999;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.4);';
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
-  }
-
-  // ── Lock button click ─────────────────────────────────────────────
-  window.ppToggleLock = function() {
-    // window._boardIsLocked is the single authoritative source of truth
-    // locked (IIFE var) is synced via _ppSetLocked when server lock loads
-    var isLocked = locked || window._boardIsLocked;
-    if (!isLocked) {
-      // Ask for PIN before locking (so only admin can lock)
-      const pin = prompt('Enter admin PIN to lock this board:');
-      if (!pin) return;
-      if (pin !== ADMIN_PIN && pin !== MASTER_PIN) { alert('Wrong PIN.'); return; }
-
-      const snap = getSnapshot();
-      // Validate - must have a real game selected
-      if (!snap.gameId || snap.gameId.trim() === '') {
-        alert('Please select a game first before locking the board.');
-        return;
-      }
-      if (!snap.label || snap.label.includes('Loading') || snap.label.trim() === '') {
-        alert('Please wait for games to load, then select a game before locking.');
-        return;
-      }
-      const btn = document.getElementById('ppLockBtn');
-      btn.textContent = '⏳ Locking...';
-      btn.disabled = true;
-
-      fetch('/api/board-lock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, action: 'lock', ...snap })
-      })
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok) {
-          window._ppIsAdmin = true; // suppress "new game" banner for admin
-          applyLockUI(snap.label, false);
-          showToast('🔒 Board locked! Share parlaypro-squares.netlify.app');
-        } else {
-          btn.textContent = '🔒 Lock Board';
-          btn.disabled = false;
-          alert('Lock failed: ' + (data.error || 'unknown error'));
-        }
-      })
-      .catch(() => {
-        btn.textContent = '🔒 Lock Board';
-        btn.disabled = false;
-        alert('Network error — could not lock board.');
-      });
-
-    } else {
-      // Board is locked — unlock it
-      const pin = prompt('Enter admin PIN to unlock:');
-      if (!pin) return;
-      if (pin !== ADMIN_PIN && pin !== MASTER_PIN) { alert('Wrong PIN.'); return; }
-      const unlockBtn = document.getElementById('ppLockBtn');
-      unlockBtn.textContent = '⏳ Unlocking...';
-      unlockBtn.disabled = true;
-      fetch('/api/board-lock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, action: 'unlock' })
-      })
-      .then(r => r.json())
-      .then(data => {
-        releaseLockUI();
-        showToast('🔓 Board unlocked — you can now change boards');
-        // Reload current sport to restore nav without wiping the board
-        if (typeof updateSport === 'function' && currentSport) {
-          updateSport(currentSport);
-        }
-      })
-      .catch(() => {
-        releaseLockUI();
-        showToast('🔓 Board unlocked');
-      });
-    }
-  };
-
-  window.ppCloseUnlock = function() {
-    document.getElementById('unlockPrompt').classList.remove('open');
-  };
-
-  window.ppConfirmUnlock = function() {
-    const pin = document.getElementById('unlockPinInput').value.trim();
-    if (pin !== ADMIN_PIN && pin !== MASTER_PIN) {
-      document.getElementById('unlockErr').textContent = '❌ Wrong PIN';
-      document.getElementById('unlockPinInput').value = '';
-      document.getElementById('unlockPinInput').focus();
-      return;
-    }
-
-    fetch('/api/board-lock', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin, action: 'unlock' })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.ok || !data.error) {
-        releaseLockUI();
-        ppCloseUnlock();
-        showToast('🔓 Board unlocked');
-      } else {
-        document.getElementById('unlockErr').textContent = '❌ ' + data.error;
-      }
-    })
-    .catch(() => {
-      // Unlock locally even if server fails
-      releaseLockUI();
-      ppCloseUnlock();
-    });
-  };
-
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') ppCloseUnlock();
-    if (e.key === 'Enter' && document.getElementById('unlockPrompt').classList.contains('open')) {
-      ppConfirmUnlock();
-    }
+function playWinSound(){
+  if(!soundEnabled)return;const ctx=getAudioCtx();
+  [523,659,784,1047].forEach((f,i)=>{
+    const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);
+    o.type='sine';o.frequency.setValueAtTime(f,ctx.currentTime+i*0.12);
+    g.gain.setValueAtTime(0,ctx.currentTime+i*0.12);g.gain.linearRampToValueAtTime(0.3,ctx.currentTime+i*0.12+0.02);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.12+0.5);
+    o.start(ctx.currentTime+i*0.12);o.stop(ctx.currentTime+i*0.12+0.6);
   });
+  for(let j=0;j<6;j++){
+    const buf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.04),ctx.sampleRate),d=buf.getChannelData(0);
+    for(let k=0;k<d.length;k++)d[k]=(Math.random()*2-1)*Math.exp(-k/(d.length*0.3));
+    const s=ctx.createBufferSource(),gn=ctx.createGain();s.buffer=buf;s.connect(gn);gn.connect(ctx.destination);
+    gn.gain.setValueAtTime(0.25,ctx.currentTime+j*0.09+0.3);s.start(ctx.currentTime+j*0.09+0.3);
+  }
+}
 
-  // ── Exposed for DOMContentLoaded to call ─────────────────────────
-  window._ppApplyLockedLink = function(label) { applyLockUI(label, true); };
+function playBigWinSound(){
+  if(!soundEnabled)return;const ctx=getAudioCtx();
+  [523,659,784,1047,1319,1047,784,1047,1319,1568].forEach((f,i)=>{
+    const o=ctx.createOscillator(),o2=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);o2.connect(g);g.connect(ctx.destination);
+    o.type='triangle';o2.type='sine';
+    o.frequency.setValueAtTime(f,ctx.currentTime+i*0.1);o2.frequency.setValueAtTime(f*2,ctx.currentTime+i*0.1);
+    g.gain.setValueAtTime(0,ctx.currentTime+i*0.1);g.gain.linearRampToValueAtTime(0.3,ctx.currentTime+i*0.1+0.04);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+i*0.1+0.45);
+    o.start(ctx.currentTime+i*0.1);o.stop(ctx.currentTime+i*0.1+0.5);o2.start(ctx.currentTime+i*0.1);o2.stop(ctx.currentTime+i*0.1+0.5);
+  });
+  for(let j=0;j<12;j++){
+    const buf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.05),ctx.sampleRate),d=buf.getChannelData(0);
+    for(let k=0;k<d.length;k++)d[k]=(Math.random()*2-1)*Math.exp(-k/(d.length*0.25));
+    const s=ctx.createBufferSource(),gn=ctx.createGain();s.buffer=buf;s.connect(gn);gn.connect(ctx.destination);
+    gn.gain.setValueAtTime(0.3,ctx.currentTime+j*0.08+0.5);s.start(ctx.currentTime+j*0.08+0.5);
+  }
+}
 
-  // ── On load: fetch lock state from server ─────────────────────────
-  window._ppCheckServerLock = async function() {
-    try {
-      const res = await fetch('/api/board-lock');
-      if (!res.ok) return;
-      const data = await res.json();
-      if (!data.locked) return;
+function playScratchSound(){
+  if(!soundEnabled)return;const ctx=getAudioCtx();
+  const buf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.08),ctx.sampleRate),d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.5*Math.sin(i/d.length*Math.PI);
+  const s=ctx.createBufferSource(),fl=ctx.createBiquadFilter(),g=ctx.createGain();
+  fl.type='bandpass';fl.frequency.value=2400;fl.Q.value=0.7;
+  s.buffer=buf;s.connect(fl);fl.connect(g);g.connect(ctx.destination);
+  g.gain.setValueAtTime(0.4,ctx.currentTime);g.gain.linearRampToValueAtTime(0,ctx.currentTime+0.08);
+  s.start(ctx.currentTime);
+}
 
-      const sport  = data.sport  || 'NBA';
-      const date   = data.date   || currentDate;
-      const gameId = data.gameId || '';
-      const label  = data.label  || 'Locked Board';
-      if (!gameId) { applyLockUI(label, true); return; } // no gameId saved, just show lock UI
+function playCoinSound(){
+  if(!soundEnabled)return;const ctx=getAudioCtx();
+  const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);
+  o.type='sine';o.frequency.setValueAtTime(1400,ctx.currentTime);o.frequency.exponentialRampToValueAtTime(900,ctx.currentTime+0.08);
+  g.gain.setValueAtTime(0.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.18);
+  o.start(ctx.currentTime);o.stop(ctx.currentTime+0.2);
+}
 
-      // ── Step 1: Always set date + sport UI immediately ─────────────
-      currentDate = date;
-      const dp = document.getElementById('gameDate');
-      if (dp) dp.value = date;
-      const ld = document.getElementById('live-date');
-      if (ld) {
-        const d = new Date(date + 'T12:00:00');
-        ld.textContent = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
-      }
-      const ss = document.querySelector('.sport-select');
-      if (ss) ss.value = sport;
+function startBgMusic(){
+  if(!soundEnabled||bgMusicPlaying)return;
+  const ctx=getAudioCtx();bgMusicGain=ctx.createGain();bgMusicGain.gain.setValueAtTime(0.07,ctx.currentTime);bgMusicGain.connect(ctx.destination);bgMusicPlaying=true;scheduleBgLoop(ctx);
+}
+function stopBgMusic(){
+  bgMusicPlaying=false;
+  if(bgMusicGain){try{bgMusicGain.gain.linearRampToValueAtTime(0,getAudioCtx().currentTime+0.5);}catch(e){}}
+}
+function scheduleBgLoop(ctx){
+  if(!bgMusicPlaying)return;
+  const t=ctx.currentTime+0.05;
+  [[130,164,196],[146,184,220],[116,146,174],[130,164,196]].forEach((chord,ci)=>{
+    chord.forEach(f=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(bgMusicGain);
+      o.type='sine';o.frequency.setValueAtTime(f,t+ci*2);
+      g.gain.setValueAtTime(0,t+ci*2);g.gain.linearRampToValueAtTime(0.15,t+ci*2+0.2);g.gain.linearRampToValueAtTime(0,t+ci*2+2.0);
+      o.start(t+ci*2);o.stop(t+ci*2+2.1);
+    });
+    const b=ctx.createOscillator(),bg=ctx.createGain();b.connect(bg);bg.connect(bgMusicGain);
+    b.type='triangle';b.frequency.setValueAtTime(chord[0]/2,t+ci*2);
+    bg.gain.setValueAtTime(0.35,t+ci*2);bg.gain.exponentialRampToValueAtTime(0.001,t+ci*2+1.8);
+    b.start(t+ci*2);b.stop(t+ci*2+1.9);
+  });
+  setTimeout(()=>scheduleBgLoop(ctx),7900);
+}
 
-      // ── Step 2: Build game object from saved label (works for any game,
-      //    any sport, any date — past, present, or future) ─────────────
-      const cleanLabel = label.replace(/^[●•]\s*/, '').trim();
-      const sep = cleanLabel.includes(' @ ') ? ' @ ' : ' vs ';
-      const parts = cleanLabel.split(sep);
-      const savedGame = {
-        id: gameId,
-        away: (parts[0] || 'AWAY').trim(),
-        home: (parts[1] || 'HOME').trim(),
-        awayScore: 0, homeScore: 0,
-        status: 'UPCOMING', time: '', period: 0
-      };
+function toggleSound(){
+  soundEnabled=!soundEnabled;
+  const btn=document.getElementById('soundToggleBtn');
+  if(!soundEnabled){stopBgMusic();btn.textContent='🔇';btn.title='Sound Off';}
+  else{btn.textContent='🔊';btn.title='Sound On';startBgMusic();}
+}
 
-      // ── Step 3: Restore saved price ────────────────────────────────
-      if (data.price) {
-        const priceEl = document.getElementById('squarePrice');
-        if (priceEl) {
-          priceEl.value = data.price;
-          if (typeof updatePriceDisplay === 'function') updatePriceDisplay(data.price);
-        }
-      }
-      // ── Step 4: Load the locked game immediately ──────────────────
-      await loadGame(savedGame);
-
-      // ── Step 4: Apply lock UI BEFORE any ESPN background fetch ─────
-      // This overrides the nav functions so updateSport can't replace the board
-      applyLockUI(label, true);
-
-      // ── Step 5: In background, fetch live scores only (won't replace board) ──
-      setTimeout(function() {
-        window._ppLockScoreFetch = true; // signal: this is a score-only fetch
-        fetchEspnScores(sport).then(function(data) {
-          window._ppLockScoreFetch = false;
-          if (!data || !data.games) return;
-          const espnGame = data.games.find(function(g) { return g.id === gameId; });
-          if (espnGame && (espnGame.status === 'LIVE' || espnGame.status === 'FINAL')) {
-            savedGame.awayScore = espnGame.awayScore;
-            savedGame.homeScore = espnGame.homeScore;
-            savedGame.status    = espnGame.status;
-            savedGame.period    = espnGame.period;
-            savedGame.time      = espnGame.time;
-            buildGrid(savedGame);
-          }
-        }).catch(function() { window._ppLockScoreFetch = false; });
-      }, 2000);
-
-    } catch(e) {
-      // Server unreachable — continue normally
-    }
-  };
-
+(function(){
+  const nav=document.querySelector('nav');if(!nav)return;
+  const btn=document.createElement('button');btn.id='soundToggleBtn';btn.textContent='🔊';btn.title='Sound On — click to mute';btn.className='nav-tab';btn.onclick=toggleSound;nav.appendChild(btn);
 })();
-</script>
 
-<script src="/props.js"></script>
+document.addEventListener('click',function(){if(soundEnabled&&!bgMusicPlaying)startBgMusic();},{once:true});
+// END SOUND ENGINE
+</script>
+</body>
+</html>
