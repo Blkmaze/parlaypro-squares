@@ -1098,8 +1098,24 @@
   }
 
   @media (max-width: 768px) {
-    .layout { grid-template-columns: 1fr; }
+    .layout { 
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto;
+    }
+    /* Board panel first, sidebar (payment) second on mobile */
+    .board-panel { order: 1; }
+    .sidebar { order: 2; width: 100%; }
     .page-wrap { padding: 8px; }
+  }
+
+  /* Tablet - side by side but tighter */
+  @media (min-width: 769px) and (max-width: 1024px) {
+    .layout { grid-template-columns: 1fr 280px; gap: 12px; }
+  }
+
+  /* Desktop - full width side by side */
+  @media (min-width: 1025px) {
+    .layout { grid-template-columns: 1fr 320px; }
   }
 
   @media (max-width: 600px) {
