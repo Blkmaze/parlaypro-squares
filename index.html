@@ -1818,13 +1818,13 @@ async function buildGrid(game) {
   const _hasOwners = Object.keys(serverOwners).length > 0;
   const _hasPending = Object.keys(serverData.pending || {}).length > 0;
   const _priceEl = document.getElementById('squarePrice');
-  if (_priceEl && (_hasOwners || _hasPending) && !window._boardIsLocked) {
-    // Freeze price dropdown — first square sets the price for this board
+  if (_priceEl && (_hasOwners || _hasPending || window._boardIsLocked)) {
+    // Freeze price — first square purchased locks the price for this board
     _priceEl.disabled = true;
     _priceEl.style.opacity = '0.6';
     _priceEl.style.cursor = 'not-allowed';
+    _priceEl.style.pointerEvents = 'none';
     _priceEl.title = 'Price locked — squares already purchased on this board';
-    // Show a small lock indicator next to the price
     if (!document.getElementById('_priceLockBadge')) {
       const _badge = document.createElement('span');
       _badge.id = '_priceLockBadge';
