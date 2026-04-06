@@ -2415,12 +2415,14 @@ async function printBoard() {
   var style = document.getElementById('_printStyle') || document.createElement('style');
   style.id = '_printStyle';
   style.textContent = '@media print {'
-    + '@page{size:landscape;margin:0.5in}'
+    + '@page{size:landscape;margin:0.3in}'
     + 'body > *:not(#_printDiv){display:none!important}'
-    + '#_printDiv{display:block!important;padding-top:8px}'
-    + '#_printDiv h2{margin-bottom:4px!important}'
-    + '#_printDiv p{margin-bottom:8px!important}'
-    + '#_printDiv td,#_printDiv th{height:40px!important;text-align:center;vertical-align:middle;font-size:11px}'
+    + '#_printDiv{display:block!important;padding-top:4px}'
+    + '#_printDiv h2{font-size:16px!important;margin-bottom:2px!important}'
+    + '#_printDiv p{font-size:10px!important;margin-bottom:6px!important}'
+    + '#_printDiv table{width:100%!important}'
+    + '#_printDiv td,#_printDiv th{height:34px!important;text-align:center;vertical-align:middle;font-size:10px!important;padding:2px!important}'
+    + '#_printDiv .corner{font-size:8px!important}'
     + '}';
   document.head.appendChild(style);
 
