@@ -1250,6 +1250,28 @@
       </div>
     </div>
 
+    <!-- Refund Policy Disclaimer Banner -->
+    <div id="refundBanner" style="
+      background: rgba(234,179,8,0.08);
+      border: 1px solid rgba(234,179,8,0.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 12px 0 4px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 12px;
+      color: #d4b44a;
+      line-height: 1.5;
+    ">
+      <span style="font-size:15px;margin-top:1px;">⚠️</span>
+      <span>
+        <strong style="color:#eab308;">Refund Policy:</strong>
+        All payments are fully refundable unless at least <strong>75% of squares are sold</strong>.
+        The board operator reserves the right to issue refunds and cancel the board at any time if this threshold is not met.
+      </span>
+    </div>
+
     <!-- Board Tabs -->
     <div class="board-tabs" style="padding-top:16px;">
       <button class="board-tab active" onclick="requireAdminPin(function(){ document.querySelectorAll('.board-tab').forEach(function(b){b.classList.remove('active');}); this.classList.add('active'); }.bind(this))">Board #1</button>
@@ -1581,6 +1603,20 @@
         </div>
       </div>
       <div id="payInstructions" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:12px;color:var(--text2);"></div>
+
+      <!-- Refund Policy Acknowledgement -->
+      <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.2);border-radius:8px;padding:10px 12px;margin:10px 0;">
+        <p style="font-size:11px;color:#c9a227;line-height:1.5;margin-bottom:8px;">
+          <strong>⚠️ Refund Policy:</strong> All payments are fully refundable unless at least <strong>75% of squares are sold</strong>.
+          The board operator reserves the right to issue refunds and cancel the board if this threshold is not met.
+        </p>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;color:var(--text2);">
+          <input type="checkbox" id="refundAckCheck" onchange="checkInitials()"
+            style="width:15px;height:15px;accent-color:#eab308;cursor:pointer;flex-shrink:0;" />
+          I understand and agree to the refund policy above.
+        </label>
+      </div>
+
       <button class="modal-cta" id="confirmBtn" disabled onclick="confirmPurchase()">
         📲 Reserve My Squares
       </button>
@@ -2260,6 +2296,8 @@ function openPayModal() {
   document.getElementById('modalTotal').textContent = `$${(currentQty * price).toFixed(2)}`;
   document.getElementById('initialsInput').value = '';
   document.getElementById('confirmBtn').disabled = true;
+  var ackBox = document.getElementById('refundAckCheck');
+  if (ackBox) ackBox.checked = false;
   document.getElementById('payModal').classList.add('open');
 }
 
@@ -2290,7 +2328,9 @@ function updatePayInstructions() {
 }
 
 function checkInitials() {
-  document.getElementById('confirmBtn').disabled = document.getElementById('initialsInput').value.trim().length < 3;
+  var hasInitials = document.getElementById('initialsInput').value.trim().length >= 3;
+  var ackChecked = (document.getElementById('refundAckCheck') || {}).checked || false;
+  document.getElementById('confirmBtn').disabled = !(hasInitials && ackChecked);
   updatePayInstructions();
 }
 
@@ -2488,12 +2528,15 @@ async function printBoard() {
     + 'p{text-align:center;font-size:10px;color:#666;margin-bottom:8px}'
     + 'table{width:100%;border-collapse:collapse;table-layout:fixed}'
     + 'td,th{height:44px;text-align:center;vertical-align:middle}'
+    + '.print-disclaimer{margin-top:10px;padding:7px 12px;background:#fffbeb;border:1px solid #f59e0b;border-radius:6px;font-size:9px;color:#92400e;text-align:center;line-height:1.5;}'
     + '</style>'
     + '<script>window.onload=function(){window.print();}<\/script>'
     + '</head><body>'
     + '<h2>SUPER SQUARES &mdash; ' + away + ' @ ' + home + '</h2>'
     + '<p>' + (dateEl?dateEl.textContent:'') + ' &bull; $' + price + '/sq &bull; parlaypro-squares.netlify.app</p>'
     + '<table>' + rows + '</table>'
+    + '<div class="print-disclaimer">&#9888; <strong>REFUND POLICY:</strong> All payments are fully refundable unless at least 75% of squares are sold. '
+    + 'The board operator reserves the right to issue refunds and cancel the board at any time if this threshold is not met.</div>'
     + '</body></html>';
 
   var win = window.open('','_blank');
