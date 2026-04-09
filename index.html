@@ -1503,7 +1503,7 @@
         <button class="admin-btn" onclick="printBoard()" style="background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.3);color:#a5b4fc;">🖨️ Print Board</button>
         <button class="admin-btn admin-btn-blue" onclick="lockNumbers(currentGame)">Lock Numbers to This Board</button>
         <button class="admin-btn admin-btn-blue" onclick="_cache={};if(!currentGame){location.reload();}else{buildTicker().catch(function(){});buildGrid(currentGame);}">↻ Force Refresh Scores</button>
-        <button class="admin-btn admin-btn-green" onclick="confirmPendingPayments()">✅ Confirm Pending Payments</button>
+        <button class="admin-btn admin-btn-green" onclick="openPendingMgr()">⏳ Manage Pending Payments</button>
         <button class="admin-btn admin-btn-red" onclick="releasePendingPayments()" style="background:rgba(234,179,8,0.1);border-color:rgba(234,179,8,0.3);color:#fbbf24;">🔓 Release Pending Squares</button>
         <button class="admin-btn admin-btn-green" onclick="alert('New board version coming soon!')">+ New Board Version</button>
         <button class="admin-btn admin-btn-red" onclick="adminReset();">⨂ Reset Board</button>
@@ -1636,6 +1636,29 @@
         <div class="confirm-badge-sub">Please pay Willie in cash or via app</div>
       </div>
       <button class="confirm-btn" onclick="closeConfirm()">Got it!</button>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE PENDING MODAL -->
+<div class="modal-overlay" id="pendingMgrModal" style="z-index:1100;">
+  <div class="modal" style="position:relative;max-width:420px;width:95%;">
+    <button class="modal-close" onclick="document.getElementById('pendingMgrModal').classList.remove('open')">✕</button>
+    <div class="modal-header">
+      <div class="modal-icon">⏳</div>
+      <div class="modal-title">Pending Payments</div>
+      <div class="modal-sub">Confirm or release each buyer individually.</div>
+    </div>
+    <div class="modal-body">
+      <div id="pendingMgrPin" style="margin-bottom:12px;">
+        <div class="modal-input-label">Admin PIN</div>
+        <input type="password" maxlength="8" placeholder="Enter PIN" class="modal-input" id="pendingMgrPinInput" />
+        <button class="modal-cta" style="margin-top:8px;" onclick="loadPendingMgr()">Load Pending Buyers</button>
+      </div>
+      <div id="pendingMgrList" style="display:none;">
+        <div id="pendingMgrItems"></div>
+        <div id="pendingMgrEmpty" style="display:none;text-align:center;color:var(--text2);padding:20px;font-size:13px;">No pending buyers.</div>
+      </div>
     </div>
   </div>
 </div>
@@ -2429,28 +2452,124 @@ function closeConfirm() {
 }
 
 // ── ADMIN ────────────────────────────────────────────────────
-async function confirmPendingPayments() {
-  var game = currentGame;
-  if (!game) { alert('No game loaded.'); return; }
-  var pin = prompt('Enter admin PIN to confirm all pending payments:');
-  if (!pin) return;
+// ── MANAGE PENDING (per-buyer) ────────────────────────────────
+var _pendingMgrPin = '';
+var _pendingMgrData = {}; // { initials: { indices: [], qty: N } }
+
+function openPendingMgr() {
+  if (!currentGame) { alert('No game loaded.'); return; }
+  _pendingMgrPin = '';
+  _pendingMgrData = {};
+  document.getElementById('pendingMgrPinInput').value = '';
+  document.getElementById('pendingMgrList').style.display = 'none';
+  document.getElementById('pendingMgrItems').innerHTML = '';
+  document.getElementById('pendingMgrModal').classList.add('open');
+}
+
+async function loadPendingMgr() {
+  var pin = document.getElementById('pendingMgrPinInput').value.trim();
+  if (!pin) { alert('Enter your admin PIN.'); return; }
+  if (!currentGame) { alert('No game loaded.'); return; }
+
+  // Validate PIN by fetching squares (lightweight check)
+  var data;
   try {
-    var r = await fetch('/api/confirm-pending', {
+    var r = await fetch('/api/squares?gameId=' + encodeURIComponent(currentGame.id));
+    data = await r.json();
+  } catch(e) { alert('Network error loading squares.'); return; }
+
+  var pending = data.pending || {};
+  var pendingList = Object.entries(pending); // [[idx, {initials, ...}], ...]
+
+  // Group by initials
+  var grouped = {};
+  pendingList.forEach(function(entry) {
+    var idx = Number(entry[0]);
+    var info = entry[1];
+    var init = (info.initials || '???').toUpperCase();
+    if (!grouped[init]) grouped[init] = { indices: [], payMethod: info.payMethod || '', amount: info.amount || '' };
+    grouped[init].indices.push(idx);
+  });
+
+  _pendingMgrPin = pin;
+  _pendingMgrData = grouped;
+
+  // Render list
+  var container = document.getElementById('pendingMgrItems');
+  var empty = document.getElementById('pendingMgrEmpty');
+  container.innerHTML = '';
+
+  var keys = Object.keys(grouped);
+  if (!keys.length) {
+    empty.style.display = 'block';
+    container.style.display = 'none';
+  } else {
+    empty.style.display = 'none';
+    container.style.display = 'block';
+    keys.forEach(function(init) {
+      var g = grouped[init];
+      var qty = g.indices.length;
+      var method = g.payMethod ? (' · ' + g.payMethod.toUpperCase()) : '';
+      var amt = g.amount ? (' · $' + g.amount) : '';
+      var row = document.createElement('div');
+      row.id = 'pmgr-row-' + init;
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;margin-bottom:8px;';
+      row.innerHTML =
+        '<div style="flex:1;">' +
+          '<div style="font-size:14px;font-weight:800;color:var(--text);">' + init + '</div>' +
+          '<div style="font-size:11px;color:var(--text2);margin-top:2px;">' + qty + ' square' + (qty>1?'s':'') + method + amt + '</div>' +
+        '</div>' +
+        '<button onclick="pendingMgrAction(\'' + init + '\',\'confirm\')" style="padding:6px 12px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.4);color:#86efac;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">✅ Confirm</button>' +
+        '<button onclick="pendingMgrAction(\'' + init + '\',\'release\')" style="padding:6px 12px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#fca5a5;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">❌ Release</button>';
+      container.appendChild(row);
+    });
+  }
+
+  document.getElementById('pendingMgrList').style.display = 'block';
+}
+
+async function pendingMgrAction(initials, action) {
+  if (!currentGame) return;
+  var g = _pendingMgrData[initials];
+  if (!g) return;
+  var qty = g.indices.length;
+  var label = action === 'confirm' ? 'confirm' : 'release';
+  if (!window.confirm(label.charAt(0).toUpperCase() + label.slice(1) + ' ' + qty + ' square(s) for ' + initials + '?')) return;
+
+  var endpoint = action === 'confirm' ? '/api/confirm-pending' : '/api/reject-pending';
+  try {
+    var r = await fetch(endpoint, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ gameId: game.id, pin: pin })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gameId: currentGame.id, pin: _pendingMgrPin, indices: g.indices })
     });
     var d = await r.json();
     if (d.ok) {
-      alert('Confirmed ' + (d.confirmed ? d.confirmed.length : 0) + ' pending squares!');
-      _cache[game.id] = null;
-      buildGrid(game);
+      // Remove row from UI
+      var row = document.getElementById('pmgr-row-' + initials);
+      if (row) row.remove();
+      delete _pendingMgrData[initials];
+      // Check if empty
+      if (!Object.keys(_pendingMgrData).length) {
+        document.getElementById('pendingMgrEmpty').style.display = 'block';
+      }
+      _cache[currentGame.id] = null;
+      buildGrid(currentGame);
     } else {
-      alert('Error: ' + (d.error || 'Failed'));
+      if (d.error && d.error.toLowerCase().includes('pin')) {
+        alert('Invalid PIN. Please close and re-enter.');
+      } else {
+        alert('Error: ' + (d.error || 'Failed'));
+      }
     }
   } catch(e) {
     alert('Network error: ' + e.message);
   }
+}
+
+async function confirmPendingPayments() {
+  // Legacy stub — now handled by openPendingMgr
+  openPendingMgr();
 }
 
 async function lockNumbers(game) {
@@ -2546,55 +2665,8 @@ async function printBoard() {
 }
 
 async function releasePendingPayments() {
-  if (!currentGame) { alert('No game loaded.'); return; }
-  var pin = prompt('Enter admin PIN to release pending squares:');
-  if (!pin) return;
-
-  // Show pending squares first
-  var data = _cache[currentGame.id];
-  if (!data) {
-    try {
-      var r = await fetch('/api/squares?gameId=' + encodeURIComponent(currentGame.id));
-      data = await r.json();
-    } catch(e) { alert('Could not load squares data.'); return; }
-  }
-
-  var pending = data.pending || {};
-  var pendingList = Object.entries(pending);
-
-  if (!pendingList.length) {
-    alert('No pending squares to release.');
-    return;
-  }
-
-  // Show who has pending squares
-  var names = {};
-  pendingList.forEach(function(entry) {
-    var initials = entry[1].initials;
-    names[initials] = (names[initials] || 0) + 1;
-  });
-
-    var summary = Object.entries(names).map(function(e) { return e[1] + ' sq - ' + e[0]; }).join('\n');
-  var confirmed = window.confirm('Release these pending squares? ' + summary + ' They will become open for others to buy.');
-  if (!confirmed) return;
-
-  try {
-    var res = await fetch('/api/reject-pending', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gameId: currentGame.id, pin: pin })
-    });
-    var result = await res.json();
-    if (result.ok) {
-      _cache[currentGame.id] = null;
-      await buildGrid(currentGame);
-      alert('Pending squares released — they are now open for purchase.');
-    } else {
-      alert('Error: ' + (result.error || 'failed'));
-    }
-  } catch(e) {
-    alert('Network error: ' + e.message);
-  }
+  // Now handled individually via Manage Pending modal
+  openPendingMgr();
 }
 
 async function adminReset() {
