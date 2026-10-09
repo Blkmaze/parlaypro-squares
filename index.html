@@ -1669,9 +1669,9 @@ function logStatus(msg, isError) {
   const el = document.getElementById('statusBar');
   if (el) {
     el.textContent = (new Date()).toLocaleTimeString() + ' | ' + msg;
-    el.style.color = isError ? '#ef4444' : '#22c55e';
+    el.style.color = isError === 'info' ? '#94a3b8' : (isError ? '#ef4444' : '#22c55e');
   }
-  if (isError) console.error('[ParlayPro]', msg);
+  if (isError === true) console.error('[ParlayPro]', msg);
   else console.log('[ParlayPro]', msg);
 }
 
@@ -1808,7 +1808,7 @@ async function fetchEspnScores(sport) {
       espnGames[sport] = games;
       return { games };
     }
-    logStatus('No games found via ESPN direct for ' + sport, true);
+    logStatus('No ' + sport + ' games right now (off-season or none scheduled)', 'info');
     return null;
   } catch (e) {
     logStatus('ESPN fetch failed for ' + sport + ': ' + e.message, true);
@@ -2194,7 +2194,7 @@ async function updateSport(sport) {
 
   const data = await fetchEspnScores(sport);
   if (!data || !data.games || !data.games.length) {
-    logStatus('No games found for ' + sport + ' — using fallback board', true);
+    logStatus('No ' + sport + ' games found - showing a sample board', 'info');
     // Still render the grid with a fallback game so board is usable
     const fallback = getFallbackGame(sport);
     espnGames[sport] = [fallback];
